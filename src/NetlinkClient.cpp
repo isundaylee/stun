@@ -104,24 +104,31 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
   }
 }
 
-struct NetlinkListInterfaceRequest {
+template <typename M>
+struct NetlinkRequest {
   struct nlmsghdr hdr;
-  struct rtgenmsg gen;
+  M msg;
+  char attrs[kNetlinkRequestAttrBufferSize];
 
-  NetlinkListInterfaceRequest() {
-    memset(this, 0, sizeof(NetlinkListInterfaceRequest));
+  NetlinkRequest() {
+    memset(this, 0, sizeof(*this));
+  }
+
+  void fillHeader(int flags) {
+    hdr.nlmsg_len = NLMSG_LENGTH(sizeof(M));
+    hdr.nlmsg_type = RTM_GETLINK;
+    hdr.nlmsg_flags = NLM_F_REQUEST | flags;
+    hdr.nlmsg_pid = getpid();
   }
 };
 
-int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
-  NetlinkListInterfaceRequest req;
+typedef NetlinkRequest<struct rtgenmsg> NetlinkListLinkRequest;
 
-  req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg));
-  req.hdr.nlmsg_type = RTM_GETLINK;
-  req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_REPLACE;
-  req.hdr.nlmsg_seq = ++requestSeq_;
-  req.hdr.nlmsg_pid = getpid();
-  req.gen.rtgen_family = AF_PACKET;
+int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
+  NetlinkListLinkRequest req;
+
+  req.fillHeader(NLM_F_DUMP);
+  req.msg.rtgen_family = AF_PACKET;
 
   int index = -1;
 
@@ -159,15 +166,7 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
   return index;
 }
 
-struct NetlinkNewLinkRequest {
-  struct nlmsghdr hdr;
-  struct ifinfomsg info;
-  struct rtattr attr_link;
-
-  NetlinkNewLinkRequest() {
-    memset(this, 0, sizeof(NetlinkNewLinkRequest));
-  }
-};
+typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
 void NetlinkClient::newLink(std::string const& deviceName) {
   LOG() << "Trying to turn up link " << deviceName << std::endl;
@@ -177,17 +176,13 @@ void NetlinkClient::newLink(std::string const& deviceName) {
     throw std::runtime_error("Cannot find device " + deviceName);
   }
 
-  NetlinkNewLinkRequest req;
+  NetlinkChangeLinkRequest req;
 
-  req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
-  req.hdr.nlmsg_type = RTM_NEWLINK;
-  req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
-  req.hdr.nlmsg_seq = ++requestSeq_;
-  req.hdr.nlmsg_pid = getpid();
-  req.info.ifi_family = AF_UNSPEC;
-  req.info.ifi_index = interfaceIndex;
-  req.info.ifi_flags = IFF_UP;
-  req.info.ifi_change = IFF_UP;
+  req.fillHeader(NLM_F_CREATE | NLM_F_ACK);
+  req.msg.ifi_family = AF_UNSPEC;
+  req.msg.ifi_index = interfaceIndex;
+  req.msg.ifi_flags = IFF_UP;
+  req.msg.ifi_change = IFF_UP;
 
   sendRequest(req);
   waitForReply([](struct nlmsghdr *msg) {});
