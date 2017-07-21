@@ -8,8 +8,6 @@
 
 namespace stun {
 
-class NetlinkRequest;
-
 const size_t kNetlinkClientReplyBufferSize = 2048;
 
 class NetlinkClient {
@@ -23,8 +21,10 @@ private:
   NetlinkClient(NetlinkClient const&) = delete;
   NetlinkClient& operator=(NetlinkClient const&) = delete;
 
-  void sendRequest(NetlinkRequest& req);
+  template <typename R>
+  void sendRequest(R& req);
   void waitForReply(std::function<void (struct nlmsghdr *)> callback);
+  int getInterfaceIndex(std::string const& deviceName);
 
   int socket_;
   int requestSeq_;

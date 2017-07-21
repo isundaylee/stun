@@ -6,21 +6,15 @@
 #include <string.h>
 #include <asm/types.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+
+#include <stdexcept>
 
 namespace stun {
 
 const int kNetlinkMTU = 1000;
-
-struct NetlinkRequest {
-  struct nlmsghdr hdr;
-  struct rtgenmsg gen;
-
-  NetlinkRequest() {
-    memset(this, 0, sizeof(NetlinkRequest));
-  }
-};
 
 NetlinkClient::NetlinkClient() {
   socket_ = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
@@ -43,7 +37,8 @@ NetlinkClient::~NetlinkClient() {
   close(socket_);
 }
 
-void NetlinkClient::sendRequest(NetlinkRequest& request) {
+template <typename T>
+void NetlinkClient::sendRequest(T& request) {
   struct msghdr rtnl_msg;
   struct iovec io;
 
@@ -83,9 +78,19 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
       for (msg_ptr = (struct nlmsghdr*) replyBuffer;
            NLMSG_OK(msg_ptr, len);
            msg_ptr = NLMSG_NEXT(msg_ptr, len)) {
+        struct nlmsgerr* err;
+
         switch (msg_ptr->nlmsg_type) {
-        case 3:
-          LOG() << "BREAKING!! " << std::endl;
+        case NLMSG_ERROR:
+          err = (struct nlmsgerr*) NLMSG_DATA(msg_ptr);
+          if (err->error == 0) {
+            // it's ACK, not an actual error
+            return;
+          } else {
+            throw std::runtime_error("Got NLMSG_ERROR from netlink: " + std::string(strerror(-err->error)));
+          }
+        case NLMSG_NOOP:
+        case NLMSG_DONE:
           return;
         default:
           callback(msg_ptr);
@@ -96,20 +101,29 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
   }
 }
 
-void NetlinkClient::newLink(std::string const& deviceName) {
-  LOG() << "Trying to turn up link " << deviceName << std::endl;
+struct NetlinkListInterfaceRequest {
+  struct nlmsghdr hdr;
+  struct rtgenmsg gen;
 
-  NetlinkRequest req;
+  NetlinkListInterfaceRequest() {
+    memset(this, 0, sizeof(NetlinkListInterfaceRequest));
+  }
+};
+
+int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
+  NetlinkListInterfaceRequest req;
 
   req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtgenmsg));
   req.hdr.nlmsg_type = RTM_GETLINK;
-  req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
-  req.hdr.nlmsg_seq = 1;
+  req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_REPLACE;
+  req.hdr.nlmsg_seq = ++requestSeq_;
   req.hdr.nlmsg_pid = getpid();
   req.gen.rtgen_family = AF_PACKET;
 
+  int index = -1;
+
   sendRequest(req);
-  waitForReply([](struct nlmsghdr *msg) {
+  waitForReply([&index, deviceName](struct nlmsghdr *msg) {
     switch (msg->nlmsg_type) {
     case 16:
       struct ifinfomsg *iface;
@@ -122,8 +136,9 @@ void NetlinkClient::newLink(std::string const& deviceName) {
       for (attr = IFLA_RTA(iface); RTA_OK(attr, len); attr = RTA_NEXT(attr, len)) {
         switch (attr->rta_type) {
         case IFLA_IFNAME:
-          LOG() << "Found interface " << iface->ifi_index << " with name: " \
-                << (char*) RTA_DATA(attr) << std::endl;
+          if (std::string((char*) RTA_DATA(attr)) == deviceName) {
+            index = iface->ifi_index;
+          }
           break;
         default:
           break;
@@ -132,9 +147,49 @@ void NetlinkClient::newLink(std::string const& deviceName) {
 
       break;
     default:
-      LOG() << "UNEXPECTED!!!!! " << msg->nlmsg_type << std::endl;
+      throw std::runtime_error("Unexpected nlmsg_type " + std::to_string(msg->nlmsg_type));
     }
   });
+
+  LOG() << "Interface index for device " << deviceName << " is " << index << std::endl;
+
+  return index;
+}
+
+struct NetlinkNewLinkRequest {
+  struct nlmsghdr hdr;
+  struct ifinfomsg info;
+  struct rtattr attr_link;
+
+  NetlinkNewLinkRequest() {
+    memset(this, 0, sizeof(NetlinkNewLinkRequest));
+  }
+};
+
+void NetlinkClient::newLink(std::string const& deviceName) {
+  LOG() << "Trying to turn up link " << deviceName << std::endl;
+  int interfaceIndex = getInterfaceIndex(deviceName);
+
+  if (interfaceIndex < 0) {
+    throw std::runtime_error("Cannot find device " + deviceName);
+  }
+
+  NetlinkNewLinkRequest req;
+
+  req.hdr.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
+  req.hdr.nlmsg_type = RTM_NEWLINK;
+  req.hdr.nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_ACK;
+  req.hdr.nlmsg_seq = ++requestSeq_;
+  req.hdr.nlmsg_pid = getpid();
+  req.info.ifi_family = AF_UNSPEC;
+  req.info.ifi_index = interfaceIndex;
+  req.info.ifi_flags = IFF_UP;
+  req.info.ifi_change = IFF_UP;
+
+  sendRequest(req);
+  waitForReply([](struct nlmsghdr *msg) {});
+
+  LOG() << "Successfully turned " << deviceName << " up" << std::endl;
 }
 
 }
