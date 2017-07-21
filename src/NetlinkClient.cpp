@@ -73,6 +73,9 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
     rtnl_reply.msg_namelen = sizeof(kernelAddress_);
 
     len = recvmsg(socket_, &rtnl_reply, 0);
+    if (len == kNetlinkClientReplyBufferSize) {
+      throw std::runtime_error("NetlinkClient buffer size too small.");
+    }
 
     if (len) {
       for (msg_ptr = (struct nlmsghdr*) replyBuffer;

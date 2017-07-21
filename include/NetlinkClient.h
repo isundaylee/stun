@@ -8,7 +8,7 @@
 
 namespace stun {
 
-const size_t kNetlinkClientReplyBufferSize = 2048;
+const size_t kNetlinkClientReplyBufferSize = (1U << 16);
 
 class NetlinkClient {
 public:
