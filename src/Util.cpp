@@ -7,8 +7,23 @@
 
 #include <string>
 #include <stdexcept>
+#include <chrono>
 
 namespace stun {
+
+const size_t kUtilTimestampBufferSize = 64;
+
+std::string logHeader() {
+  char timestampBuffer[kUtilTimestampBufferSize];
+  time_t rawTime;
+  struct tm* timeInfo;
+
+  time(&rawTime);
+  timeInfo = localtime(&rawTime);
+
+  strftime(timestampBuffer, kUtilTimestampBufferSize, "[%F %H:%M:%S] ", timeInfo);
+  return std::string(timestampBuffer);
+}
 
 void throwUnixError(std::string const& action) {
   throw std::runtime_error("Error while " + action + ": " + std::string(strerror(errno)));

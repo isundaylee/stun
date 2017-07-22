@@ -3,9 +3,11 @@
 #include <string>
 #include <iostream>
 
-#define LOG() std::cout
+#define LOG() std::cout << stun::logHeader()
 
 namespace stun {
+
+std::string logHeader();
 
 void throwUnixError(std::string const& action);
 
