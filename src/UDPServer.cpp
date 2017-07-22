@@ -52,7 +52,7 @@ void UDPServer::doReceive(ev::io& watcher, int events) {
 
   UDPPacket packet;
   int ret = recv(socket_, packet.data, kUDPPacketBufferSize, 0);
-  if (ret < 0) {
+  if (ret < 0 && errno != EAGAIN) {
     throwUnixError("receiving a UDP packet");
   }
   packet.size = ret;
