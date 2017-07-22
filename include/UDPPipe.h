@@ -2,6 +2,7 @@
 
 #include <FIFO.h>
 #include <Pipe.h>
+#include <SocketPipe.h>
 
 #include <ev/ev++.h>
 #include <netdb.h>
@@ -16,24 +17,10 @@ const int kUDPOutboundQueueSize = 32;
 
 struct UDPPacket: PipePacket {};
 
-class UDPPipe: public Pipe<UDPPacket> {
+class UDPPipe: public SocketPipe<UDPPacket> {
 public:
-  UDPPipe();
-  ~UDPPipe();
-
-  void bind(int port);
-  void connect(std::string const& host, int port);
-
-private:
-  UDPPipe(UDPPipe const& copy) = delete;
-  UDPPipe& operator=(UDPPipe const& copy) = delete;
-
-  struct addrinfo* getAddr(std::string const& host, int port);
-
-  bool read(UDPPacket& packet) override;
-  bool write(UDPPacket const& packet) override;
-
-  bool connected_;
+  UDPPipe() :
+    SocketPipe(SocketType::UDP) {}
 };
 
 }
