@@ -1,2 +1,2 @@
 [cxx]
-  cxxflags = -g -std=c++11
+  cxxflags = -g -std=c++11 -static-libstdc++

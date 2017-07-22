@@ -20,12 +20,12 @@ struct UDPPacket {
 
 class UDPServer {
 public:
-  UDPServer(int port);
+  UDPServer();
   ~UDPServer();
 
-  void bind();
+  void bind(int port);
+  void connect(std::string const& host, int port);
 
-  std::function<void (UDPPacket const&)> onReceive = [](UDPPacket const&) {};
   FIFO<UDPPacket> inboundQ;
   FIFO<UDPPacket> outboundQ;
 
@@ -33,14 +33,14 @@ private:
   UDPServer(UDPServer const& copy) = delete;
   UDPServer& operator=(UDPServer const& copy) = delete;
 
+  struct addrinfo* getAddr(std::string const& host, int port);
+
   void doReceive(ev::io& watcher, int events);
   void doSend(ev::io& watcher, int events);
 
   ev::io receiveWatcher_;
   ev::io sendWatcher_;
 
-  struct addrinfo *myAddr_;
-  struct addrinfo *peerAddr_;
   bool connected_;
   int socket_;
 };
