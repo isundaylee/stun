@@ -29,6 +29,13 @@ public:
     return front;
   }
 
+  T const& front() {
+    if (data_.size() == 0) {
+      throw std::runtime_error("Attempting to access front of an empty FIFO.");
+    }
+    return data_.front();
+  }
+
   bool empty() const {
     return data_.size() == 0;
   }

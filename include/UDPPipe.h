@@ -1,6 +1,7 @@
 #pragma once
 
 #include <FIFO.h>
+#include <Pipe.h>
 
 #include <ev/ev++.h>
 #include <netdb.h>
@@ -18,7 +19,7 @@ struct UDPPacket {
   char data[kUDPPacketBufferSize];
 };
 
-class UDPPipe {
+class UDPPipe: public Pipe<UDPPacket> {
 public:
   UDPPipe();
   ~UDPPipe();
@@ -26,23 +27,16 @@ public:
   void bind(int port);
   void connect(std::string const& host, int port);
 
-  FIFO<UDPPacket> inboundQ;
-  FIFO<UDPPacket> outboundQ;
-
 private:
   UDPPipe(UDPPipe const& copy) = delete;
   UDPPipe& operator=(UDPPipe const& copy) = delete;
 
   struct addrinfo* getAddr(std::string const& host, int port);
 
-  void doReceive(ev::io& watcher, int events);
-  void doSend(ev::io& watcher, int events);
-
-  ev::io receiveWatcher_;
-  ev::io sendWatcher_;
+  bool read(UDPPacket& packet) override;
+  bool write(UDPPacket const& packet) override;
 
   bool connected_;
-  int socket_;
 };
 
 }

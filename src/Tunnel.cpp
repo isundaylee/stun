@@ -21,8 +21,7 @@ const size_t kTunnelInboundQueueSize = 32;
 const size_t kTunnelOutboundQueueSize = 32;
 
 Tunnel::Tunnel(TunnelType type) :
-    inboundQ(kTunnelInboundQueueSize),
-    outboundQ(kTunnelOutboundQueueSize) {
+    Pipe(kTunnelInboundQueueSize, kTunnelOutboundQueueSize) {
   type_ = type;
 
   int err;
@@ -50,63 +49,36 @@ Tunnel::Tunnel(TunnelType type) :
   devName_ = ifr.ifr_name;
   LOG() << "Successfully opened tunnel " << devName_ << std::endl;
 
-  inboundWatcher_.set<Tunnel, &Tunnel::doReceive>(this);
-  inboundWatcher_.set(fd_, EV_READ);
-  inboundWatcher_.start();
-
-  outboundWatcher_.set<Tunnel, &Tunnel::doSend>(this);
-  outboundWatcher_.set(fd_, EV_WRITE);
-  outboundWatcher_.start();
+  setFd(fd_);
 }
 
-void Tunnel::doReceive(ev::io& watcher, int events) {
-  if (events & EV_ERROR) {
-    throwUnixError("Tunnel doReceive()");
-  }
-
-  if (inboundQ.full()) {
-    return;
-  }
-
-  TunnelPacket packet;
-  int ret = read(fd_, packet.buffer, kTunnelBufferSize);
+bool Tunnel::read(TunnelPacket& packet) {
+  int ret = ::read(fd_, packet.buffer, kTunnelBufferSize);
   if (ret < 0) {
     if (errno != EAGAIN) {
       throwUnixError("reading a tunnel packet");
     }
-    return;
+    return false;
   }
   if (ret == kTunnelBufferSize) {
     throw std::runtime_error("kTunnelBufferSize reached");
   }
   packet.size = ret;
-  inboundQ.push(packet);
-  LOG() << "Picking up " << packet.size << " bytes ==> " << devName_ << std::endl;
+  return true;
 }
 
-void Tunnel::doSend(ev::io& watcher, int events) {
-  if (events & EV_ERROR) {
-    throwUnixError("Tunnel doSend()");
-  }
-
-  if (outboundQ.empty()) {
-    return;
-  }
-
-  while (!outboundQ.empty()) {
-    TunnelPacket packet = outboundQ.pop();
-    int ret = write(fd_, packet.buffer, packet.size);
-    if (ret < 0) {
-      if (errno != EAGAIN) {
-        throwUnixError("writing a tunnel packet");
-      }
-      return;
+bool Tunnel::write(TunnelPacket const& packet) {
+  int ret = ::write(fd_, packet.buffer, packet.size);
+  if (ret < 0) {
+    if (errno != EAGAIN) {
+      throwUnixError("writing a tunnel packet");
     }
-    if (ret != packet.size) {
-      throw std::runtime_error("Packet fragmented");
-    }
-    LOG() << "Delivering " << devName_ << " ==> " << packet.size << " bytes" << std::endl;
+    return false;
   }
+  if (ret != packet.size) {
+    throw std::runtime_error("Packet fragmented");
+  }
+  return true;
 }
 
 }

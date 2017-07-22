@@ -1,6 +1,7 @@
 #pragma once
 
 #include <FIFO.h>
+#include <Pipe.h>
 
 #include <ev/ev++.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ struct TunnelPacket {
   }
 };
 
-class Tunnel {
+class Tunnel: public Pipe<TunnelPacket> {
 public:
   Tunnel(TunnelType type);
 
@@ -61,22 +62,15 @@ public:
     return devName_;
   }
 
-  FIFO<TunnelPacket> inboundQ;
-  FIFO<TunnelPacket> outboundQ;
-
 private:
   Tunnel(const Tunnel&) = delete;
   Tunnel& operator=(const Tunnel&) = delete;
 
-  void doReceive(ev::io& watcher, int events);
-  void doSend(ev::io& watcher, int events);
+  bool read(TunnelPacket& packet) override;
+  bool write(TunnelPacket const& packet) override;
 
-  ev::io inboundWatcher_;
-  ev::io outboundWatcher_;
   TunnelType type_;
   std::string devName_;
-  int fd_;
-  char buffer_[kTunnelBufferSize];
 };
 
 };

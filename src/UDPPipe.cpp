@@ -15,25 +15,18 @@
 namespace stun {
 
 UDPPipe::UDPPipe() :
-    inboundQ(kUDPInboundQueueSize),
-    outboundQ(kUDPOutboundQueueSize),
+    Pipe(kUDPInboundQueueSize, kUDPOutboundQueueSize),
     connected_(false) {
-  socket_ = socket(PF_INET, SOCK_DGRAM, 0);
-  if (socket_ < 0) {
+  int fd_ = socket(PF_INET, SOCK_DGRAM, 0);
+  if (fd_ < 0) {
     throwUnixError("creating UDPPipe's socket");
   }
 
-  if (fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFL, 0) | O_NONBLOCK) < 0) {
+  if (fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK) < 0) {
     throwUnixError("setting O_NONBLOCK for UDPPipe");
   }
 
-  receiveWatcher_.set<UDPPipe, &UDPPipe::doReceive>(this);
-  receiveWatcher_.set(socket_, ev::READ);
-  receiveWatcher_.start();
-
-  sendWatcher_.set<UDPPipe, &UDPPipe::doSend>(this);
-  sendWatcher_.set(socket_, ev::WRITE);
-  sendWatcher_.start();
+  setFd(fd_);
 }
 
 struct addrinfo* UDPPipe::getAddr(std::string const& host, int port) {
@@ -55,7 +48,7 @@ struct addrinfo* UDPPipe::getAddr(std::string const& host, int port) {
 void UDPPipe::bind(int port) {
   struct addrinfo* myAddr = getAddr("0.0.0.0", port);
 
-  int ret = ::bind(socket_, myAddr->ai_addr, myAddr->ai_addrlen);
+  int ret = ::bind(fd_, myAddr->ai_addr, myAddr->ai_addrlen);
   if (ret < 0) {
     throwUnixError("binding to UDPPipe's socket");
   }
@@ -74,7 +67,7 @@ void UDPPipe::connect(std::string const& host, int port) {
     throw std::runtime_error("Connecting while already connected");
   }
 
-  int ret = ::connect(socket_, peerAddr->ai_addr, peerAddr->ai_addrlen);
+  int ret = ::connect(fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
   if (ret < 0) {
     throwUnixError("connecting in UDPPipe");
   }
@@ -85,61 +78,44 @@ void UDPPipe::connect(std::string const& host, int port) {
   LOG() << "UDPPipe connected to " << host << ":" << port << std::endl;
 }
 
-void UDPPipe::doReceive(ev::io& watcher, int events) {
-  if (events & EV_ERROR) {
-    throwUnixError("UDPPipe doReceive()");
-  }
-
-  if (inboundQ.full()) {
-    return;
-  }
-
+bool UDPPipe::read(UDPPacket& packet) {
   struct sockaddr_storage peerAddr;
   socklen_t peerAddrSize = sizeof(peerAddr);
 
-  UDPPacket packet;
-  int ret = recvfrom(socket_, packet.data, kUDPPacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+  int ret = recvfrom(fd_, packet.data, kUDPPacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
   if (ret < 0) {
     if (errno != EAGAIN) {
       throwUnixError("receiving a UDP packet");
     }
-    return;
+    return false;
   }
   packet.size = ret;
 
-  LOG() << "Receiving UDP <== " << packet.size << " bytes" << std::endl;
-
   if (!connected_) {
-    int ret = ::connect(socket_, (sockaddr*) &peerAddr, peerAddrSize);
+    int ret = ::connect(fd_, (sockaddr*) &peerAddr, peerAddrSize);
     if (ret < 0) {
       throwUnixError("connecting in UDPPipe");
     }
     connected_ = true;
   }
 
-  inboundQ.push(packet);
+  return true;
 }
 
-void UDPPipe::doSend(ev::io& watcher, int events) {
-  if (events & EV_ERROR) {
-    throwUnixError("UDPPipe doSend()");
+bool UDPPipe::write(UDPPacket const& packet) {
+  int ret = send(fd_, packet.data, packet.size, 0);
+  if (ret < 0) {
+    if (errno != EAGAIN) {
+      throwUnixError("sending a UDP packet");
+    }
+    return false;
   }
 
-  if (outboundQ.empty()) {
-    return;
-  }
-
-  UDPPacket packet = outboundQ.pop();
-  int ret = send(socket_, packet.data, packet.size, 0);
-  if (ret < 0 && errno != EAGAIN) {
-    throwUnixError("sending a UDP packet");
-  }
-
-  LOG() << "Sending " << packet.size << " bytes ==> UDP" << std::endl;
+  return true;
 }
 
 UDPPipe::~UDPPipe() {
-  close(socket_);
+  close(fd_);
 }
 
 }
