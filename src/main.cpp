@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
   NetlinkClient netlink;
 
   netlink.newLink(tunnel.getDeviceName());
+  netlink.setLinkAddress(tunnel.getDeviceName(), "10.100.0.1", "10.100.0.2");
 
   while (true) {
     TunnelPacket packet = tunnel.readPacket();

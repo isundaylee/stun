@@ -7,6 +7,8 @@
 #include <asm/types.h>
 #include <sys/socket.h>
 #include <net/if.h>
+#include <arpa/inet.h>
+#include <netinet/ip.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
@@ -114,11 +116,19 @@ struct NetlinkRequest {
     memset(this, 0, sizeof(*this));
   }
 
-  void fillHeader(int flags) {
+  void fillHeader(int type, int flags) {
     hdr.nlmsg_len = NLMSG_LENGTH(sizeof(M));
-    hdr.nlmsg_type = RTM_GETLINK;
+    hdr.nlmsg_type = type;
     hdr.nlmsg_flags = NLM_F_REQUEST | flags;
     hdr.nlmsg_pid = getpid();
+  }
+
+  void addAttr(int type, int size, void* data) {
+    struct rtattr* attr = (struct rtattr*) (((char*) this) + NLMSG_ALIGN(hdr.nlmsg_len));
+    attr->rta_type = type;
+    attr->rta_len = RTA_LENGTH(size);
+    hdr.nlmsg_len = NLMSG_ALIGN(hdr.nlmsg_len) + RTA_LENGTH(size);
+    memcpy(RTA_DATA(attr), data, size);
   }
 };
 
@@ -127,7 +137,7 @@ typedef NetlinkRequest<struct rtgenmsg> NetlinkListLinkRequest;
 int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
   NetlinkListLinkRequest req;
 
-  req.fillHeader(NLM_F_DUMP);
+  req.fillHeader(RTM_GETLINK, NLM_F_DUMP);
   req.msg.rtgen_family = AF_PACKET;
 
   int index = -1;
@@ -161,6 +171,10 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
     }
   });
 
+  if (index < 0) {
+    throw std::runtime_error("Cannot find device " + deviceName);
+  }
+
   LOG() << "Interface index for device " << deviceName << " is " << index << std::endl;
 
   return index;
@@ -169,16 +183,12 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
 typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
 void NetlinkClient::newLink(std::string const& deviceName) {
-  LOG() << "Trying to turn up link " << deviceName << std::endl;
+  LOG() << "Turning up link " << deviceName << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
-
-  if (interfaceIndex < 0) {
-    throw std::runtime_error("Cannot find device " + deviceName);
-  }
 
   NetlinkChangeLinkRequest req;
 
-  req.fillHeader(NLM_F_CREATE | NLM_F_ACK);
+  req.fillHeader(RTM_NEWLINK, NLM_F_CREATE | NLM_F_ACK);
   req.msg.ifi_family = AF_UNSPEC;
   req.msg.ifi_index = interfaceIndex;
   req.msg.ifi_flags = IFF_UP;
@@ -187,7 +197,34 @@ void NetlinkClient::newLink(std::string const& deviceName) {
   sendRequest(req);
   waitForReply([](struct nlmsghdr *msg) {});
 
-  LOG() << "Successfully turned " << deviceName << " up" << std::endl;
+  LOG() << "Successfully turned link up" << std::endl;
+}
+
+typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
+
+void NetlinkClient::setLinkAddress(std::string const& deviceName,
+    std::string const& localAddress, std::string const& peerAddress) {
+  LOG() << "Setting link " << deviceName << "'s address to " << localAddress
+      << " -> " << peerAddress << std::endl;
+  int interfaceIndex = getInterfaceIndex(deviceName);
+
+  NetlinkChangeAddressRequest req;
+  struct in_addr localAddr;
+  struct in_addr peerAddr;
+  inet_pton(AF_INET, localAddress.c_str(), &localAddr);
+  inet_pton(AF_INET, peerAddress.c_str(), &peerAddr);
+
+  req.fillHeader(RTM_NEWADDR, NLM_F_CREATE | NLM_F_ACK);
+  req.msg.ifa_family = AF_INET;
+  req.msg.ifa_prefixlen = 32;
+  req.msg.ifa_index = interfaceIndex;
+  req.addAttr(IFA_LOCAL, sizeof(localAddr), &localAddr);
+  req.addAttr(IFA_ADDRESS, sizeof(peerAddr), &peerAddr);
+
+  sendRequest(req);
+  waitForReply([](struct nlmsghdr *msg) {});
+
+  LOG() << "Successfully set link address" << std::endl;
 }
 
 }

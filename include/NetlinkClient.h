@@ -17,6 +17,8 @@ public:
   ~NetlinkClient();
 
   void newLink(std::string const& deviceName);
+  void setLinkAddress(std::string const& deviceName, std::string const& localAddress,
+    std::string const& peerAddress);
 
 private:
   NetlinkClient(NetlinkClient const&) = delete;
