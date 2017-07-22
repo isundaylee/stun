@@ -18,10 +18,10 @@ struct UDPPacket {
   char data[kUDPPacketBufferSize];
 };
 
-class UDPServer {
+class UDPPipe {
 public:
-  UDPServer();
-  ~UDPServer();
+  UDPPipe();
+  ~UDPPipe();
 
   void bind(int port);
   void connect(std::string const& host, int port);
@@ -30,8 +30,8 @@ public:
   FIFO<UDPPacket> outboundQ;
 
 private:
-  UDPServer(UDPServer const& copy) = delete;
-  UDPServer& operator=(UDPServer const& copy) = delete;
+  UDPPipe(UDPPipe const& copy) = delete;
+  UDPPipe& operator=(UDPPipe const& copy) = delete;
 
   struct addrinfo* getAddr(std::string const& host, int port);
 

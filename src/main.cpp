@@ -1,6 +1,6 @@
 #include <Tunnel.h>
 #include <Util.h>
-#include <UDPServer.h>
+#include <UDPPipe.h>
 #include <UDPConnection.h>
 #include <NetlinkClient.h>
 #include <PacketTranslator.h>
@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     server ? "10.100.0.2" : "10.100.0.1"
   );
 
-  UDPServer udp;
+  UDPPipe udp;
 
   if (server) {
     udp.bind(2859);

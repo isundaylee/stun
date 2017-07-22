@@ -1,4 +1,4 @@
-#include "UDPServer.h"
+#include "UDPPipe.h"
 
 #include <Util.h>
 
@@ -14,29 +14,29 @@
 
 namespace stun {
 
-UDPServer::UDPServer() :
+UDPPipe::UDPPipe() :
     inboundQ(kUDPInboundQueueSize),
     outboundQ(kUDPOutboundQueueSize),
     connected_(false) {
   socket_ = socket(PF_INET, SOCK_DGRAM, 0);
   if (socket_ < 0) {
-    throwUnixError("creating UDPServer's socket");
+    throwUnixError("creating UDPPipe's socket");
   }
 
   if (fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFL, 0) | O_NONBLOCK) < 0) {
-    throwUnixError("setting O_NONBLOCK for UDPServer");
+    throwUnixError("setting O_NONBLOCK for UDPPipe");
   }
 
-  receiveWatcher_.set<UDPServer, &UDPServer::doReceive>(this);
+  receiveWatcher_.set<UDPPipe, &UDPPipe::doReceive>(this);
   receiveWatcher_.set(socket_, ev::READ);
   receiveWatcher_.start();
 
-  sendWatcher_.set<UDPServer, &UDPServer::doSend>(this);
+  sendWatcher_.set<UDPPipe, &UDPPipe::doSend>(this);
   sendWatcher_.set(socket_, ev::WRITE);
   sendWatcher_.start();
 }
 
-struct addrinfo* UDPServer::getAddr(std::string const& host, int port) {
+struct addrinfo* UDPPipe::getAddr(std::string const& host, int port) {
   struct addrinfo hints;
   struct addrinfo *addr;
 
@@ -52,21 +52,21 @@ struct addrinfo* UDPServer::getAddr(std::string const& host, int port) {
   return addr;
 }
 
-void UDPServer::bind(int port) {
+void UDPPipe::bind(int port) {
   struct addrinfo* myAddr = getAddr("0.0.0.0", port);
 
   int ret = ::bind(socket_, myAddr->ai_addr, myAddr->ai_addrlen);
   if (ret < 0) {
-    throwUnixError("binding to UDPServer's socket");
+    throwUnixError("binding to UDPPipe's socket");
   }
 
   freeaddrinfo(myAddr);
 
-  LOG() << "UDPServer started listening on port " << port << std::endl;
+  LOG() << "UDPPipe started listening on port " << port << std::endl;
 }
 
-void UDPServer::connect(std::string const& host, int port) {
-  LOG() << "UDPServer connecting to " << host << ":" << port << std::endl;
+void UDPPipe::connect(std::string const& host, int port) {
+  LOG() << "UDPPipe connecting to " << host << ":" << port << std::endl;
 
   struct addrinfo* peerAddr = getAddr(host, port);
 
@@ -76,18 +76,18 @@ void UDPServer::connect(std::string const& host, int port) {
 
   int ret = ::connect(socket_, peerAddr->ai_addr, peerAddr->ai_addrlen);
   if (ret < 0) {
-    throwUnixError("connecting in UDPServer");
+    throwUnixError("connecting in UDPPipe");
   }
   connected_ = true;
 
   freeaddrinfo(peerAddr);
 
-  LOG() << "UDPServer connected to " << host << ":" << port << std::endl;
+  LOG() << "UDPPipe connected to " << host << ":" << port << std::endl;
 }
 
-void UDPServer::doReceive(ev::io& watcher, int events) {
+void UDPPipe::doReceive(ev::io& watcher, int events) {
   if (events & EV_ERROR) {
-    throwUnixError("UDPServer doReceive()");
+    throwUnixError("UDPPipe doReceive()");
   }
 
   if (inboundQ.full()) {
@@ -112,7 +112,7 @@ void UDPServer::doReceive(ev::io& watcher, int events) {
   if (!connected_) {
     int ret = ::connect(socket_, (sockaddr*) &peerAddr, peerAddrSize);
     if (ret < 0) {
-      throwUnixError("connecting in UDPServer");
+      throwUnixError("connecting in UDPPipe");
     }
     connected_ = true;
   }
@@ -120,9 +120,9 @@ void UDPServer::doReceive(ev::io& watcher, int events) {
   inboundQ.push(packet);
 }
 
-void UDPServer::doSend(ev::io& watcher, int events) {
+void UDPPipe::doSend(ev::io& watcher, int events) {
   if (events & EV_ERROR) {
-    throwUnixError("UDPServer doSend()");
+    throwUnixError("UDPPipe doSend()");
   }
 
   if (outboundQ.empty()) {
@@ -138,7 +138,7 @@ void UDPServer::doSend(ev::io& watcher, int events) {
   LOG() << "Sending " << packet.size << " bytes ==> UDP" << std::endl;
 }
 
-UDPServer::~UDPServer() {
+UDPPipe::~UDPPipe() {
   close(socket_);
 }
 
