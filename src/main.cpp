@@ -3,6 +3,7 @@
 #include <UDPServer.h>
 #include <UDPConnection.h>
 #include <NetlinkClient.h>
+#include <PacketTranslator.h>
 
 #include <ev/ev++.h>
 #include <unistd.h>
@@ -26,14 +27,15 @@ int main(int argc, char* argv[]) {
   };
   server.bind();
 
-  // while (true) {
-  //   TunnelPacket packet = tunnel.readPacket();
-  //   LOG() << "Read a packet with size " << packet.size << std::endl;
-  //
-  //   sleep(1);
-  // }
+  PacketTranslator<UDPPacket> translator(server.inboundQ, server.outboundQ);
+  translator.transform = [](UDPPacket const& packet) {
+    UDPPacket outPacket;
+    sprintf(outPacket.data, "Hello back, %c!\n", packet.data[0]);
+    outPacket.size = strlen(outPacket.data);
+    return outPacket;
+  };
 
   loop.run(0);
-  
+
   return 0;
 }

@@ -14,7 +14,10 @@
 
 namespace stun {
 
-UDPServer::UDPServer(int port) {
+UDPServer::UDPServer(int port) :
+    inboundQ(kUDPInboundQueueSize),
+    outboundQ(kUDPOutboundQueueSize),
+    connected_(false) {
   struct addrinfo hints;
 
   memset(&hints, 0, sizeof(hints));
@@ -41,8 +44,13 @@ void UDPServer::bind() {
 
   fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFL, 0) | O_NONBLOCK);
 
-  io_.set<UDPServer, &UDPServer::doReceive>(this);
-  io_.start(socket_, ev::READ);
+  receiveWatcher_.set<UDPServer, &UDPServer::doReceive>(this);
+  receiveWatcher_.set(socket_, ev::READ);
+  receiveWatcher_.start();
+
+  sendWatcher_.set<UDPServer, &UDPServer::doSend>(this);
+  sendWatcher_.set(socket_, ev::WRITE);
+  sendWatcher_.start();
 }
 
 void UDPServer::doReceive(ev::io& watcher, int events) {
@@ -50,14 +58,48 @@ void UDPServer::doReceive(ev::io& watcher, int events) {
     throwUnixError("UDPServer doReceive()");
   }
 
+  if (inboundQ.full()) {
+    return;
+  }
+
+  struct sockaddr_storage peerAddr;
+  socklen_t peerAddrSize = sizeof(peerAddr);
+
   UDPPacket packet;
-  int ret = recv(socket_, packet.data, kUDPPacketBufferSize, 0);
-  if (ret < 0 && errno != EAGAIN) {
-    throwUnixError("receiving a UDP packet");
+  int ret = recvfrom(socket_, packet.data, kUDPPacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+  if (ret < 0) {
+    if (errno != EAGAIN) {
+      throwUnixError("receiving a UDP packet");
+    }
+    return;
   }
   packet.size = ret;
 
-  onReceive(packet);
+  if (!connected_) {
+    int ret = connect(socket_, (sockaddr*) &peerAddr, peerAddrSize);
+    if (ret < 0) {
+      throwUnixError("connecting in UDPServer");
+    }
+    connected_ = true;
+  }
+
+  inboundQ.push(packet);
+}
+
+void UDPServer::doSend(ev::io& watcher, int events) {
+  if (events & EV_ERROR) {
+    throwUnixError("UDPServer doSend()");
+  }
+
+  if (outboundQ.empty()) {
+    return;
+  }
+
+  UDPPacket packet = outboundQ.pop();
+  int ret = send(socket_, packet.data, packet.size, 0);
+  if (ret < 0 && errno != EAGAIN) {
+    throwUnixError("sending a UDP packet");
+  }
 }
 
 UDPServer::~UDPServer() {
