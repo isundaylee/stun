@@ -7,6 +7,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <string>
 
@@ -25,8 +27,6 @@ UDPServer::UDPServer(int port) {
     throwGetAddrInfoError(err);
   }
 
-  LOG() << inet_ntoa(((struct sockaddr_in*) (myAddr_->ai_addr))->sin_addr) << std::endl;
-
   socket_ = socket(myAddr_->ai_family, myAddr_->ai_socktype, myAddr_->ai_protocol);
   if (socket_ < 0) {
     throwUnixError("creating UDPServer's socket");
@@ -38,16 +38,26 @@ void UDPServer::bind() {
   if (ret < 0) {
     throwUnixError("binding to UDPServer's socket");
   }
+
+  fcntl(socket_, F_SETFL, fcntl(socket_, F_GETFL, 0) | O_NONBLOCK);
+
+  io_.set<UDPServer, &UDPServer::doReceive>(this);
+  io_.start(socket_, ev::READ);
 }
 
-UDPPacket UDPServer::receivePacket() {
+void UDPServer::doReceive(ev::io& watcher, int events) {
+  if (events & EV_ERROR) {
+    throwUnixError("UDPServer doReceive()");
+  }
+
   UDPPacket packet;
   int ret = recv(socket_, packet.data, kUDPPacketBufferSize, 0);
   if (ret < 0) {
     throwUnixError("receiving a UDP packet");
   }
   packet.size = ret;
-  return packet;
+
+  onReceive(packet);
 }
 
 UDPServer::~UDPServer() {

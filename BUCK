@@ -6,4 +6,7 @@ cxx_binary(
     srcs = glob([
         'src/**/*.cpp',
     ]),
+    deps = [
+        '//libev:ev'
+    ],
 )

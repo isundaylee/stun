@@ -1,0 +1,12 @@
+prebuilt_cxx_library(
+    name = 'ev',
+    visibility = [
+        'PUBLIC',
+    ],
+    exported_headers = {
+        'ev.h': 'include/ev.h',
+        'ev++.h': 'include/ev++.h',
+        'event.h': 'include/event.h',
+    },
+    header_namespace = 'ev',
+)

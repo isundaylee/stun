@@ -4,6 +4,7 @@
 #include <UDPConnection.h>
 #include <NetlinkClient.h>
 
+#include <ev/ev++.h>
 #include <unistd.h>
 
 #include <iostream>
@@ -11,6 +12,8 @@
 using namespace stun;
 
 int main(int argc, char* argv[]) {
+  ev::default_loop loop;
+
   Tunnel tunnel(TunnelType::TUN);
   NetlinkClient netlink;
 
@@ -18,9 +21,10 @@ int main(int argc, char* argv[]) {
   netlink.setLinkAddress(tunnel.getDeviceName(), "10.100.0.1", "10.100.0.2");
 
   UDPServer server(2859);
+  server.onReceive = [](UDPPacket const& packet) {
+    LOG() << "Received a packet with size " << packet.size << std::endl;
+  };
   server.bind();
-  UDPPacket packet = server.receivePacket();
-  LOG() << "Received a packet with size " << packet.size << std::endl;
 
   // while (true) {
   //   TunnelPacket packet = tunnel.readPacket();
@@ -29,5 +33,7 @@ int main(int argc, char* argv[]) {
   //   sleep(1);
   // }
 
+  loop.run(0);
+  
   return 0;
 }
