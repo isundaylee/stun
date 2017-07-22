@@ -26,6 +26,8 @@ UDPPipe::UDPPipe() :
     throwUnixError("setting O_NONBLOCK for UDPPipe");
   }
 
+  name = "UDP carrier";
+  shouldOutputStats = true;
   setFd(fd_);
 }
 

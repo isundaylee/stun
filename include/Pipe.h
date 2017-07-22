@@ -9,6 +9,9 @@
 
 namespace stun {
 
+const ev_tstamp kPipeStatsInterval = 1.0;
+const size_t kBytesPerKiloBit = 1024 / 8;
+
 template <typename P>
 class Pipe {
 public:
@@ -17,7 +20,9 @@ public:
 
   Pipe(int inboundQueueSize, int outboundQueueSize) :
       inboundQ(inboundQueueSize),
-      outboundQ(outboundQueueSize) {}
+      outboundQ(outboundQueueSize),
+      inboundBytes(0),
+      outboundBytes(0) {}
 
 protected:
   void setFd(int fd) {
@@ -30,10 +35,19 @@ protected:
     outboundWatcher_.set<Pipe, &Pipe::doSend>(this);
     outboundWatcher_.set(fd_, EV_WRITE);
     outboundWatcher_.start();
+
+    if (shouldOutputStats) {
+      statsWatcher_.set<Pipe, &Pipe::doStats>(this);
+      statsWatcher_.set(0.0, kPipeStatsInterval);
+      statsWatcher_.start();
+    }
   }
 
   virtual bool write(P const& packet) = 0;
   virtual bool read(P& packet) = 0;
+
+  std::string name = "random pipe";
+  bool shouldOutputStats = false;
 
   int fd_;
 
@@ -52,10 +66,9 @@ private:
 
     P packet;
     if (read(packet)) {
+      inboundBytes += packet.size;
       inboundQ.push(packet);
     }
-
-    LOG() << "RECEIVING!!" << std::endl;
   }
 
   void doSend(ev::io& watcher, int events) {
@@ -66,14 +79,29 @@ private:
     while (!outboundQ.empty()) {
       P packet = outboundQ.front();
       if (write(packet)) {
+        outboundBytes += packet.size;
         outboundQ.pop();
       };
-      LOG() << "SENDING!!" << std::endl;
     }
+  }
+
+  void doStats(ev::timer& watcher, int events) {
+    if (events & EV_ERROR) {
+      throwUnixError("doStats()");
+    }
+
+    LOG() << name << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
+        << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps" << std::endl;
+    inboundBytes = 0;
+    outboundBytes = 0;
   }
 
   ev::io inboundWatcher_;
   ev::io outboundWatcher_;
+  ev::timer statsWatcher_;
+
+  size_t inboundBytes;
+  size_t outboundBytes;
 };
 
 }

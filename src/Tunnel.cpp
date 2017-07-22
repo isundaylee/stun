@@ -49,6 +49,7 @@ Tunnel::Tunnel(TunnelType type) :
   devName_ = ifr.ifr_name;
   LOG() << "Successfully opened tunnel " << devName_ << std::endl;
 
+  name = "tunnel " + devName_;
   setFd(fd_);
 }
 
