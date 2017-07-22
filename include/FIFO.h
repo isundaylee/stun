@@ -3,6 +3,7 @@
 #include <deque>
 #include <stdexcept>
 #include <iostream>
+#include <functional>
 
 namespace stun {
 
@@ -18,6 +19,13 @@ public:
         throw std::runtime_error("Attempting to push into a full FIFO.");
       }
       data_.push_back(element);
+
+      if (data_.size() == 1) {
+        onBecomeNonEmpty();
+      }
+      if (data_.size() == capacity_) {
+        onBecomeFull();
+      }
   }
 
   T pop() {
@@ -26,6 +34,14 @@ public:
     }
     T front = data_.front();
     data_.pop_front();
+
+    if (data_.size() == capacity_ - 1) {
+      onBecomeNonFull();
+    }
+    if (data_.size() == 0) {
+      onBecomeEmpty();
+    }
+
     return front;
   }
 
@@ -43,6 +59,11 @@ public:
   bool full() const {
     return data_.size() == capacity_;
   }
+
+  std::function<void ()> onBecomeEmpty = []() {};
+  std::function<void ()> onBecomeFull = []() {};
+  std::function<void ()> onBecomeNonEmpty = []() {};
+  std::function<void ()> onBecomeNonFull = []() {};
 
 private:
   std::deque<T> data_;

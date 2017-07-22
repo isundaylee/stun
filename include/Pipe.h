@@ -72,7 +72,10 @@ protected:
 
     outboundWatcher_.set<Pipe, &Pipe::doSend>(this);
     outboundWatcher_.set(fd_, EV_WRITE);
-    outboundWatcher_.start();
+
+    outboundQ.onBecomeNonEmpty = [this]() {
+      outboundWatcher_.start();
+    };
 
     if (shouldOutputStats) {
       statsWatcher_.set<Pipe, &Pipe::doStats>(this);
@@ -112,6 +115,11 @@ private:
   void doSend(ev::io& watcher, int events) {
     if (events & EV_ERROR) {
       throwUnixError("doSend()");
+    }
+
+    if (outboundQ.empty()) {
+      outboundWatcher_.stop();
+      return;
     }
 
     while (!outboundQ.empty()) {
