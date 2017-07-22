@@ -1,7 +1,6 @@
 #include <Tunnel.h>
 #include <Util.h>
 #include <UDPPipe.h>
-#include <UDPConnection.h>
 #include <NetlinkClient.h>
 #include <PacketTranslator.h>
 
@@ -39,15 +38,6 @@ int main(int argc, char* argv[]) {
   } else {
     udp.connect("54.174.137.123", 2859);
   }
-
-  // This is the ECHO translator
-  // PacketTranslator<UDPPacket> translator(udp.inboundQ, udp.outboundQ);
-  // translator.transform = [](UDPPacket const& packet) {
-  //   UDPPacket outPacket;
-  //   sprintf(outPacket.data, "Hello back, %c!\n", packet.data[0]);
-  //   outPacket.size = strlen(outPacket.data);
-  //   return outPacket;
-  // };
 
   // These are the TUNNEL translators! ;)
   PacketTranslator<TunnelPacket, UDPPacket> sender(tunnel.inboundQ, udp.outboundQ);
