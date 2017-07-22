@@ -1,6 +1,9 @@
 #pragma once
 
-#include <cstdio>
+#include <FIFO.h>
+
+#include <ev/ev++.h>
+#include <stdio.h>
 
 #include <string>
 
@@ -54,16 +57,22 @@ class Tunnel {
 public:
   Tunnel(TunnelType type);
 
-  TunnelPacket readPacket();
-
   std::string const& getDeviceName() {
     return devName_;
   }
+
+  FIFO<TunnelPacket> inboundQ;
+  FIFO<TunnelPacket> outboundQ;
 
 private:
   Tunnel(const Tunnel&) = delete;
   Tunnel& operator=(const Tunnel&) = delete;
 
+  void doReceive(ev::io& watcher, int events);
+  void doSend(ev::io& watcher, int events);
+
+  ev::io inboundWatcher_;
+  ev::io outboundWatcher_;
   TunnelType type_;
   std::string devName_;
   int fd_;
