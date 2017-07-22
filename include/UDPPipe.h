@@ -10,7 +10,7 @@
 
 namespace stun {
 
-const int kUDPPacketBufferSize = 2048;
+const int kUDPPacketBufferSize = 4096;
 const int kUDPInboundQueueSize = 32;
 const int kUDPOutboundQueueSize = 32;
 
