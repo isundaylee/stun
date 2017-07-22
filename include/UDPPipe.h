@@ -14,10 +14,7 @@ const int kUDPPacketBufferSize = 4096;
 const int kUDPInboundQueueSize = 32;
 const int kUDPOutboundQueueSize = 32;
 
-struct UDPPacket {
-  size_t size;
-  char data[kUDPPacketBufferSize];
-};
+struct UDPPacket: PipePacket {};
 
 class UDPPipe: public Pipe<UDPPacket> {
 public:

@@ -84,7 +84,7 @@ bool UDPPipe::read(UDPPacket& packet) {
   struct sockaddr_storage peerAddr;
   socklen_t peerAddrSize = sizeof(peerAddr);
 
-  int ret = recvfrom(fd_, packet.data, kUDPPacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+  int ret = recvfrom(fd_, packet.buffer, kUDPPacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
   if (ret < 0) {
     if (errno != EAGAIN) {
       throwUnixError("receiving a UDP packet");
@@ -105,7 +105,7 @@ bool UDPPipe::read(UDPPacket& packet) {
 }
 
 bool UDPPipe::write(UDPPacket const& packet) {
-  int ret = send(fd_, packet.data, packet.size, 0);
+  int ret = send(fd_, packet.buffer, packet.size, 0);
   if (ret < 0) {
     if (errno != EAGAIN) {
       throwUnixError("sending a UDP packet");

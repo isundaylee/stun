@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   sender.transform = [](TunnelPacket const& in) {
     UDPPacket out;
     out.size = in.size;
-    memcpy(out.data, in.buffer, in.size);
+    memcpy(out.buffer, in.buffer, in.size);
     return out;
   };
 
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   receiver.transform = [](UDPPacket const& in) {
     TunnelPacket out;
     out.size = in.size;
-    memcpy(out.buffer, in.data, in.size);
+    memcpy(out.buffer, in.buffer, in.size);
     return out;
   };
 
