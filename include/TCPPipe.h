@@ -31,7 +31,6 @@ private:
       SocketPipe(SocketType::TCP) {
     fd_ = fd;
     connected_ = true;
-    shouldOutputStats = true;
   }
 };
 

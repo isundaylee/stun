@@ -54,7 +54,7 @@ public:
     socklen_t myActualAddrLen = sizeof(myActualAddr);
     ret = getsockname(this->fd_, (struct sockaddr*) &myActualAddr, &myActualAddrLen);
     checkUnixError(ret, "calling getsockname()");
-    int actualPort = ((struct sockaddr_in*) &myActualAddr)->sin_port;
+    int actualPort = ntohs(((struct sockaddr_in*) &myActualAddr)->sin_port);
 
     // Listening
     if (type_ == TCP) {
@@ -62,11 +62,10 @@ public:
       checkUnixError(ret, "listening on a SocketPipe's socket");
     }
 
-    LOG() << "SocketPipe started listening on port " << port << std::endl;
+    LOG() << "SocketPipe started listening on port " << actualPort << std::endl;
 
     bound_ = true;
     this->startWatchers();
-    this->shouldOutputStats = (type_ == UDP);
 
     return actualPort;
   }
@@ -88,7 +87,6 @@ public:
     LOG() << "SocketPipe connected to " << host << ":" << port << std::endl;
 
     this->startWatchers();
-    this->shouldOutputStats = true;
   }
 
   virtual void open() override {

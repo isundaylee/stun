@@ -51,20 +51,23 @@ public:
       memcpy(buffer_ + bufferUsed_, in.buffer, in.size);
       bufferUsed_ += in.size;
 
-      int messageLen = *((MessengerLengthHeaderType*) buffer_);
-      if (bufferUsed_ >= messageLen) {
+      while (bufferUsed_ >= sizeof(MessengerLengthHeaderType)) {
+        int messageLen = *((MessengerLengthHeaderType*) buffer_);
+        if (bufferUsed_ < sizeof(MessengerLengthHeaderType) + messageLen) {
+          break;
+        }
+
         // We have got a complete message;
         Message message;
         message.size = messageLen;
         memcpy(message.buffer, buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
 
         if (bufferUsed_ > sizeof(MessengerLengthHeaderType) + messageLen) {
-          memcpy(buffer_, buffer_ + sizeof(MessengerLengthHeaderType),
+          memmove(buffer_, buffer_ + sizeof(MessengerLengthHeaderType) + messageLen,
               bufferUsed_ - (sizeof(MessengerLengthHeaderType) + messageLen));
         }
 
         bufferUsed_ -= (sizeof(MessengerLengthHeaderType) + messageLen);
-
         LOG() << client_.name << " received: " << message.getType() << " - " << message.getBody() << std::endl;
 
         auto responses = handler(message);

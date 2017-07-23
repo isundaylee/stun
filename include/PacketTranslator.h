@@ -43,7 +43,7 @@ private:
 
     while (!source_.empty() && !target_.full()) {
       X packet = source_.pop();
-      X result = transform(packet);
+      Y result = transform(packet);
       if (result.size > 0) {
         target_.push(result);
       }
