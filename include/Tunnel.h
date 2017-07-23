@@ -27,12 +27,15 @@ public:
     return devName_;
   }
 
+  void open() override;
+
+protected:
+  bool read(TunnelPacket& packet) override;
+  bool write(TunnelPacket const& packet) override;
+
 private:
   Tunnel(const Tunnel&) = delete;
   Tunnel& operator=(const Tunnel&) = delete;
-
-  bool read(TunnelPacket& packet) override;
-  bool write(TunnelPacket const& packet) override;
 
   TunnelType type_;
   std::string devName_;

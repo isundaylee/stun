@@ -30,6 +30,8 @@ public:
 private:
   PacketTranslator(PacketTranslator const& copy) = delete;
   PacketTranslator& operator+=(PacketTranslator const& copy) = delete;
+  PacketTranslator(PacketTranslator&& move) = delete;
+  PacketTranslator& operator+=(PacketTranslator&& move) = delete;
 
   void doTranslate(ev::timer& watcher, int events) {
     if (events & EV_ERROR) {

@@ -11,16 +11,15 @@
 
 namespace stun {
 
-const int kUDPPacketBufferSize = 4096;
-const int kUDPInboundQueueSize = 32;
-const int kUDPOutboundQueueSize = 32;
-
 struct UDPPacket: PipePacket {};
 
 class UDPPipe: public SocketPipe<UDPPacket> {
 public:
   UDPPipe() :
     SocketPipe(SocketType::UDP) {}
+
+  UDPPipe(UDPPipe&& move) :
+    SocketPipe(std::move(move)) {}
 };
 
 }

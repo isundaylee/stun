@@ -1,6 +1,7 @@
 #include <Tunnel.h>
 #include <Util.h>
 #include <UDPPipe.h>
+#include <TCPPipe.h>
 #include <NetlinkClient.h>
 #include <PacketTranslator.h>
 
@@ -8,6 +9,8 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <memory>
+#include <vector>
 
 using namespace stun;
 
@@ -22,6 +25,7 @@ int main(int argc, char* argv[]) {
   LOG() << "Running as " << (server ? "server" : "client") << std::endl;
 
   Tunnel tunnel(TunnelType::TUN);
+  tunnel.open();
   NetlinkClient netlink;
 
   netlink.newLink(tunnel.getDeviceName());
@@ -31,13 +35,31 @@ int main(int argc, char* argv[]) {
     server ? "10.100.0.2" : "10.100.0.1"
   );
 
-  UDPPipe udp;
+  UDPPipe udp2;
+  TCPPipe tcpServer;
+
+  udp2.open();
+  tcpServer.open();
 
   if (server) {
-    udp.bind(2859);
+    udp2.bind(2859);
+    tcpServer.bind(2859);
   } else {
-    udp.connect("54.174.137.123", 2859);
+    udp2.connect("54.174.137.123", 2859);
   }
+
+  UDPPipe udp(std::move(udp2));
+
+  std::vector<TCPPipe> clients;
+  std::vector<std::unique_ptr<PacketTranslator<TCPPacket, TCPPacket>>> echoers;
+
+  tcpServer.onAccept = [&clients, &echoers](TCPPipe&& client) {
+    clients.push_back(std::move(client));
+    echoers.emplace_back(new PacketTranslator<TCPPacket, TCPPacket>(clients.back().inboundQ, clients.back().outboundQ));
+    echoers.back()->transform = [](TCPPacket const& in) {
+      return in;
+    };
+  };
 
   // These are the TUNNEL translators! ;)
   PacketTranslator<TunnelPacket, UDPPacket> sender(tunnel.inboundQ, udp.outboundQ);

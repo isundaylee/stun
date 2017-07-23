@@ -33,6 +33,30 @@ void throwGetAddrInfoError(int err) {
   throw std::runtime_error("Error while getaddrinfo(): " + std::string(gai_strerror(err)));
 }
 
+void assertTrue(bool condition, std::string const& reason) {
+  if (!condition) {
+    throw std::runtime_error(reason);
+  }
+}
+
+bool checkUnixError(int ret, std::string const& action) {
+  if (ret < 0) {
+    throwUnixError(action);
+    return false;
+  }
+  return true;
+}
+
+bool checkRetryableError(int ret, std::string const& action) {
+  if (ret < 0) {
+    if (errno != EAGAIN) {
+      throwUnixError(action);
+    }
+    return false;
+  }
+  return true;
+}
+
 void logf(char const* format, ...) {
   va_list argptr;
   va_start(argptr, format);

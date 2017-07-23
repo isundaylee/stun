@@ -4,7 +4,9 @@
 #include <Util.h>
 
 #include <ev/ev++.h>
+#include <unistd.h>
 
+#include <memory>
 #include <stdexcept>
 
 namespace stun {
@@ -60,37 +62,79 @@ public:
       inboundQ(inboundQueueSize),
       outboundQ(outboundQueueSize),
       inboundBytes(0),
-      outboundBytes(0) {}
+      outboundBytes(0),
+      inboundWatcher_(new ev::io()),
+      outboundWatcher_(new ev::io()),
+      statsWatcher_(new ev::timer()) {}
+
+  Pipe(Pipe&& move) :
+      inboundQ(std::move(move.inboundQ)),
+      outboundQ(std::move(move.outboundQ)),
+      name(std::move(move.name)),
+      shouldOutputStats(move.shouldOutputStats),
+      inboundBytes(move.inboundBytes),
+      outboundBytes(move.outboundBytes) {
+    fd_ = move.fd_;
+    move.fd_ = 0;
+
+    inboundWatcher_ = std::move(move.inboundWatcher_);
+    outboundWatcher_ = std::move(move.outboundWatcher_);
+    statsWatcher_ = std::move(move.statsWatcher_);
+
+    this->startWatchers();
+  }
+
+  ~Pipe() {
+    close();
+  }
+
+  virtual void open() = 0;
 
 protected:
-  void setFd(int fd) {
-    fd_ = fd;
+  void startWatchers() {
+    assertTrue(fd_ != 0, "startWatchers() called when fd_ is 0");
 
-    inboundWatcher_.set<Pipe, &Pipe::doReceive>(this);
-    inboundWatcher_.set(fd_, EV_READ);
-    inboundWatcher_.start();
+    inboundWatcher_->set<Pipe, &Pipe::doReceive>(this);
+    inboundWatcher_->set(fd_, EV_READ);
+    inboundWatcher_->start();
 
-    outboundWatcher_.set<Pipe, &Pipe::doSend>(this);
-    outboundWatcher_.set(fd_, EV_WRITE);
+    outboundWatcher_->set<Pipe, &Pipe::doSend>(this);
+    outboundWatcher_->set(fd_, EV_WRITE);
 
     outboundQ.onBecomeNonEmpty = [this]() {
-      outboundWatcher_.start();
+      outboundWatcher_->start();
     };
 
-    if (shouldOutputStats) {
-      statsWatcher_.set<Pipe, &Pipe::doStats>(this);
-      statsWatcher_.set(0.0, kPipeStatsInterval);
-      statsWatcher_.start();
-    }
+    statsWatcher_->set<Pipe, &Pipe::doStats>(this);
+    statsWatcher_->set(0.0, kPipeStatsInterval);
+    statsWatcher_->start();
+  }
+
+  void stopWatchers() {
+    inboundWatcher_->stop();
+    outboundWatcher_->stop();
+    statsWatcher_->stop();
+
+    outboundQ.onBecomeNonEmpty = []() {};
   }
 
   virtual bool write(P const& packet) = 0;
   virtual bool read(P& packet) = 0;
 
+  virtual void close() {
+    if (!!inboundWatcher_) {
+      stopWatchers();
+    }
+
+    if (fd_ != 0) {
+      ::close(fd_);
+    }
+  }
+
   std::string name = "random pipe";
   bool shouldOutputStats = false;
 
-  int fd_;
+  int fd_ = 0;
 
 private:
   Pipe(Pipe const&) = delete;
@@ -118,7 +162,7 @@ private:
     }
 
     if (outboundQ.empty()) {
-      outboundWatcher_.stop();
+      outboundWatcher_->stop();
       return;
     }
 
@@ -136,15 +180,18 @@ private:
       throwUnixError("doStats()");
     }
 
-    LOG() << name << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
-        << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps" << std::endl;
+    if (shouldOutputStats) {
+      LOG() << name << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
+          << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps" << std::endl;
+    }
+
     inboundBytes = 0;
     outboundBytes = 0;
   }
 
-  ev::io inboundWatcher_;
-  ev::io outboundWatcher_;
-  ev::timer statsWatcher_;
+  std::unique_ptr<ev::io> inboundWatcher_;
+  std::unique_ptr<ev::io> outboundWatcher_;
+  std::unique_ptr<ev::timer> statsWatcher_;
 
   size_t inboundBytes;
   size_t outboundBytes;

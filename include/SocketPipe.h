@@ -15,6 +15,8 @@ namespace stun {
 const int kSocketInboundQueueSize = 32;
 const int kSocketOutboundQueueSize = 32;
 
+const int kSocketPipeListenBacklog = 10;
+
 struct SocketPacket: PipePacket {};
 
 enum SocketType {
@@ -28,57 +30,122 @@ public:
   SocketPipe(SocketType type) :
       Pipe<P>(kSocketInboundQueueSize, kSocketOutboundQueueSize),
       type_(type),
-      connected_(false) {
-    int fd_ = socket(PF_INET, type_ == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
-    if (fd_ < 0) {
-      throwUnixError("creating SocketPipe's socket");
-    }
+      bound_(false),
+      connected_(false) {}
 
-    if (fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK) < 0) {
-      throwUnixError("setting O_NONBLOCK for SocketPipe");
-    }
+  SocketPipe(SocketPipe&& move) :
+    Pipe<P>(std::move(move)),
+    type_(move.type_),
+    bound_(move.bound_),
+    connected_(move.connected_) {}
 
-    this->name = "UDP carrier";
-    this->shouldOutputStats = true;
-    this->setFd(fd_);
-  }
+  virtual void bind(int port) {
+    assertTrue(!bound_, "Calling bind() on a bound SocketPipe");
+    assertTrue(!connected_, "Calling bind() on a connected SocketPipe");
 
-  ~SocketPipe() {
-    close(this->fd_);
-  }
-
-  void bind(int port) {
     struct addrinfo* myAddr = getAddr("0.0.0.0", port);
 
     int ret = ::bind(this->fd_, myAddr->ai_addr, myAddr->ai_addrlen);
-    if (ret < 0) {
-      throwUnixError("binding to SocketPipe's socket");
-    }
+    checkUnixError(ret, "binding to SocketPipe's socket");
 
     freeaddrinfo(myAddr);
 
+    if (type_ == TCP) {
+      int ret = listen(this->fd_, kSocketPipeListenBacklog);
+      checkUnixError(ret, "listening on a SocketPipe's socket");
+    }
+
     LOG() << "SocketPipe started listening on port " << port << std::endl;
+
+    bound_ = true;
+    this->startWatchers();
+    this->shouldOutputStats = (type_ == UDP);
   }
 
   void connect(std::string const& host, int port) {
+    assertTrue(!connected_, "Connecting while already connected");
+    assertTrue(!bound_, "Connecting while already bound");
+
     LOG() << "SocketPipe connecting to " << host << ":" << port << std::endl;
 
     struct addrinfo* peerAddr = getAddr(host, port);
 
-    if (connected_) {
-      throw std::runtime_error("Connecting while already connected");
-    }
-
     int ret = ::connect(this->fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
-    if (ret < 0) {
-      throwUnixError("connecting in SocketPipe");
-    }
+    checkUnixError(ret, "connecting in SocketPipe");
     connected_ = true;
 
     freeaddrinfo(peerAddr);
 
     LOG() << "SocketPipe connected to " << host << ":" << port << std::endl;
+
+    this->startWatchers();
+    this->shouldOutputStats = true;
   }
+
+  virtual void open() override {
+    assertTrue(this->fd_ == 0, "trying to open an already open SocketPipe");
+
+    int fd_ = socket(PF_INET, type_ == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
+    checkUnixError(fd_, "creating SocketPipe's socket");
+
+    int ret = fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK);
+    checkUnixError(ret, "setting O_NONBLOCK for SocketPipe");
+
+    int yes = 1;
+    ret = setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    checkUnixError(ret, "setting SO_REUSEADDR for SocketPipe");
+
+    this->name = (type_ == TCP ? "TCP carrier" : "UDP carrier");
+    this->fd_ = fd_;
+  }
+
+protected:
+  virtual bool read(P& packet) override {
+    if (!connected_ && !bound_) {
+      return false;
+    }
+
+    struct sockaddr_storage peerAddr;
+    socklen_t peerAddrSize = sizeof(peerAddr);
+
+    int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+    if (!checkRetryableError(ret, "receiving a " + std::string(type_ == TCP ? "TCP" : "UDP") + " packet")) {
+      return false;
+    }
+    packet.size = ret;
+
+    if (ret == 0) {
+      // the socket is closed
+      close();
+      return false;
+    }
+
+    if (!connected_) {
+      int ret = ::connect(this->fd_, (sockaddr*) &peerAddr, peerAddrSize);
+      checkUnixError(ret, "connecting in SocketPipe");
+      connected_ = true;
+    }
+
+    return true;
+  }
+
+  virtual bool write(P const& packet) override {
+    int ret = send(this->fd_, packet.buffer, packet.size, 0);
+    if (!checkRetryableError(ret, "sending a UDP " + std::string(type_ == TCP ? "TCP" : "UDP") + " packet")) {
+      return false;
+    }
+    return true;
+  }
+
+  virtual void close() override {
+    Pipe<P>::close();
+    bound_ = false;
+    connected_ = false;
+  }
+
+  SocketType type_;
+  bool bound_;
+  bool connected_;
 
 private:
   SocketPipe(SocketPipe const& copy) = delete;
@@ -99,45 +166,6 @@ private:
 
     return addr;
   }
-
-  bool read(P& packet) override {
-    struct sockaddr_storage peerAddr;
-    socklen_t peerAddrSize = sizeof(peerAddr);
-
-    int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
-    if (ret < 0) {
-      if (errno != EAGAIN) {
-        throwUnixError("receiving a UDP packet");
-      }
-      return false;
-    }
-    packet.size = ret;
-
-    if (!connected_) {
-      int ret = ::connect(this->fd_, (sockaddr*) &peerAddr, peerAddrSize);
-      if (ret < 0) {
-        throwUnixError("connecting in SocketPipe");
-      }
-      connected_ = true;
-    }
-
-    return true;
-  }
-
-  bool write(P const& packet) override {
-    int ret = send(this->fd_, packet.buffer, packet.size, 0);
-    if (ret < 0) {
-      if (errno != EAGAIN) {
-        throwUnixError("sending a UDP packet");
-      }
-      return false;
-    }
-
-    return true;
-  }
-
-  SocketType type_;
-  bool connected_;
 };
 
 }

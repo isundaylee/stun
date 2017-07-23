@@ -21,64 +21,53 @@ const size_t kTunnelInboundQueueSize = 32;
 const size_t kTunnelOutboundQueueSize = 32;
 
 Tunnel::Tunnel(TunnelType type) :
-    Pipe(kTunnelInboundQueueSize, kTunnelOutboundQueueSize) {
-  type_ = type;
+    Pipe(kTunnelInboundQueueSize, kTunnelOutboundQueueSize),
+    type_(type) {}
 
-  int err;
+void Tunnel::open() {
+  assertTrue(this->fd_ == 0, "trying to open an already open Tunnel");
 
-  if ((err = open("/dev/net/tun", O_RDWR)) < 0) {
-    throwUnixError("opening /dev/net/tun");
-  } else {
-    fd_ = err;
-  }
+  int ret = ::open("/dev/net/tun", O_RDWR);
+  checkUnixError(ret, "opening /dev/net/tun");
+  fd_ = ret;
 
   struct ifreq ifr;
-
   memset(&ifr, 0, sizeof(ifr));
-  ifr.ifr_flags = (type == TUN ? IFF_TUN : IFF_TAP);
+  ifr.ifr_flags = (type_ == TUN ? IFF_TUN : IFF_TAP);
+  ret = ioctl(fd_, TUNSETIFF, (void *) &ifr);
+  checkUnixError(ret, "doing TUNSETIFF");
 
-  if ((err = ioctl(fd_, TUNSETIFF, (void *) &ifr)) < 0) {
-    close(fd_);
-    throwUnixError("doing TUNSETIFF");
-  }
-
-  if (fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK, 0) < 0) {
-    throwUnixError("setting O_NONBLOCK for Tunnel");
-  }
+  ret = fcntl(fd_, F_SETFL, fcntl(fd_, F_GETFL, 0) | O_NONBLOCK, 0);
+  checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   devName_ = ifr.ifr_name;
   LOG() << "Successfully opened tunnel " << devName_ << std::endl;
 
   name = "tunnel " + devName_;
-  setFd(fd_);
+  this->fd_ = fd_;
+  this->startWatchers();
 }
 
 bool Tunnel::read(TunnelPacket& packet) {
   int ret = ::read(fd_, packet.buffer, kTunnelBufferSize);
-  if (ret < 0) {
-    if (errno != EAGAIN) {
-      throwUnixError("reading a tunnel packet");
-    }
+  if (!checkRetryableError(ret, "reading a tunnel packet")) {
     return false;
   }
-  if (ret == kTunnelBufferSize) {
-    throw std::runtime_error("kTunnelBufferSize reached");
-  }
+  assertTrue(ret < kTunnelBufferSize, "kTunnelBufferSize reached");
   packet.size = ret;
+  if (ret == 0) {
+    close();
+    return false;
+  }
   return true;
 }
 
 bool Tunnel::write(TunnelPacket const& packet) {
   int ret = ::write(fd_, packet.buffer, packet.size);
-  if (ret < 0) {
-    if (errno != EAGAIN) {
-      throwUnixError("writing a tunnel packet");
-    }
+  if (!checkRetryableError(ret, "writing a tunnel packet")) {
     return false;
   }
-  if (ret != packet.size) {
-    throw std::runtime_error("Packet fragmented");
-  }
+  assertTrue(ret == packet.size, "Packet fragmented");
   return true;
 }
 
