@@ -1,0 +1,8 @@
+cxx_library(
+    name = 'event',
+    visibility = [
+        'PUBLIC',
+    ],
+    exported_headers = subdir_glob([('include', '*.h')]),
+    srcs = glob(['src/*.cpp']),
+)
