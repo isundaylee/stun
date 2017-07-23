@@ -104,7 +104,6 @@ public:
     ret = setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
     checkUnixError(ret, "setting SO_REUSEADDR for SocketPipe");
 
-    this->name = (type_ == TCP ? "TCP carrier" : "UDP carrier");
     this->fd_ = fd_;
   }
 
