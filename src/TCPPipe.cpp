@@ -2,10 +2,6 @@
 
 namespace stun {
 
-void TCPPipe::bind(int port) {
-  SocketPipe::bind(port);
-}
-
 bool TCPPipe::read(TCPPacket& packet) {
   if (!bound_) {
     // We are a normal client-server pipe

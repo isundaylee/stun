@@ -39,17 +39,24 @@ public:
     bound_(move.bound_),
     connected_(move.connected_) {}
 
-  virtual void bind(int port) {
+  int bind(int port) {
     assertTrue(!bound_, "Calling bind() on a bound SocketPipe");
     assertTrue(!connected_, "Calling bind() on a connected SocketPipe");
 
+    // Binding
     struct addrinfo* myAddr = getAddr("0.0.0.0", port);
-
     int ret = ::bind(this->fd_, myAddr->ai_addr, myAddr->ai_addrlen);
     checkUnixError(ret, "binding to SocketPipe's socket");
-
     freeaddrinfo(myAddr);
 
+    // Getting the port that is actually used (in case that the given port is 0)
+    struct sockaddr_storage myActualAddr;
+    socklen_t myActualAddrLen = sizeof(myActualAddr);
+    ret = getsockname(this->fd_, (struct sockaddr*) &myActualAddr, &myActualAddrLen);
+    checkUnixError(ret, "calling getsockname()");
+    int actualPort = ((struct sockaddr_in*) &myActualAddr)->sin_port;
+
+    // Listening
     if (type_ == TCP) {
       int ret = listen(this->fd_, kSocketPipeListenBacklog);
       checkUnixError(ret, "listening on a SocketPipe's socket");
@@ -60,6 +67,8 @@ public:
     bound_ = true;
     this->startWatchers();
     this->shouldOutputStats = (type_ == UDP);
+
+    return actualPort;
   }
 
   void connect(std::string const& host, int port) {
@@ -71,7 +80,7 @@ public:
     struct addrinfo* peerAddr = getAddr(host, port);
 
     int ret = ::connect(this->fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
-    checkUnixError(ret, "connecting in SocketPipe");
+    checkUnixError(ret, "connecting in SocketPipe", EINPROGRESS);
     connected_ = true;
 
     freeaddrinfo(peerAddr);
@@ -109,6 +118,13 @@ protected:
     socklen_t peerAddrSize = sizeof(peerAddr);
 
     int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+    if (ret < 0 && errno == ECONNRESET) {
+      // the socket is closed
+      LOG() << "Goodbye, " << this->name << " (less peacfully)!" << std::endl;
+      close();
+      return false;
+    }
+
     if (!checkRetryableError(ret, "receiving a " + std::string(type_ == TCP ? "TCP" : "UDP") + " packet")) {
       return false;
     }
@@ -116,6 +132,7 @@ protected:
 
     if (ret == 0) {
       // the socket is closed
+      LOG() << "Goodbye, " << this->name << "!" << std::endl;
       close();
       return false;
     }

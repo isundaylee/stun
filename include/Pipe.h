@@ -58,6 +58,9 @@ public:
   FIFO<P> inboundQ;
   FIFO<P> outboundQ;
 
+  std::string name = "UNNAMED-BAD";
+  bool shouldOutputStats = false;
+
   Pipe(int inboundQueueSize, int outboundQueueSize) :
       inboundQ(inboundQueueSize),
       outboundQ(outboundQueueSize),
@@ -130,9 +133,6 @@ protected:
       ::close(fd_);
     }
   }
-
-  std::string name = "random pipe";
-  bool shouldOutputStats = false;
 
   int fd_ = 0;
 

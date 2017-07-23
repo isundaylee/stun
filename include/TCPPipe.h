@@ -21,8 +21,6 @@ public:
   TCPPipe(TCPPipe&& move) :
     SocketPipe(std::move(move)) {}
 
-  void bind(int port) override;
-
   std::function<void (TCPPipe&& client)> onAccept = [](TCPPipe&&) {};
 
 protected:

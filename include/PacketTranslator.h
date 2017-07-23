@@ -19,6 +19,9 @@ public:
       target_(target) {
     timer_.set<PacketTranslator, &PacketTranslator::doTranslate>(this);
     timer_.set(0.0, kPacketTranslatorInterval);
+  }
+
+  void start() {
     timer_.start();
   }
 
@@ -40,7 +43,10 @@ private:
 
     while (!source_.empty() && !target_.full()) {
       X packet = source_.pop();
-      target_.push(transform(packet));
+      X result = transform(packet);
+      if (result.size > 0) {
+        target_.push(result);
+      }
     }
   }
 

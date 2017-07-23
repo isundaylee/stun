@@ -39,17 +39,19 @@ void assertTrue(bool condition, std::string const& reason) {
   }
 }
 
-bool checkUnixError(int ret, std::string const& action) {
+bool checkUnixError(int ret, std::string const& action, int allowed /* = 0 */) {
   if (ret < 0) {
-    throwUnixError(action);
+    if (errno != allowed) {
+      throwUnixError(action);
+    }
     return false;
   }
   return true;
 }
 
-bool checkRetryableError(int ret, std::string const& action) {
+bool checkRetryableError(int ret, std::string const& action, int allowed /* = 0 */) {
   if (ret < 0) {
-    if (errno != EAGAIN) {
+    if (errno != EAGAIN && errno != allowed) {
       throwUnixError(action);
     }
     return false;
