@@ -80,6 +80,8 @@ public:
     fd_ = move.fd_;
     move.fd_ = 0;
 
+    onClose = std::move(move.onClose);
+    move.onClose = []() {};
     inboundWatcher_ = std::move(move.inboundWatcher_);
     outboundWatcher_ = std::move(move.outboundWatcher_);
     statsWatcher_ = std::move(move.statsWatcher_);
@@ -90,6 +92,8 @@ public:
   ~Pipe() {
     close();
   }
+
+  std::function<void (void)> onClose = []() {};
 
   virtual void open() = 0;
 
@@ -131,6 +135,8 @@ protected:
 
     if (fd_ != 0) {
       ::close(fd_);
+      fd_ = 0;
+      onClose();
     }
   }
 

@@ -10,44 +10,72 @@
 
 namespace stun {
 
-class ServerHandler {
+class AbstractHandler {
 public:
-  ServerHandler(size_t clientIndex, TCPPipe&& client) :
-      clientIndex_(clientIndex),
+  size_t clientIndex;
+
+  AbstractHandler(size_t clientIndex, TCPPipe&& client) :
+      clientIndex(clientIndex),
       commandPipe_(new TCPPipe(std::move(client))),
       messenger_(new Messenger(*commandPipe_)) {
     attachHandler();
   }
 
-  ServerHandler(ServerHandler&& move) :
+  AbstractHandler(AbstractHandler&& move) :
       commandPipe_(std::move(move.commandPipe_)),
+      dataPipe_(std::move(move.dataPipe_)),
       messenger_(std::move(move.messenger_)) {
     attachHandler();
   }
 
-  void start() {
+  AbstractHandler& operator=(AbstractHandler&& move) {
+    using std::swap;
+    swap(commandPipe_, move.commandPipe_);
+    swap(dataPipe_, move.dataPipe_);
+    swap(messenger_, move.messenger_);
+    swap(clientIndex, move.clientIndex);
+    attachHandler();
+    return *this;
+  }
+
+  virtual void start() {
     messenger_->start();
   }
 
-private:
-  size_t clientIndex_;
+protected:
+  virtual std::vector<Message> handleMessage(Message const& message) = 0;
   std::unique_ptr<TCPPipe> commandPipe_;
   std::unique_ptr<Messenger> messenger_;
   std::unique_ptr<UDPPipe> dataPipe_;
 
+private:
   void attachHandler() {
     messenger_->handler = [this](Message const& message) {
       return handleMessage(message);
     };
   }
+};
 
-  std::vector<Message> handleMessage(Message const& message) {
+class ServerHandler: public AbstractHandler {
+public:
+  ServerHandler(int clientIndex, TCPPipe&& client) :
+    AbstractHandler(clientIndex, std::move(client)) {}
+
+  explicit ServerHandler(ServerHandler&& move) :
+    AbstractHandler(std::move(move)) {}
+
+  ServerHandler& operator=(ServerHandler&& move) {
+    AbstractHandler::operator=(std::move(move));
+  }
+
+protected:
+  virtual std::vector<Message> handleMessage(Message const& message) override {
     std::string type = message.getType();
     std::vector<Message> replies;
 
     if (type == "hello") {
       dataPipe_.reset(new UDPPipe());
-      dataPipe_->name = "DATA-" + std::to_string(clientIndex_);
+      dataPipe_->name = "DATA-" + std::to_string(clientIndex);
       dataPipe_->open();
       int port = dataPipe_->bind(0);
       replies.emplace_back("data_port", std::to_string(port));
@@ -59,36 +87,25 @@ private:
   }
 };
 
-class ClientHandler {
+class ClientHandler: public AbstractHandler {
 public:
-  ClientHandler(TCPPipe&& server) :
-      commandPipe_(new TCPPipe(std::move(server))),
-      messenger_(new Messenger(*commandPipe_)) {
-    attachHandler();
+  explicit ClientHandler(TCPPipe&& client) :
+    AbstractHandler(0, std::move(client)) {}
+
+  explicit ClientHandler(ClientHandler&& move) :
+    AbstractHandler(std::move(move)) {}
+
+  ClientHandler& operator=(ClientHandler&& move) {
+    AbstractHandler::operator=(std::move(move));
   }
 
-  ClientHandler(ClientHandler&& move) :
-      commandPipe_(std::move(move.commandPipe_)),
-      messenger_(std::move(move.messenger_)) {
-    attachHandler();
-  }
-
-  void start() {
-    messenger_->start();
+  virtual void start() override {
+    AbstractHandler::start();
     messenger_->send(Message("hello", ""));
   }
 
-private:
-  std::unique_ptr<TCPPipe> commandPipe_;
-  std::unique_ptr<Messenger> messenger_;
-
-  void attachHandler() {
-    messenger_->handler = [this](Message const& message) {
-      return handleMessage(message);
-    };
-  }
-
-  std::vector<Message> handleMessage(Message const& message) {
+protected:
+  virtual std::vector<Message> handleMessage(Message const& message) override {
     std::string type = message.getType();
     std::string body = message.getBody();
     std::vector<Message> replies;
@@ -109,6 +126,8 @@ public:
   void connect(std::string const& host, int port);
 
 private:
+  static int numClients;
+
   TCPPipe commandServer;
   std::vector<ServerHandler> servers;
   std::unique_ptr<ClientHandler> client;

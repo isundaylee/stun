@@ -24,7 +24,6 @@ struct Message : PipePacket {
   std::string getBody() const {
     int typeLen = strlen(buffer);
     std::string body = std::string(buffer + (typeLen + 1));
-    LOG() << getType() << " " << body << std::endl;
     assertTrue(typeLen + body.length() + 2 == size, "Message size not matching");
     return body;
   }
@@ -32,7 +31,7 @@ struct Message : PipePacket {
 private:
   void appendString(std::string str) {
     memcpy(buffer + size, str.c_str(), str.length());
-    buffer[size + str.length() + 1] = '\0';
+    buffer[size + str.length()] = '\0';
     size += (str.length() + 1);
   }
 };
