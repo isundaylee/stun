@@ -60,6 +60,37 @@ void SessionHandler::attachHandler() {
   };
 }
 
+void SessionHandler::createDataTunnel(std::string const& myAddr,
+                                      std::string const& peerAddr) {
+  // Establish tunnel
+  tun_.reset(new Tunnel(TunnelType::TUN));
+  tun_->open();
+  NetlinkClient client;
+  client.newLink(tun_->getDeviceName());
+  client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
+
+  // Configure sender and receiver
+  sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
+      tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
+  sender_->transform = [](TunnelPacket const& in) {
+    UDPPacket out;
+    out.size = in.size;
+    memcpy(out.buffer, in.buffer, in.size);
+    return out;
+  };
+  sender_->start();
+
+  receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
+      dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
+  receiver_->transform = [](UDPPacket const& in) {
+    TunnelPacket out;
+    out.size = in.size;
+    memcpy(out.buffer, in.buffer, in.size);
+    return out;
+  };
+  receiver_->start();
+}
+
 std::vector<Message>
 SessionHandler::handleMessageFromClient(Message const& message) {
   std::string type = message.getType();
@@ -82,33 +113,7 @@ SessionHandler::handleMessageFromClient(Message const& message) {
     replies.emplace_back("server_ip", myAddr);
     replies.emplace_back("client_ip", peerAddr);
 
-    // Establish tunnel
-    tun_.reset(new Tunnel(TunnelType::TUN));
-    tun_->open();
-    NetlinkClient client;
-    client.newLink(tun_->getDeviceName());
-    client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
-
-    // Configure sender and receiver
-    sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
-        tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
-    sender_->transform = [](TunnelPacket const& in) {
-      UDPPacket out;
-      out.size = in.size;
-      memcpy(out.buffer, in.buffer, in.size);
-      return out;
-    };
-    sender_->start();
-
-    receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
-        dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
-    receiver_->transform = [](UDPPacket const& in) {
-      TunnelPacket out;
-      out.size = in.size;
-      memcpy(out.buffer, in.buffer, in.size);
-      return out;
-    };
-    receiver_->start();
+    createDataTunnel(myAddr, peerAddr);
   } else {
     assertTrue(false, "Unrecognized client message type: " + type);
   }
@@ -140,33 +145,7 @@ SessionHandler::handleMessageFromServer(Message const& message) {
     dataPipe_->open();
     dataPipe_->connect(serverAddr_, dataPort_);
 
-    // Create the tunnel
-    tun_.reset(new Tunnel(TunnelType::TUN));
-    tun_->open();
-    NetlinkClient client;
-    client.newLink(tun_->getDeviceName());
-    client.setLinkAddress(tun_->getDeviceName(), clientIP_, serverIP_);
-
-    // Configure sender and receiver
-    sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
-        tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
-    sender_->transform = [](TunnelPacket const& in) {
-      UDPPacket out;
-      out.size = in.size;
-      memcpy(out.buffer, in.buffer, in.size);
-      return out;
-    };
-    sender_->start();
-
-    receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
-        dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
-    receiver_->transform = [](UDPPacket const& in) {
-      TunnelPacket out;
-      out.size = in.size;
-      memcpy(out.buffer, in.buffer, in.size);
-      return out;
-    };
-    receiver_->start();
+    createDataTunnel(clientIP_, serverIP_);
   }
 
   return replies;
