@@ -2,13 +2,16 @@
 
 #include <common/Util.h>
 
+// Ugly hack to make clang-format happy, as this has to precede <linux/if.h>
+// below -- oh well, linux header files ):
+#include <sys/socket.h>
+
 #include <fcntl.h>
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include <stdexcept>
