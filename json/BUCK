@@ -1,0 +1,5 @@
+cxx_library(
+    name = 'json',
+    exported_headers = ['json.hpp'],
+    visibility = ['PUBLIC'],
+)

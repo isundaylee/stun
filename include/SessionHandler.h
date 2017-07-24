@@ -38,11 +38,6 @@ private:
   std::unique_ptr<PacketTranslator<TunnelPacket, UDPPacket>> sender_;
   std::unique_ptr<PacketTranslator<UDPPacket, TunnelPacket>> receiver_;
 
-  // TODO: Rid of this temporary storage
-  std::string serverIP_;
-  std::string clientIP_;
-  int dataPort_;
-
   void attachHandler();
   void createDataTunnel(std::string const& myAddr, std::string const& peerAddr);
   std::vector<Message> handleMessageFromClient(Message const& message);

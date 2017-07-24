@@ -10,6 +10,7 @@ cxx_binary(
         '//event:event',
         '//common:common',
         '//networking:networking',
+        '//json:json',
     ],
 )
 
@@ -22,6 +23,5 @@ cxx_binary(
     deps = [
         '//event:event',
         '//common:common',
-        '//networking:networking',
     ]
 )

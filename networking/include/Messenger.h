@@ -1,5 +1,8 @@
 #pragma once
 
+#include <json/json.hpp>
+
+#include <common/Util.h>
 #include <networking/PacketTranslator.h>
 #include <networking/TCPPipe.h>
 
@@ -7,22 +10,24 @@
 
 namespace networking {
 
+using json = nlohmann::json;
+
 struct Message : PipePacket {
   Message() : PipePacket() {}
 
-  Message(std::string const& type, std::string const& body) : PipePacket() {
+  Message(std::string const& type, json const& body) : PipePacket() {
     appendString(type);
-    appendString(body);
+    appendString(body.dump());
   }
 
   std::string getType() const { return std::string(buffer); }
 
-  std::string getBody() const {
+  json getBody() const {
     int typeLen = strlen(buffer);
     std::string body = std::string(buffer + (typeLen + 1));
     assertTrue(typeLen + body.length() + 2 == size,
                "Message size not matching");
-    return body;
+    return json::parse(body);
   }
 
 private:
