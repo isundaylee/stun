@@ -12,7 +12,7 @@ Action::~Action() {
 }
 
 void Action::invoke() {
-  callback_();
+  callback.invoke();
 }
 
 bool Action::canInvoke() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <event/Callback.h>
 #include <event/Condition.h>
 #include <event/EventLoop.h>
 
@@ -18,34 +19,10 @@ public:
   void invoke();
   bool canInvoke();
 
-  template<typename T, void (T::*Method)()>
-  void setCallback(T* object) {
-    methodCallback_ = [=](void* object) {
-      T::Method((T*) object);
-    };
-
-    callback_ = [this]() {
-      methodCallback_(this->target_);
-    };
-  }
-
-  void setCallback(std::function<void ()> callback) {
-    callback_ = callback;
-  }
-
-  void setTarget(void* target) {
-    if (target == nullptr) {
-      throw std::runtime_error("Cannot set target to nullptr.");
-    }
-
-    target_ = target;
-  }
+  Callback callback;
 
 private:
   std::vector<Condition*> conditions_;
-  std::function<void ()> callback_;
-  std::function<void (void*)> methodCallback_;
-  void* target_ = nullptr;
 };
 
 }
