@@ -20,7 +20,8 @@ cxx_binary(
     ]),
     srcs = glob(['src/**/*.cpp'], excludes = ['src/main.cpp']),
     deps = [
-        '//libev:ev',
         '//event:event',
+        '//common:common',
+        '//networking:networking',
     ]
 )
