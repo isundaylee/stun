@@ -55,10 +55,12 @@ void Messenger::doReceive() {
   }
 }
 
-void Messenger::send(Message const& message) {
-  // TODO: Think about FIFO overflow later
-  // TODO: Think about large messages later
+event::Condition* Messenger::canSend() {
+  return outboundQ_->canPush();
+}
 
+void Messenger::send(Message const& message) {
+  // TODO: Think about large messages later
   assertTrue(message.size + sizeof(MessengerLengthHeaderType) <=
                  kPipePacketBufferSize,
              "Message too large");

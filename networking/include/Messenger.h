@@ -42,6 +42,8 @@ public:
   Messenger(TCPPipe& client);
 
   void start();
+
+  event::Condition* canSend();
   void send(Message const& message);
 
   std::function<Message(Message const&)> handler;
