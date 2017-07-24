@@ -10,7 +10,6 @@ cxx_binary(
         '//event:event',
         '//common:common',
         '//networking:networking',
-        '//json:json',
     ],
 )
 

@@ -40,8 +40,8 @@ private:
 
   void attachHandler();
   void createDataTunnel(std::string const& myAddr, std::string const& peerAddr);
-  std::vector<Message> handleMessageFromClient(Message const& message);
-  std::vector<Message> handleMessageFromServer(Message const& message);
+  Message handleMessageFromClient(Message const& message);
+  Message handleMessageFromServer(Message const& message);
 };
 
 class ServerHandler {

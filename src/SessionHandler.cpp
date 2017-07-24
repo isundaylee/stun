@@ -85,10 +85,8 @@ void SessionHandler::createDataTunnel(std::string const& myAddr,
   receiver_->start();
 }
 
-std::vector<Message>
-SessionHandler::handleMessageFromClient(Message const& message) {
+Message SessionHandler::handleMessageFromClient(Message const& message) {
   std::string type = message.getType();
-  std::vector<Message> replies;
 
   if (type == "hello") {
     // Set up data pipe
@@ -104,23 +102,19 @@ SessionHandler::handleMessageFromClient(Message const& message) {
     LOG() << "Acquired IP address: mine = " << myAddr << ", peer = " << peerAddr
           << std::endl;
 
-    json config = {
-      {"server_ip", myAddr},
-      {"client_ip", peerAddr},
-      {"data_port", port},
-    };
-    replies.emplace_back("config", config);
-
     createDataTunnel(myAddr, peerAddr);
-  } else {
-    assertTrue(false, "Unrecognized client message type: " + type);
-  }
 
-  return replies;
+    return Message(
+        "config",
+        json{
+            {"server_ip", myAddr}, {"client_ip", peerAddr}, {"data_port", port},
+        });
+  } else {
+    unreachable("Unrecognized client message type: " + type);
+  }
 }
 
-std::vector<Message>
-SessionHandler::handleMessageFromServer(Message const& message) {
+Message SessionHandler::handleMessageFromServer(Message const& message) {
   std::string type = message.getType();
   json body = message.getBody();
   std::vector<Message> replies;
@@ -134,10 +128,9 @@ SessionHandler::handleMessageFromServer(Message const& message) {
     dataPipe_->connect(serverAddr_, body["data_port"]);
 
     createDataTunnel(body["client_ip"], body["server_ip"]);
+    return Message::null();
   } else {
-    assertTrue(false, "Unrecognized server message type: " + type);
+    unreachable("Unrecognized server message type: " + type);
   }
-
-  return replies;
 }
 }

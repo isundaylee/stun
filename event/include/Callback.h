@@ -35,15 +35,19 @@ public:
     target = object;
   }
 
-  void invoke() {
+  bool invoke() {
     if (!!func_) {
       func_();
+      return true;
     } else if (!!method_) {
       if (target == nullptr) {
         throw std::runtime_error("Invoking an Callable with an empty target.");
       }
 
       method_(target);
+      return true;
+    } else {
+      return false;
     }
   }
 

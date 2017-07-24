@@ -15,106 +15,53 @@ using json = nlohmann::json;
 struct Message : PipePacket {
   Message() : PipePacket() {}
 
+  static Message null() { return Message(); }
+
   Message(std::string const& type, json const& body) : PipePacket() {
-    appendString(type);
-    appendString(body.dump());
+    json payload = {
+        {"type", type}, {"body", body},
+    };
+    std::string content = payload.dump();
+    memcpy(buffer, content.c_str(), content.length());
+    size = content.length();
   }
 
-  std::string getType() const { return std::string(buffer); }
+  std::string getType() const {
+    return json::parse(std::string(buffer, size))["type"];
+  }
 
   json getBody() const {
-    int typeLen = strlen(buffer);
-    std::string body = std::string(buffer + (typeLen + 1));
-    assertTrue(typeLen + body.length() + 2 == size,
-               "Message size not matching");
-    return json::parse(body);
-  }
-
-private:
-  void appendString(std::string str) {
-    memcpy(buffer + size, str.c_str(), str.length());
-    buffer[size + str.length()] = '\0';
-    size += (str.length() + 1);
+    return json::parse(std::string(buffer, size))["body"];
   }
 };
 
 const size_t kMessengerReceiveBufferSize = 8192;
 
-typedef uint32_t MessengerLengthHeaderType;
-
 class Messenger {
 public:
-  Messenger(TCPPipe& client)
-      : bufferUsed_(0),
-        translator_(client.inboundQ.get(), client.outboundQ.get()),
-        client_(client) {
-    translator_.transform = [this](TCPPacket const& in) {
-      assertTrue(bufferUsed_ + in.size <= kMessengerReceiveBufferSize,
-                 "Messenger receive buffer overflow.");
-      memcpy(buffer_ + bufferUsed_, in.buffer, in.size);
-      bufferUsed_ += in.size;
+  Messenger(TCPPipe& client);
 
-      while (bufferUsed_ >= sizeof(MessengerLengthHeaderType)) {
-        int messageLen = *((MessengerLengthHeaderType*)buffer_);
-        if (bufferUsed_ < sizeof(MessengerLengthHeaderType) + messageLen) {
-          break;
-        }
+  void start();
+  void send(Message const& message);
 
-        // We have got a complete message;
-        Message message;
-        message.size = messageLen;
-        memcpy(message.buffer, buffer_ + sizeof(MessengerLengthHeaderType),
-               messageLen);
-
-        if (bufferUsed_ > sizeof(MessengerLengthHeaderType) + messageLen) {
-          memmove(
-              buffer_, buffer_ + sizeof(MessengerLengthHeaderType) + messageLen,
-              bufferUsed_ - (sizeof(MessengerLengthHeaderType) + messageLen));
-        }
-
-        bufferUsed_ -= (sizeof(MessengerLengthHeaderType) + messageLen);
-        LOG() << client_.name << " received: " << message.getType() << " - "
-              << message.getBody() << std::endl;
-
-        auto responses = handler(message);
-        for (auto const& response : responses) {
-          send(response);
-        }
-      }
-
-      // TODO: fake an empty back packet
-      TCPPacket emptyPacket;
-      return emptyPacket;
-    };
-  }
-
-  void start() { translator_.start(); }
-
-  void send(Message const& message) {
-    // TODO: Think about FIFO overflow later
-    // TODO: Think about large messages later
-
-    assertTrue(message.size + sizeof(MessengerLengthHeaderType) <=
-                   kPipePacketBufferSize,
-               "Message too large");
-
-    TCPPacket packet;
-    packet.size = sizeof(MessengerLengthHeaderType) + message.size;
-    *((MessengerLengthHeaderType*)packet.buffer) = message.size;
-    memcpy(packet.buffer + sizeof(MessengerLengthHeaderType), message.buffer,
-           message.size);
-
-    client_.outboundQ->push(packet);
-    LOG() << client_.name << " sent: " << message.getType() << " - "
-          << message.getBody() << std::endl;
-  }
-
-  std::function<std::vector<Message>(Message const&)> handler;
+  std::function<Message(Message const&)> handler;
 
 private:
+  Messenger(Messenger const& copy) = delete;
+  Messenger& operator=(Messenger const& copy) = delete;
+
+  Messenger(Messenger&& move) = delete;
+  Messenger& operator=(Messenger&& move) = delete;
+
   TCPPipe& client_;
-  PacketTranslator<TCPPacket, TCPPacket> translator_;
+
+  event::FIFO<TCPPacket>* inboundQ_;
+  event::FIFO<TCPPacket>* outboundQ_;
+
+  std::unique_ptr<event::Action> receiver_;
   int bufferUsed_;
   char buffer_[kMessengerReceiveBufferSize];
+
+  void doReceive();
 };
 }

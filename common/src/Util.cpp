@@ -40,6 +40,10 @@ void assertTrue(bool condition, std::string const& reason) {
   }
 }
 
+void unreachable(std::string const& reason) {
+  throw std::runtime_error(reason);
+}
+
 bool checkUnixError(int ret, std::string const& action, int allowed /* = 0 */) {
   if (ret < 0) {
     if (errno != allowed) {

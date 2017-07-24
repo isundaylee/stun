@@ -8,7 +8,13 @@ Action::Action(std::vector<Condition*> conditions) : conditions_(conditions) {
 
 Action::~Action() { EventLoop::getCurrentLoop()->removeAction(this); }
 
-void Action::invoke() { callback.invoke(); }
+void Action::invoke() {
+  if (!callback.invoke()) {
+    // The callback is empty
+    throw std::runtime_error(
+        "Action without a callback added to the event loop.");
+  }
+}
 
 bool Action::canInvoke() {
   for (auto condition : conditions_) {
