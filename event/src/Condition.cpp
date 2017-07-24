@@ -1,8 +1,12 @@
 #include "event/Condition.h"
+#include "event/EventLoop.h"
 
 namespace event {
 
-Condition::Condition() :
-    value(false) {}
+Condition::Condition(ConditionType type) :
+    type(type),
+    value(false) {
+  EventLoop::getCurrentLoop()->addCondition(this);
+}
 
 }

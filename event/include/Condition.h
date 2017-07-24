@@ -1,11 +1,14 @@
 #pragma once
 
+#include <event/EventLoop.h>
+
 namespace event {
 
 class Condition {
 public:
-  Condition();
+  Condition(ConditionType type = ConditionType::Base);
 
+  ConditionType type;
   bool value;
 
 private:

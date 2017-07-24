@@ -4,7 +4,18 @@
 
 namespace event {
 
+enum ConditionType {
+  Base,
+  IO,
+};
+
 class Action;
+class Condition;
+
+class ConditionManager {
+public:
+  virtual void prepareConditions(std::vector<Condition*> const& conditions) = 0;
+};
 
 class EventLoop {
 public:
@@ -12,6 +23,8 @@ public:
 
   void run();
   void addAction(Action* action);
+  void addCondition(Condition* condition);
+  void addConditionManager(ConditionManager* manager, ConditionType type);
 
   static EventLoop* getCurrentLoop();
 
@@ -23,6 +36,8 @@ private:
   EventLoop& operator=(EventLoop const&& move) = delete;
 
   std::vector<Action*> actions_;
+  std::vector<Condition*> conditions_;
+  std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
 
   static EventLoop* instance;
 };
