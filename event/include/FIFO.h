@@ -18,12 +18,6 @@ public:
     updateConditions();
   }
 
-  FIFO(FIFO&& move) :
-      capacity_(move.capacity_),
-      queue_(std::move(move.queue_)),
-      canPush_(std::move(canPush_)),
-      canPop_(std::move(canPop_)) {}
-
   Condition* canPush() {
     return canPush_.get();
   }
@@ -63,6 +57,9 @@ public:
 private:
   FIFO(FIFO const& copy) = delete;
   FIFO& operator=(FIFO const& copy) = delete;
+
+  FIFO(FIFO&& move) = delete;
+  FIFO& operator=(FIFO&& move) = delete;
 
   std::size_t capacity_;
   std::queue<T> queue_;
