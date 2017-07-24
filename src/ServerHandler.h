@@ -6,5 +6,4 @@ class ServerHandler {
 public:
   ServerHandler();
 };
-
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <set>
+#include <vector>
 
 namespace event {
 
@@ -15,8 +15,9 @@ class Condition;
 
 class ConditionManager {
 public:
-  virtual void prepareConditions(std::vector<Condition*> const& conditions,
-      std::vector<Condition*> const& interesting) = 0;
+  virtual void
+  prepareConditions(std::vector<Condition*> const& conditions,
+                    std::vector<Condition*> const& interesting) = 0;
 };
 
 class EventLoop {
@@ -47,5 +48,4 @@ private:
 
   void resetExternalConditions();
 };
-
 }

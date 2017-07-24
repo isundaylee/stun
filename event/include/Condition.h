@@ -19,5 +19,4 @@ private:
   Condition(Condition const&& move) = delete;
   Condition& operator=(Condition const&& move) = delete;
 };
-
 }

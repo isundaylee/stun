@@ -1,15 +1,15 @@
 #pragma once
 
-#include <networking/TCPPipe.h>
-#include <networking/UDPPipe.h>
-#include <networking/Tunnel.h>
-#include <networking/NetlinkClient.h>
-#include <networking/Messenger.h>
 #include <networking/IPAddressPool.h>
+#include <networking/Messenger.h>
+#include <networking/NetlinkClient.h>
+#include <networking/TCPPipe.h>
+#include <networking/Tunnel.h>
+#include <networking/UDPPipe.h>
 
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace stun {
 
@@ -20,8 +20,7 @@ class ClientHandler;
 
 class CommandCenter {
 public:
-  CommandCenter() :
-      addrPool(new IPAddressPool("10.100.0.0", 16)) {}
+  CommandCenter() : addrPool(new IPAddressPool("10.100.0.0", 16)) {}
 
   void serve(int port);
   void connect(std::string const& host, int port);
@@ -42,18 +41,17 @@ class AbstractHandler {
 public:
   size_t clientIndex;
 
-  AbstractHandler(CommandCenter* center, size_t clientIndex, TCPPipe&& client) :
-      center_(center),
-      clientIndex(clientIndex),
-      commandPipe_(new TCPPipe(std::move(client))),
-      messenger_(new Messenger(*commandPipe_)) {
+  AbstractHandler(CommandCenter* center, size_t clientIndex, TCPPipe&& client)
+      : center_(center), clientIndex(clientIndex),
+        commandPipe_(new TCPPipe(std::move(client))),
+        messenger_(new Messenger(*commandPipe_)) {
     attachHandler();
   }
 
-  AbstractHandler(AbstractHandler&& move) :
-      commandPipe_(std::move(move.commandPipe_)),
-      dataPipe_(std::move(move.dataPipe_)),
-      messenger_(std::move(move.messenger_)) {
+  AbstractHandler(AbstractHandler&& move)
+      : commandPipe_(std::move(move.commandPipe_)),
+        dataPipe_(std::move(move.dataPipe_)),
+        messenger_(std::move(move.messenger_)) {
     attachHandler();
   }
 
@@ -71,9 +69,7 @@ public:
     return *this;
   }
 
-  virtual void start() {
-    messenger_->start();
-  }
+  virtual void start() { messenger_->start(); }
 
 protected:
   virtual std::vector<Message> handleMessage(Message const& message) = 0;
@@ -93,13 +89,13 @@ private:
   }
 };
 
-class ServerHandler: public AbstractHandler {
+class ServerHandler : public AbstractHandler {
 public:
-  ServerHandler(CommandCenter* center, int clientIndex, TCPPipe&& client) :
-    AbstractHandler(center, clientIndex, std::move(client)) {}
+  ServerHandler(CommandCenter* center, int clientIndex, TCPPipe&& client)
+      : AbstractHandler(center, clientIndex, std::move(client)) {}
 
-  explicit ServerHandler(ServerHandler&& move) :
-    AbstractHandler(std::move(move)) {}
+  explicit ServerHandler(ServerHandler&& move)
+      : AbstractHandler(std::move(move)) {}
 
   ServerHandler& operator=(ServerHandler&& move) {
     AbstractHandler::operator=(std::move(move));
@@ -123,7 +119,8 @@ protected:
       // Acquire IP addresses
       std::string const& myAddr = center_->addrPool->acquire();
       std::string const& peerAddr = center_->addrPool->acquire();
-      LOG() << "Acquired IP address: mine = " << myAddr << ", peer = " << peerAddr << std::endl;
+      LOG() << "Acquired IP address: mine = " << myAddr
+            << ", peer = " << peerAddr << std::endl;
       replies.emplace_back("server_ip", myAddr);
       replies.emplace_back("client_ip", peerAddr);
 
@@ -135,7 +132,8 @@ protected:
       client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
 
       // Configure sender and receiver
-      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
+      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
+          tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
       sender_->transform = [](TunnelPacket const& in) {
         UDPPacket out;
         out.size = in.size;
@@ -144,7 +142,8 @@ protected:
       };
       sender_->start();
 
-      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
+      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
+          dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
       receiver_->transform = [](UDPPacket const& in) {
         TunnelPacket out;
         out.size = in.size;
@@ -160,15 +159,14 @@ protected:
   }
 };
 
-class ClientHandler: public AbstractHandler {
+class ClientHandler : public AbstractHandler {
 public:
-  explicit ClientHandler(CommandCenter* center, std::string const& host, TCPPipe&& client) :
-    AbstractHandler(center, 0, std::move(client)),
-    host_(host) {}
+  explicit ClientHandler(CommandCenter* center, std::string const& host,
+                         TCPPipe&& client)
+      : AbstractHandler(center, 0, std::move(client)), host_(host) {}
 
-  explicit ClientHandler(ClientHandler&& move) :
-    AbstractHandler(std::move(move)),
-    host_(std::move(move.host_)) {}
+  explicit ClientHandler(ClientHandler&& move)
+      : AbstractHandler(std::move(move)), host_(std::move(move.host_)) {}
 
   ClientHandler& operator=(ClientHandler&& move) {
     AbstractHandler::operator=(std::move(move));
@@ -213,7 +211,8 @@ protected:
       client.setLinkAddress(tun_->getDeviceName(), clientIP_, serverIP_);
 
       // Configure sender and receiver
-      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
+      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
+          tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
       sender_->transform = [](TunnelPacket const& in) {
         UDPPacket out;
         out.size = in.size;
@@ -222,7 +221,8 @@ protected:
       };
       sender_->start();
 
-      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
+      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
+          dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
       receiver_->transform = [](UDPPacket const& in) {
         TunnelPacket out;
         out.size = in.size;
@@ -242,5 +242,4 @@ private:
   std::string serverIP_ = "";
   std::string clientIP_ = "";
 };
-
 }

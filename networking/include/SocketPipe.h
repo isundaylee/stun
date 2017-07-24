@@ -3,12 +3,12 @@
 #include <networking/Pipe.h>
 
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 namespace networking {
 
@@ -17,27 +17,19 @@ const int kSocketOutboundQueueSize = 32;
 
 const int kSocketPipeListenBacklog = 10;
 
-struct SocketPacket: PipePacket {};
+struct SocketPacket : PipePacket {};
 
-enum SocketType {
-  TCP,
-  UDP
-};
+enum SocketType { TCP, UDP };
 
-template <typename P>
-class SocketPipe: public Pipe<P> {
+template <typename P> class SocketPipe : public Pipe<P> {
 public:
-  SocketPipe(SocketType type) :
-      Pipe<P>(kSocketInboundQueueSize, kSocketOutboundQueueSize),
-      type_(type),
-      bound_(false),
-      connected_(false) {}
+  SocketPipe(SocketType type)
+      : Pipe<P>(kSocketInboundQueueSize, kSocketOutboundQueueSize), type_(type),
+        bound_(false), connected_(false) {}
 
-  SocketPipe(SocketPipe&& move) :
-    Pipe<P>(std::move(move)),
-    type_(move.type_),
-    bound_(move.bound_),
-    connected_(move.connected_) {}
+  SocketPipe(SocketPipe&& move)
+      : Pipe<P>(std::move(move)), type_(move.type_), bound_(move.bound_),
+        connected_(move.connected_) {}
 
   int bind(int port) {
     assertTrue(!bound_, "Calling bind() on a bound SocketPipe");
@@ -52,9 +44,10 @@ public:
     // Getting the port that is actually used (in case that the given port is 0)
     struct sockaddr_storage myActualAddr;
     socklen_t myActualAddrLen = sizeof(myActualAddr);
-    ret = getsockname(this->fd_, (struct sockaddr*) &myActualAddr, &myActualAddrLen);
+    ret = getsockname(this->fd_, (struct sockaddr*)&myActualAddr,
+                      &myActualAddrLen);
     checkUnixError(ret, "calling getsockname()");
-    int actualPort = ntohs(((struct sockaddr_in*) &myActualAddr)->sin_port);
+    int actualPort = ntohs(((struct sockaddr_in*)&myActualAddr)->sin_port);
 
     // Listening
     if (type_ == TCP) {
@@ -114,7 +107,8 @@ protected:
     struct sockaddr_storage peerAddr;
     socklen_t peerAddrSize = sizeof(peerAddr);
 
-    int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0, (sockaddr *) &peerAddr, &peerAddrSize);
+    int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0,
+                       (sockaddr*)&peerAddr, &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
       LOG() << "Goodbye, " << this->name << " (less peacfully)!" << std::endl;
@@ -122,7 +116,9 @@ protected:
       return false;
     }
 
-    if (!checkRetryableError(ret, "receiving a " + std::string(type_ == TCP ? "TCP" : "UDP") + " packet")) {
+    if (!checkRetryableError(
+            ret, "receiving a " + std::string(type_ == TCP ? "TCP" : "UDP") +
+                     " packet")) {
       return false;
     }
     packet.size = ret;
@@ -135,7 +131,7 @@ protected:
     }
 
     if (!connected_) {
-      int ret = ::connect(this->fd_, (sockaddr*) &peerAddr, peerAddrSize);
+      int ret = ::connect(this->fd_, (sockaddr*)&peerAddr, peerAddrSize);
       checkUnixError(ret, "connecting in SocketPipe");
       connected_ = true;
     }
@@ -145,7 +141,9 @@ protected:
 
   virtual bool write(P const& packet) override {
     int ret = send(this->fd_, packet.buffer, packet.size, 0);
-    if (!checkRetryableError(ret, "sending a UDP " + std::string(type_ == TCP ? "TCP" : "UDP") + " packet")) {
+    if (!checkRetryableError(
+            ret, "sending a UDP " + std::string(type_ == TCP ? "TCP" : "UDP") +
+                     " packet")) {
       return false;
     }
     return true;
@@ -167,19 +165,19 @@ private:
 
   struct addrinfo* getAddr(std::string const& host, int port) {
     struct addrinfo hints;
-    struct addrinfo *addr;
+    struct addrinfo* addr;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = type_ == TCP ? SOCK_STREAM : SOCK_DGRAM;
 
     int err;
-    if ((err = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &addr)) != 0) {
+    if ((err = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints,
+                           &addr)) != 0) {
       throwGetAddrInfoError(err);
     }
 
     return addr;
   }
 };
-
 }

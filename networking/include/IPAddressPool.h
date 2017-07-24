@@ -18,5 +18,4 @@ private:
   uint32_t hostMask_;
   size_t prefixLen_;
 };
-
 }

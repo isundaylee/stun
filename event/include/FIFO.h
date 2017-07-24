@@ -7,24 +7,17 @@
 
 namespace event {
 
-template <typename T>
-class FIFO {
+template <typename T> class FIFO {
 public:
-  FIFO(std::size_t capacity) :
-      capacity_(capacity),
-      queue_(),
-      canPush_(new Condition()),
-      canPop_(new Condition()) {
+  FIFO(std::size_t capacity)
+      : capacity_(capacity), queue_(), canPush_(new Condition()),
+        canPop_(new Condition()) {
     updateConditions();
   }
 
-  Condition* canPush() {
-    return canPush_.get();
-  }
+  Condition* canPush() { return canPush_.get(); }
 
-  Condition* canPop() {
-    return canPop_.get();
-  }
+  Condition* canPop() { return canPop_.get(); }
 
   void push(T element) {
     if (queue_.size() >= capacity_) {
@@ -72,5 +65,4 @@ private:
     canPop_->value = (queue_.size() > 0);
   }
 };
-
 }

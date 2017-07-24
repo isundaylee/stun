@@ -1,13 +1,13 @@
 #include "common/Util.h"
 
-#include <string.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <netdb.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include <string>
-#include <stdexcept>
 #include <chrono>
+#include <stdexcept>
+#include <string>
 
 const size_t kUtilTimestampBufferSize = 64;
 
@@ -19,16 +19,19 @@ std::string logHeader() {
   time(&rawTime);
   timeInfo = localtime(&rawTime);
 
-  strftime(timestampBuffer, kUtilTimestampBufferSize, "[%F %H:%M:%S] ", timeInfo);
+  strftime(timestampBuffer, kUtilTimestampBufferSize, "[%F %H:%M:%S] ",
+           timeInfo);
   return std::string(timestampBuffer);
 }
 
 void throwUnixError(std::string const& action) {
-  throw std::runtime_error("Error while " + action + ": " + std::string(strerror(errno)));
+  throw std::runtime_error("Error while " + action + ": " +
+                           std::string(strerror(errno)));
 }
 
 void throwGetAddrInfoError(int err) {
-  throw std::runtime_error("Error while getaddrinfo(): " + std::string(gai_strerror(err)));
+  throw std::runtime_error("Error while getaddrinfo(): " +
+                           std::string(gai_strerror(err)));
 }
 
 void assertTrue(bool condition, std::string const& reason) {
@@ -47,7 +50,8 @@ bool checkUnixError(int ret, std::string const& action, int allowed /* = 0 */) {
   return true;
 }
 
-bool checkRetryableError(int ret, std::string const& action, int allowed /* = 0 */) {
+bool checkRetryableError(int ret, std::string const& action,
+                         int allowed /* = 0 */) {
   if (ret < 0) {
     if (errno != EAGAIN && errno != allowed) {
       throwUnixError(action);

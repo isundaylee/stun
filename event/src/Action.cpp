@@ -2,18 +2,13 @@
 
 namespace event {
 
-Action::Action(std::vector<Condition*> conditions) :
-    conditions_(conditions) {
+Action::Action(std::vector<Condition*> conditions) : conditions_(conditions) {
   EventLoop::getCurrentLoop()->addAction(this);
 }
 
-Action::~Action() {
-  EventLoop::getCurrentLoop()->removeAction(this);
-}
+Action::~Action() { EventLoop::getCurrentLoop()->removeAction(this); }
 
-void Action::invoke() {
-  callback.invoke();
-}
+void Action::invoke() { callback.invoke(); }
 
 bool Action::canInvoke() {
   for (auto condition : conditions_) {
@@ -24,5 +19,4 @@ bool Action::canInvoke() {
 
   return true;
 }
-
 }

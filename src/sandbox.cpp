@@ -1,11 +1,11 @@
-#include "event/EventLoop.h"
-#include "event/Action.h"
-#include "event/Condition.h"
-#include "event/IOCondition.h"
-#include "event/FIFO.h"
+#include <event/Action.h>
+#include <event/Condition.h>
+#include <event/EventLoop.h>
+#include <event/FIFO.h>
+#include <event/IOCondition.h>
 
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <iostream>
 
@@ -18,7 +18,8 @@ int main(int argc, char* argv[]) {
   int fb = open("/tmp/b", O_WRONLY);
 
   // Producer: /tmp/a -> fifo
-  event::Action producer({event::IOConditionManager::canRead(fa), fifo.canPush()});
+  event::Action producer(
+      {event::IOConditionManager::canRead(fa), fifo.canPush()});
   producer.callback = [&fifo, fa, fb]() {
     char c;
     int ret = read(fa, &c, 1);
@@ -33,7 +34,8 @@ int main(int argc, char* argv[]) {
   };
 
   // Consumer: fifo -> /tmp/b
-  event::Action consumer({fifo.canPop(), event::IOConditionManager::canWrite(fb)});
+  event::Action consumer(
+      {fifo.canPop(), event::IOConditionManager::canWrite(fb)});
   consumer.callback = [&fifo, fb]() {
     char c = fifo.pop();
     write(fb, &c, 1);

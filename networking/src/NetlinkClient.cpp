@@ -2,15 +2,15 @@
 
 #include <common/Util.h>
 
-#include <unistd.h>
-#include <string.h>
-#include <asm/types.h>
-#include <sys/socket.h>
-#include <net/if.h>
 #include <arpa/inet.h>
-#include <netinet/ip.h>
+#include <asm/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <net/if.h>
+#include <netinet/ip.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <stdexcept>
 
@@ -27,7 +27,8 @@ NetlinkClient::NetlinkClient() {
   localAddress_.nl_pid = getpid();
   localAddress_.nl_groups = 0;
 
-  if (bind(socket_, (struct sockaddr *) &localAddress_, sizeof(localAddress_)) < 0) {
+  if (bind(socket_, (struct sockaddr*)&localAddress_, sizeof(localAddress_)) <
+      0) {
     throwUnixError("binding to NETLINK socket");
   }
 
@@ -35,12 +36,9 @@ NetlinkClient::NetlinkClient() {
   kernelAddress_.nl_family = AF_NETLINK;
 }
 
-NetlinkClient::~NetlinkClient() {
-  close(socket_);
-}
+NetlinkClient::~NetlinkClient() { close(socket_); }
 
-template <typename T>
-void NetlinkClient::sendRequest(T& request) {
+template <typename T> void NetlinkClient::sendRequest(T& request) {
   struct msghdr rtnl_msg;
   struct iovec io;
 
@@ -53,14 +51,14 @@ void NetlinkClient::sendRequest(T& request) {
   rtnl_msg.msg_name = &kernelAddress_;
   rtnl_msg.msg_namelen = sizeof(kernelAddress_);
 
-  sendmsg(socket_, (struct msghdr*) &rtnl_msg, 0);
+  sendmsg(socket_, (struct msghdr*)&rtnl_msg, 0);
 }
 
-
-void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callback) {
+void NetlinkClient::waitForReply(
+    std::function<void(struct nlmsghdr*)> callback) {
   while (true) {
     int len;
-    struct nlmsghdr *msg_ptr;
+    struct nlmsghdr* msg_ptr;
     struct msghdr rtnl_reply;
     struct iovec io_reply;
 
@@ -80,19 +78,19 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
     }
 
     if (len) {
-      for (msg_ptr = (struct nlmsghdr*) replyBuffer;
-           NLMSG_OK(msg_ptr, len);
+      for (msg_ptr = (struct nlmsghdr*)replyBuffer; NLMSG_OK(msg_ptr, len);
            msg_ptr = NLMSG_NEXT(msg_ptr, len)) {
         struct nlmsgerr* err;
 
         switch (msg_ptr->nlmsg_type) {
         case NLMSG_ERROR:
-          err = (struct nlmsgerr*) NLMSG_DATA(msg_ptr);
+          err = (struct nlmsgerr*)NLMSG_DATA(msg_ptr);
           if (err->error == 0) {
             // it's ACK, not an actual error
             return;
           } else {
-            throw std::runtime_error("Got NLMSG_ERROR from netlink: " + std::string(strerror(-err->error)));
+            throw std::runtime_error("Got NLMSG_ERROR from netlink: " +
+                                     std::string(strerror(-err->error)));
           }
         case NLMSG_NOOP:
         case NLMSG_DONE:
@@ -106,15 +104,12 @@ void NetlinkClient::waitForReply(std::function<void (struct nlmsghdr *)> callbac
   }
 }
 
-template <typename M>
-struct NetlinkRequest {
+template <typename M> struct NetlinkRequest {
   struct nlmsghdr hdr;
   M msg;
   char attrs[kNetlinkRequestAttrBufferSize];
 
-  NetlinkRequest() {
-    memset(this, 0, sizeof(*this));
-  }
+  NetlinkRequest() { memset(this, 0, sizeof(*this)); }
 
   void fillHeader(int type, int flags) {
     hdr.nlmsg_len = NLMSG_LENGTH(sizeof(M));
@@ -124,7 +119,8 @@ struct NetlinkRequest {
   }
 
   void addAttr(int type, int size, void* data) {
-    struct rtattr* attr = (struct rtattr*) (((char*) this) + NLMSG_ALIGN(hdr.nlmsg_len));
+    struct rtattr* attr =
+        (struct rtattr*)(((char*)this) + NLMSG_ALIGN(hdr.nlmsg_len));
     attr->rta_type = type;
     attr->rta_len = RTA_LENGTH(size);
     hdr.nlmsg_len = NLMSG_ALIGN(hdr.nlmsg_len) + RTA_LENGTH(size);
@@ -143,20 +139,21 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
   int index = -1;
 
   sendRequest(req);
-  waitForReply([&index, deviceName](struct nlmsghdr *msg) {
+  waitForReply([&index, deviceName](struct nlmsghdr* msg) {
     switch (msg->nlmsg_type) {
     case 16:
-      struct ifinfomsg *iface;
-      struct rtattr *attr;
+      struct ifinfomsg* iface;
+      struct rtattr* attr;
       int len;
 
-      iface = (ifinfomsg*) NLMSG_DATA(msg);
+      iface = (ifinfomsg*)NLMSG_DATA(msg);
       len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(*iface));
 
-      for (attr = IFLA_RTA(iface); RTA_OK(attr, len); attr = RTA_NEXT(attr, len)) {
+      for (attr = IFLA_RTA(iface); RTA_OK(attr, len);
+           attr = RTA_NEXT(attr, len)) {
         switch (attr->rta_type) {
         case IFLA_IFNAME:
-          if (std::string((char*) RTA_DATA(attr)) == deviceName) {
+          if (std::string((char*)RTA_DATA(attr)) == deviceName) {
             index = iface->ifi_index;
           }
           break;
@@ -167,7 +164,8 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
 
       break;
     default:
-      throw std::runtime_error("Unexpected nlmsg_type " + std::to_string(msg->nlmsg_type));
+      throw std::runtime_error("Unexpected nlmsg_type " +
+                               std::to_string(msg->nlmsg_type));
     }
   });
 
@@ -175,7 +173,8 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
     throw std::runtime_error("Cannot find device " + deviceName);
   }
 
-  LOG() << "Interface index for device " << deviceName << " is " << index << std::endl;
+  LOG() << "Interface index for device " << deviceName << " is " << index
+        << std::endl;
 
   return index;
 }
@@ -195,7 +194,7 @@ void NetlinkClient::newLink(std::string const& deviceName) {
   req.msg.ifi_change = IFF_UP;
 
   sendRequest(req);
-  waitForReply([](struct nlmsghdr *msg) {});
+  waitForReply([](struct nlmsghdr* msg) {});
 
   LOG() << "Successfully turned link up" << std::endl;
 }
@@ -203,9 +202,10 @@ void NetlinkClient::newLink(std::string const& deviceName) {
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 
 void NetlinkClient::setLinkAddress(std::string const& deviceName,
-    std::string const& localAddress, std::string const& peerAddress) {
+                                   std::string const& localAddress,
+                                   std::string const& peerAddress) {
   LOG() << "Setting link " << deviceName << "'s address to " << localAddress
-      << " -> " << peerAddress << std::endl;
+        << " -> " << peerAddress << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
 
   NetlinkChangeAddressRequest req;
@@ -222,9 +222,8 @@ void NetlinkClient::setLinkAddress(std::string const& deviceName,
   req.addAttr(IFA_ADDRESS, sizeof(peerAddr), &peerAddr);
 
   sendRequest(req);
-  waitForReply([](struct nlmsghdr *msg) {});
+  waitForReply([](struct nlmsghdr* msg) {});
 
   LOG() << "Successfully set link address" << std::endl;
 }
-
 }

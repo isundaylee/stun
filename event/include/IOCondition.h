@@ -13,18 +13,16 @@ enum IOType {
   Write,
 };
 
-class IOCondition: public Condition {
+class IOCondition : public Condition {
 public:
-  IOCondition(int fd, IOType type) :
-      Condition(ConditionType::IO),
-      fd(fd),
-      type(type) {}
+  IOCondition(int fd, IOType type)
+      : Condition(ConditionType::IO), fd(fd), type(type) {}
 
   int fd;
   IOType type;
 };
 
-class IOConditionManager: ConditionManager {
+class IOConditionManager : ConditionManager {
 public:
   static IOCondition* canRead(int fd);
   static IOCondition* canWrite(int fd);
@@ -33,8 +31,9 @@ public:
   IOCondition* canDo(int fd, IOType type);
   void removeCondition(int fd, IOType type);
 
-  virtual void prepareConditions(std::vector<Condition*> const& conditions,
-      std::vector<Condition*> const& interesting) override;
+  virtual void
+  prepareConditions(std::vector<Condition*> const& conditions,
+                    std::vector<Condition*> const& interesting) override;
 
 private:
   IOConditionManager();
@@ -50,5 +49,4 @@ private:
 
   std::map<std::pair<IOType, int>, std::unique_ptr<IOCondition>> conditions_;
 };
-
 }

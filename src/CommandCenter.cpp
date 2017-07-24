@@ -24,12 +24,13 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   LOG() << "A new client connected" << std::endl;
 
   size_t clientIndex = numClients;
-  numClients ++;
+  numClients++;
 
   client.onClose = [this, clientIndex]() {
-    auto it = std::find_if(servers.begin(), servers.end(), [clientIndex](ServerHandler const& server) {
-      return server.clientIndex == clientIndex;
-    });
+    auto it = std::find_if(servers.begin(), servers.end(),
+                           [clientIndex](ServerHandler const& server) {
+                             return server.clientIndex == clientIndex;
+                           });
 
     assertTrue(it != servers.end(), "Cannot find the client to remove.");
     servers.erase(it);
@@ -49,5 +50,4 @@ void CommandCenter::connect(std::string const& host, int port) {
   client.reset(new ClientHandler(this, host, std::move(toServer)));
   client->start();
 }
-
 }

@@ -1,17 +1,14 @@
 #include "event/EventLoop.h"
 #include "event/Action.h"
 
-#include <stdexcept>
 #include <iostream>
+#include <stdexcept>
 
 namespace event {
 
 EventLoop* EventLoop::instance = nullptr;
 
-EventLoop::EventLoop() :
-    actions_(),
-    conditions_(),
-    conditionManagers_() {
+EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {
   if (EventLoop::instance != nullptr) {
     throw std::runtime_error("Only 1 EventLoop should be created.");
   }
@@ -19,13 +16,9 @@ EventLoop::EventLoop() :
   EventLoop::instance = this;
 }
 
-void EventLoop::addAction(Action* action) {
-  actions_.insert(action);
-}
+void EventLoop::addAction(Action* action) { actions_.insert(action); }
 
-void EventLoop::removeAction(Action* action) {
-  actions_.erase(action);
-}
+void EventLoop::removeAction(Action* action) { actions_.erase(action); }
 
 void EventLoop::addCondition(Condition* condition) {
   conditions_.insert(condition);
@@ -35,22 +28,27 @@ void EventLoop::removeCondition(Condition* condition) {
   conditions_.erase(condition);
 }
 
-void EventLoop::addConditionManager(ConditionManager* manager, ConditionType type) {
+void EventLoop::addConditionManager(ConditionManager* manager,
+                                    ConditionType type) {
   conditionManagers_.emplace_back(type, manager);
 }
 
 void EventLoop::run() {
   while (true) {
-    // Tell condition managers to prepare conditions they manage. For example, the
-    // IO condition manager might use select, poll, or epoll to resolve values for
+    // Tell condition managers to prepare conditions they manage. For example,
+    // the
+    // IO condition manager might use select, poll, or epoll to resolve values
+    // for
     // all IO conditions.
 
     // Conditions are divided into two types: internal and external. External
-    // conditions are those related to external I/O. Internal conditions are those
+    // conditions are those related to external I/O. Internal conditions are
+    // those
     // changed exclusively as a result of an Action.
 
     // First we need to find all "interesting" external conditions. An external
-    // condition is interesting if it could potentially unblock at least one action.
+    // condition is interesting if it could potentially unblock at least one
+    // action.
     // On the contrary, if an action currently has an internal condition unmet,
     // it will not be unblocked by any movement of its external conditions.
 
@@ -84,7 +82,8 @@ void EventLoop::run() {
           }
         }
       }
-      pair.second->prepareConditions(conditionsWithType,
+      pair.second->prepareConditions(
+          conditionsWithType,
           std::vector<Condition*>(interesting.begin(), interesting.end()));
     }
 
@@ -120,5 +119,4 @@ EventLoop* EventLoop::getCurrentLoop() {
 
   return EventLoop::instance;
 }
-
 }

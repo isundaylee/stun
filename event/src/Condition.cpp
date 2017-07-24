@@ -3,14 +3,9 @@
 
 namespace event {
 
-Condition::Condition(ConditionType type) :
-    type(type),
-    value(false) {
+Condition::Condition(ConditionType type) : type(type), value(false) {
   EventLoop::getCurrentLoop()->addCondition(this);
 }
 
-Condition::~Condition() {
-  EventLoop::getCurrentLoop()->removeCondition(this);
-}
-
+Condition::~Condition() { EventLoop::getCurrentLoop()->removeCondition(this); }
 }

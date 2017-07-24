@@ -45,9 +45,7 @@ struct PipePacket {
     swap(size, other.size);
   }
 
-  ~PipePacket() {
-    free(buffer);
-  }
+  ~PipePacket() { free(buffer); }
 
   friend void swap(PipePacket& lhs, PipePacket& rhs) noexcept {
     using std::swap;
@@ -56,8 +54,7 @@ struct PipePacket {
   }
 };
 
-template <typename P>
-class Pipe {
+template <typename P> class Pipe {
 public:
   std::unique_ptr<event::FIFO<P>> inboundQ;
   std::unique_ptr<event::FIFO<P>> outboundQ;
@@ -65,19 +62,16 @@ public:
   std::string name = "UNNAMED-BAD";
   bool shouldOutputStats = false;
 
-  Pipe(int inboundQueueSize, int outboundQueueSize) :
-      inboundQ(new event::FIFO<P>(inboundQueueSize)),
-      outboundQ(new event::FIFO<P>(outboundQueueSize)),
-      inboundBytes(0),
-      outboundBytes(0) {}
+  Pipe(int inboundQueueSize, int outboundQueueSize)
+      : inboundQ(new event::FIFO<P>(inboundQueueSize)),
+        outboundQ(new event::FIFO<P>(outboundQueueSize)), inboundBytes(0),
+        outboundBytes(0) {}
 
-  Pipe(Pipe&& move) :
-      inboundQ(std::move(move.inboundQ)),
-      outboundQ(std::move(move.outboundQ)),
-      name(std::move(move.name)),
-      shouldOutputStats(move.shouldOutputStats),
-      inboundBytes(move.inboundBytes),
-      outboundBytes(move.outboundBytes) {
+  Pipe(Pipe&& move)
+      : inboundQ(std::move(move.inboundQ)),
+        outboundQ(std::move(move.outboundQ)), name(std::move(move.name)),
+        shouldOutputStats(move.shouldOutputStats),
+        inboundBytes(move.inboundBytes), outboundBytes(move.outboundBytes) {
     fd_ = move.fd_;
     move.fd_ = 0;
 
@@ -93,10 +87,7 @@ public:
     onClose.target = this;
   }
 
-  ~Pipe() {
-    close();
-  }
-
+  ~Pipe() { close(); }
 
   virtual void open() = 0;
 
@@ -106,10 +97,12 @@ protected:
   void startActions() {
     assertTrue(fd_ != 0, "startActions() called when fd_ is 0");
 
-    receiver.reset(new event::Action({event::IOConditionManager::canRead(fd_), inboundQ->canPush()}));
+    receiver.reset(new event::Action(
+        {event::IOConditionManager::canRead(fd_), inboundQ->canPush()}));
     receiver->callback.setMethod<Pipe, &Pipe::doReceive>(this);
 
-    sender.reset(new event::Action({event::IOConditionManager::canWrite(fd_), outboundQ->canPop()}));
+    sender.reset(new event::Action(
+        {event::IOConditionManager::canWrite(fd_), outboundQ->canPop()}));
     sender->callback.setMethod<Pipe, &Pipe::doSend>(this);
   }
 
@@ -158,8 +151,10 @@ private:
 
   void doStats() {
     if (shouldOutputStats) {
-      LOG() << name << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
-          << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps" << std::endl;
+      LOG() << name
+            << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
+            << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps"
+            << std::endl;
     }
 
     inboundBytes = 0;
@@ -172,5 +167,4 @@ private:
   size_t inboundBytes;
   size_t outboundBytes;
 };
-
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <functional>
+#include <string>
 
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -17,16 +17,16 @@ public:
   ~NetlinkClient();
 
   void newLink(std::string const& deviceName);
-  void setLinkAddress(std::string const& deviceName, std::string const& localAddress,
-    std::string const& peerAddress);
+  void setLinkAddress(std::string const& deviceName,
+                      std::string const& localAddress,
+                      std::string const& peerAddress);
 
 private:
   NetlinkClient(NetlinkClient const&) = delete;
   NetlinkClient& operator=(NetlinkClient const&) = delete;
 
-  template <typename R>
-  void sendRequest(R& req);
-  void waitForReply(std::function<void (struct nlmsghdr *)> callback);
+  template <typename R> void sendRequest(R& req);
+  void waitForReply(std::function<void(struct nlmsghdr*)> callback);
   int getInterfaceIndex(std::string const& deviceName);
 
   int socket_;
@@ -35,5 +35,4 @@ private:
   struct sockaddr_nl localAddress_;
   struct sockaddr_nl kernelAddress_;
 };
-
 }

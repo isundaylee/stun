@@ -9,20 +9,19 @@
 
 namespace networking {
 
-template <typename X, typename Y>
-class PacketTranslator {
+template <typename X, typename Y> class PacketTranslator {
 public:
-  PacketTranslator(event::FIFO<X>* source, event::FIFO<Y>* target) :
-      source_(source),
-      target_(target),
-      translator_() {}
+  PacketTranslator(event::FIFO<X>* source, event::FIFO<Y>* target)
+      : source_(source), target_(target), translator_() {}
 
   void start() {
-    translator_.reset(new event::Action({source_->canPop(), target_->canPush()}));
-    translator_->callback.setMethod<PacketTranslator, &PacketTranslator::doTranslate>(this);
+    translator_.reset(
+        new event::Action({source_->canPop(), target_->canPush()}));
+    translator_->callback
+        .setMethod<PacketTranslator, &PacketTranslator::doTranslate>(this);
   }
 
-  std::function<Y (X const&)> transform = [](X const& t) {
+  std::function<Y(X const&)> transform = [](X const& t) {
     throw std::runtime_error("transform not set in PacketTranslator");
     return Y();
   };
@@ -47,5 +46,4 @@ private:
   event::FIFO<Y>* target_;
   std::unique_ptr<event::Action> translator_;
 };
-
 }

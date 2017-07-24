@@ -9,28 +9,24 @@
 
 namespace networking {
 
-struct TCPPacket: PipePacket {};
+struct TCPPacket : PipePacket {};
 
-class TCPPipe: public SocketPipe<TCPPacket> {
+class TCPPipe : public SocketPipe<TCPPacket> {
 public:
-  TCPPipe() :
-    SocketPipe(SocketType::TCP) {}
+  TCPPipe() : SocketPipe(SocketType::TCP) {}
 
-  TCPPipe(TCPPipe&& move) :
-    SocketPipe(std::move(move)) {}
+  TCPPipe(TCPPipe&& move) : SocketPipe(std::move(move)) {}
 
-  std::function<void (TCPPipe&& client)> onAccept = [](TCPPipe&&) {};
+  std::function<void(TCPPipe&& client)> onAccept = [](TCPPipe&&) {};
 
 protected:
-  virtual bool read(TCPPacket &packet) override;
+  virtual bool read(TCPPacket& packet) override;
 
 private:
-  TCPPipe(int fd) :
-      SocketPipe(SocketType::TCP) {
+  TCPPipe(int fd) : SocketPipe(SocketType::TCP) {
     fd_ = fd;
     connected_ = true;
     startActions();
   }
 };
-
 }

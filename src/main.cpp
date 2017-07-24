@@ -1,5 +1,5 @@
-#include <common/Util.h>
 #include <CommandCenter.h>
+#include <common/Util.h>
 
 #include <event/EventLoop.h>
 

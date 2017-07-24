@@ -15,15 +15,13 @@ enum TunnelType {
   TAP,
 };
 
-struct TunnelPacket: PipePacket {};
+struct TunnelPacket : PipePacket {};
 
-class Tunnel: public Pipe<TunnelPacket> {
+class Tunnel : public Pipe<TunnelPacket> {
 public:
   Tunnel(TunnelType type);
 
-  std::string const& getDeviceName() {
-    return devName_;
-  }
+  std::string const& getDeviceName() { return devName_; }
 
   void open() override;
 
@@ -38,5 +36,4 @@ private:
   TunnelType type_;
   std::string devName_;
 };
-
 };

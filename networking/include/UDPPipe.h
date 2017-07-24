@@ -9,15 +9,12 @@
 
 namespace networking {
 
-struct UDPPacket: PipePacket {};
+struct UDPPacket : PipePacket {};
 
-class UDPPipe: public SocketPipe<UDPPacket> {
+class UDPPipe : public SocketPipe<UDPPacket> {
 public:
-  UDPPipe() :
-    SocketPipe(SocketType::UDP) {}
+  UDPPipe() : SocketPipe(SocketType::UDP) {}
 
-  UDPPipe(UDPPipe&& move) :
-    SocketPipe(std::move(move)) {}
+  UDPPipe(UDPPipe&& move) : SocketPipe(std::move(move)) {}
 };
-
 }

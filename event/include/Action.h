@@ -4,8 +4,8 @@
 #include <event/Condition.h>
 #include <event/EventLoop.h>
 
-#include <vector>
 #include <functional>
+#include <vector>
 
 namespace event {
 
@@ -24,5 +24,4 @@ public:
 private:
   std::vector<Condition*> conditions_;
 };
-
 }
