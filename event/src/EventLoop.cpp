@@ -19,11 +19,19 @@ EventLoop::EventLoop() :
 }
 
 void EventLoop::addAction(Action* action) {
-  actions_.push_back(action);
+  actions_.insert(action);
+}
+
+void EventLoop::removeAction(Action* action) {
+  actions_.erase(action);
 }
 
 void EventLoop::addCondition(Condition* condition) {
-  conditions_.push_back(condition);
+  conditions_.insert(condition);
+}
+
+void EventLoop::removeCondition(Condition* condition) {
+  conditions_.erase(condition);
 }
 
 void EventLoop::addConditionManager(ConditionManager* manager, ConditionType type) {

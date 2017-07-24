@@ -7,6 +7,7 @@ namespace event {
 class Condition {
 public:
   Condition(ConditionType type = ConditionType::Base);
+  ~Condition();
 
   ConditionType type;
   bool value;

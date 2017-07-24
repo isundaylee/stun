@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 namespace event {
 
@@ -23,7 +24,9 @@ public:
 
   void run();
   void addAction(Action* action);
+  void removeAction(Action* action);
   void addCondition(Condition* condition);
+  void removeCondition(Condition* condition);
   void addConditionManager(ConditionManager* manager, ConditionType type);
 
   static EventLoop* getCurrentLoop();
@@ -35,8 +38,8 @@ private:
   EventLoop(EventLoop const&& move) = delete;
   EventLoop& operator=(EventLoop const&& move) = delete;
 
-  std::vector<Action*> actions_;
-  std::vector<Condition*> conditions_;
+  std::set<Action*> actions_;
+  std::set<Condition*> conditions_;
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
 
   static EventLoop* instance;

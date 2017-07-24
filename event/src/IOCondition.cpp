@@ -37,6 +37,11 @@ IOConditionManager::IOConditionManager() :
   return getInstance()->canDo(fd, IOType::Write);
 }
 
+/* static */ void IOConditionManager::close(int fd) {
+  getInstance()->removeCondition(fd, IOType::Read);
+  getInstance()->removeCondition(fd, IOType::Write);
+}
+
 void IOConditionManager::prepareConditions(std::vector<Condition*> const& conditions) {
   // Resetting all conditions first
   for (auto condition : conditions) {
@@ -61,7 +66,12 @@ void IOConditionManager::prepareConditions(std::vector<Condition*> const& condit
   for (size_t i=0; i<conditions.size(); i++) {
     IOCondition* condition = (IOCondition*) conditions[i];
     int mask = (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
-    if (polls[i].revents & (POLLERR | POLLNVAL)) {
+    if (polls[i].revents & POLLNVAL) {
+      throw std::runtime_error("Invalid file descriptor. Be sure to call "
+          "IOConditionManager::close(fd) before calling the file descriptor.");
+    }
+
+    if (polls[i].revents & POLLERR) {
       throw std::runtime_error("Error response from poll()");
     }
 
@@ -80,6 +90,13 @@ IOCondition* IOConditionManager::canDo(int fd, IOType type) {
   IOCondition* condition = new IOCondition(fd, type);
   conditions_[std::make_pair(type, fd)].reset(condition);
   return condition;
+}
+
+void IOConditionManager::removeCondition(int fd, IOType type) {
+  auto existing = conditions_.find(std::make_pair(type, fd));
+  if (existing != conditions_.end()) {
+    conditions_.erase(existing);
+  }
 }
 
 }

@@ -11,6 +11,7 @@ namespace event {
 class Action {
 public:
   Action(std::vector<Condition*> conditions);
+  ~Action();
 
   void invoke();
   bool canInvoke();

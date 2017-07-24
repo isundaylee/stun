@@ -28,8 +28,10 @@ class IOConditionManager: ConditionManager {
 public:
   static IOCondition* canRead(int fd);
   static IOCondition* canWrite(int fd);
+  static void close(int fd);
 
   IOCondition* canDo(int fd, IOType type);
+  void removeCondition(int fd, IOType type);
 
   virtual void prepareConditions(std::vector<Condition*> const& conditions) override;
 

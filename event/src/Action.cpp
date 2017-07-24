@@ -7,6 +7,10 @@ Action::Action(std::vector<Condition*> conditions) :
   EventLoop::getCurrentLoop()->addAction(this);
 }
 
+Action::~Action() {
+  EventLoop::getCurrentLoop()->removeAction(this);
+}
+
 void Action::invoke() {
   callback_();
 }

@@ -9,4 +9,8 @@ Condition::Condition(ConditionType type) :
   EventLoop::getCurrentLoop()->addCondition(this);
 }
 
+Condition::~Condition() {
+  EventLoop::getCurrentLoop()->removeCondition(this);
+}
+
 }

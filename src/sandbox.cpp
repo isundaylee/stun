@@ -19,6 +19,11 @@ int main(int argc, char* argv[]) {
     int charRead = read(fd, buffer, sizeof(buffer));
     buffer[charRead] = '\0';
     std::cout << buffer << std::flush;
+
+    if (charRead == 0) {
+      event::IOConditionManager::close(fd);
+      close(fd);
+    }
   });
 
   loop.run();
