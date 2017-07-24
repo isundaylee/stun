@@ -9,8 +9,6 @@
 #include <stdexcept>
 #include <chrono>
 
-namespace stun {
-
 const size_t kUtilTimestampBufferSize = 64;
 
 std::string logHeader() {
@@ -64,6 +62,4 @@ void logf(char const* format, ...) {
   va_start(argptr, format);
   vprintf(format, argptr);
   va_end(argptr);
-}
-
 }

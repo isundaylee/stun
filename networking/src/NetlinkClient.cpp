@@ -1,4 +1,4 @@
-#include "NetlinkClient.h"
+#include "networking/NetlinkClient.h"
 
 #include <common/Util.h>
 
@@ -14,7 +14,7 @@
 
 #include <stdexcept>
 
-namespace stun {
+namespace networking {
 
 const int kNetlinkMTU = 1000;
 

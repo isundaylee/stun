@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Pipe.h>
+#include <networking/Pipe.h>
 
 #include <stdio.h>
 
 #include <string>
 
-namespace stun {
+namespace networking {
 
 const int kTunnelBufferSize = 2000;
 

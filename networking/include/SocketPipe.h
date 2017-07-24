@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Pipe.h>
+#include <networking/Pipe.h>
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-namespace stun {
+namespace networking {
 
 const int kSocketInboundQueueSize = 32;
 const int kSocketOutboundQueueSize = 32;

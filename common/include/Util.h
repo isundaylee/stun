@@ -3,9 +3,7 @@
 #include <string>
 #include <iostream>
 
-#define LOG() std::cout << stun::logHeader()
-
-namespace stun {
+#define LOG() std::cout << logHeader()
 
 std::string logHeader();
 
@@ -15,5 +13,3 @@ void assertTrue(bool condition, std::string const& reason);
 bool checkUnixError(int ret, std::string const& action, int allowed = 0);
 bool checkRetryableError(int ret, std::string const& action, int allowed = 0);
 void logf(char const* format, ...);
-
-}

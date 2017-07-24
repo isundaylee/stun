@@ -1,11 +1,11 @@
 #pragma once
 
-#include <TCPPipe.h>
-#include <PacketTranslator.h>
+#include <networking/TCPPipe.h>
+#include <networking/PacketTranslator.h>
 
 #include <vector>
 
-namespace stun {
+namespace networking {
 
 struct Message : PipePacket {
   Message() :

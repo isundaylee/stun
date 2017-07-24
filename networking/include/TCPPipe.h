@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Pipe.h>
-#include <SocketPipe.h>
+#include <networking/Pipe.h>
+#include <networking/SocketPipe.h>
 
 #include <netdb.h>
 
 #include <functional>
 
-namespace stun {
+namespace networking {
 
 struct TCPPacket: PipePacket {};
 

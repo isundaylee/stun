@@ -1,4 +1,4 @@
-#include "Tunnel.h"
+#include "networking/Tunnel.h"
 
 #include <common/Util.h>
 
@@ -13,9 +13,7 @@
 
 #include <stdexcept>
 
-using namespace stun;
-
-namespace stun {
+namespace networking {
 
 const size_t kTunnelInboundQueueSize = 32;
 const size_t kTunnelOutboundQueueSize = 32;

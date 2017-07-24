@@ -7,7 +7,7 @@
 
 #include <functional>
 
-namespace stun {
+namespace networking {
 
 template <typename X, typename Y>
 class PacketTranslator {

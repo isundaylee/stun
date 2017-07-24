@@ -1,6 +1,6 @@
-#include "TCPPipe.h"
+#include "networking/TCPPipe.h"
 
-namespace stun {
+namespace networking {
 
 bool TCPPipe::read(TCPPacket& packet) {
   if (!bound_) {

@@ -6,7 +6,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
-namespace stun {
+namespace networking {
 
 const size_t kNetlinkClientReplyBufferSize = (1U << 16);
 const size_t kNetlinkRequestAttrBufferSize = (1U << 10);

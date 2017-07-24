@@ -1,11 +1,13 @@
 #include "CommandCenter.h"
 
-#include <Messenger.h>
 #include <common/Util.h>
+#include <networking/Messenger.h>
 
 #include <algorithm>
 
 namespace stun {
+
+using namespace networking;
 
 int CommandCenter::numClients = 0;
 

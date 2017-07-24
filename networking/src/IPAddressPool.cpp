@@ -1,10 +1,10 @@
-#include "IPAddressPool.h"
+#include "networking/IPAddressPool.h"
 
 #include <common/Util.h>
 
 #include <arpa/inet.h>
 
-namespace stun {
+namespace networking {
 
 const uint32_t kLastOctetMask = 0xff;
 
@@ -22,7 +22,7 @@ std::string IPAddressPool::acquire() {
 
   assertTrue(octets[3] < 0xff, "TODO: do a proper address increment");
   octets[3] ++;
-  
+
   std::string addr = std::to_string(octets[0]) + "." + std::to_string(octets[1]) + "." +
       std::to_string(octets[2]) + "." + std::to_string(octets[3]);
 

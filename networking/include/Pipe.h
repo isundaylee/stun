@@ -12,7 +12,7 @@
 #include <memory>
 #include <stdexcept>
 
-namespace stun {
+namespace networking {
 
 const double kPipeStatsInterval = 1.0;
 const size_t kBytesPerKiloBit = 1024 / 8;

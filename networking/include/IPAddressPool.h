@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace stun {
+namespace networking {
 
 class IPAddressPool {
 public:

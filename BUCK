@@ -9,6 +9,7 @@ cxx_binary(
     deps = [
         '//event:event',
         '//common:common',
+        '//networking:networking',
     ],
 )
 

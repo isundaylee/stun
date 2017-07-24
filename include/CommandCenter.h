@@ -1,17 +1,19 @@
 #pragma once
 
-#include <TCPPipe.h>
-#include <UDPPipe.h>
-#include <Tunnel.h>
-#include <NetlinkClient.h>
-#include <Messenger.h>
-#include <IPAddressPool.h>
+#include <networking/TCPPipe.h>
+#include <networking/UDPPipe.h>
+#include <networking/Tunnel.h>
+#include <networking/NetlinkClient.h>
+#include <networking/Messenger.h>
+#include <networking/IPAddressPool.h>
 
 #include <string>
 #include <vector>
 #include <memory>
 
 namespace stun {
+
+using namespace networking;
 
 class ServerHandler;
 class ClientHandler;
