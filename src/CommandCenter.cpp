@@ -1,5 +1,7 @@
 #include "CommandCenter.h"
 
+#include <SessionHandler.h>
+
 #include <common/Util.h>
 #include <networking/Messenger.h>
 
@@ -28,7 +30,7 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
 
   client.onClose = [this, clientIndex]() {
     auto it = std::find_if(servers.begin(), servers.end(),
-                           [clientIndex](ServerHandler const& server) {
+                           [clientIndex](SessionHandler const& server) {
                              return server.clientIndex == clientIndex;
                            });
 
@@ -37,7 +39,7 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   };
 
   client.name = "COMMAND-" + std::to_string(clientIndex);
-  servers.emplace_back(this, clientIndex, std::move(client));
+  servers.emplace_back(this, true, "", clientIndex, std::move(client));
   servers.back().start();
 }
 
@@ -47,7 +49,7 @@ void CommandCenter::connect(std::string const& host, int port) {
   toServer.open();
   toServer.connect(host, port);
 
-  client.reset(new ClientHandler(this, host, std::move(toServer)));
+  client.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
   client->start();
 }
 }
