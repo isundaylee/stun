@@ -1,6 +1,5 @@
 #pragma once
 
-#include <FIFO.h>
 #include <Pipe.h>
 #include <SocketPipe.h>
 
