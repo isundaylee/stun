@@ -11,19 +11,32 @@
 
 int main(int argc, char* argv[]) {
   event::EventLoop loop;
+  event::FIFO<char> fifo(4);
 
-  int fd = open("/tmp/a", O_RDONLY);
-  event::Action readPipe({event::IOConditionManager::canRead(fd)});
-  readPipe.setCallback([fd]() {
-    char buffer[256];
-    int charRead = read(fd, buffer, sizeof(buffer));
-    buffer[charRead] = '\0';
-    std::cout << buffer << std::flush;
+  // Open the file descriptors
+  int fa = open("/tmp/a", O_RDONLY);
+  int fb = open("/tmp/b", O_WRONLY);
 
-    if (charRead == 0) {
-      event::IOConditionManager::close(fd);
-      close(fd);
+  // Producer: /tmp/a -> fifo
+  event::Action producer({event::IOConditionManager::canRead(fa), fifo.canPush()});
+  producer.setCallback([&fifo, fa, fb]() {
+    char c;
+    int ret = read(fa, &c, 1);
+    if (ret == 0) {
+      event::IOConditionManager::close(fa);
+      event::IOConditionManager::close(fb);
+      close(fa);
+      close(fb);
+    } else {
+      fifo.push(c);
     }
+  });
+
+  // Consumer: fifo -> /tmp/b
+  event::Action consumer({fifo.canPop(), event::IOConditionManager::canWrite(fb)});
+  consumer.setCallback([&fifo, fb]() {
+    char c = fifo.pop();
+    write(fb, &c, 1);
   });
 
   loop.run();

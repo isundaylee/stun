@@ -13,6 +13,8 @@ public:
   Action(std::vector<Condition*> conditions);
   ~Action();
 
+  friend class EventLoop;
+
   void invoke();
   bool canInvoke();
 

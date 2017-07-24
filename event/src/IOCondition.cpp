@@ -42,29 +42,30 @@ IOConditionManager::IOConditionManager() :
   getInstance()->removeCondition(fd, IOType::Write);
 }
 
-void IOConditionManager::prepareConditions(std::vector<Condition*> const& conditions) {
+void IOConditionManager::prepareConditions(std::vector<Condition*> const& conditions,
+    std::vector<Condition*> const& interesting) {
   // Resetting all conditions first
   for (auto condition : conditions) {
     condition->value = false;
   }
 
   // Let's poll!
-  struct pollfd polls[conditions.size()];
-  for (size_t i=0; i<conditions.size(); i++) {
-    IOCondition* condition = (IOCondition*) conditions[i];
+  struct pollfd polls[interesting.size()];
+  for (size_t i=0; i<interesting.size(); i++) {
+    IOCondition* condition = (IOCondition*) interesting[i];
     polls[i].fd = condition->fd;
     polls[i].events = (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     polls[i].revents = 0;
   }
-  int ret = poll(polls, conditions.size(), -1);
+  int ret = poll(polls, interesting.size(), -1);
 
   if (ret < 0) {
     throw std::runtime_error("Error encountered while poll()-ing: " + std::string(strerror(errno)));
   }
 
-  // Enable conditions according to poll result
-  for (size_t i=0; i<conditions.size(); i++) {
-    IOCondition* condition = (IOCondition*) conditions[i];
+  // Enable connections according to poll result
+  for (size_t i=0; i<interesting.size(); i++) {
+    IOCondition* condition = (IOCondition*) interesting[i];
     int mask = (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     if (polls[i].revents & POLLNVAL) {
       throw std::runtime_error("Invalid file descriptor. Be sure to call "

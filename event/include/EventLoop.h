@@ -15,7 +15,8 @@ class Condition;
 
 class ConditionManager {
 public:
-  virtual void prepareConditions(std::vector<Condition*> const& conditions) = 0;
+  virtual void prepareConditions(std::vector<Condition*> const& conditions,
+      std::vector<Condition*> const& interesting) = 0;
 };
 
 class EventLoop {

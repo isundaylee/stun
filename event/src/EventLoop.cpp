@@ -2,6 +2,7 @@
 #include "event/Action.h"
 
 #include <stdexcept>
+#include <iostream>
 
 namespace event {
 
@@ -43,14 +44,48 @@ void EventLoop::run() {
     // Tell condition managers to prepare conditions they manage. For example, the
     // IO condition manager might use select, poll, or epoll to resolve values for
     // all IO conditions.
+
+    // Conditions are divided into two types: internal and external. External
+    // conditions are those related to external I/O. Internal conditions are those
+    // changed exclusively as a result of an Action.
+
+    // First we need to find all "interesting" external conditions. An external
+    // condition is interesting if it could potentially unblock at least one action.
+    // On the contrary, if an action currently has an internal condition unmet,
+    // it will not be unblocked by any movement of its external conditions.
+
+    // We then pass the set of all type-matching conditions, and the set of all
+    // "interesting" conditions to the condition manager.
+
     for (auto pair : conditionManagers_) {
-      std::vector<Condition*> conditionsToPrepare;
+      // Find all conditions of the given type
+      std::vector<Condition*> conditionsWithType;
       for (auto condition : conditions_) {
         if (condition->type == pair.first) {
-          conditionsToPrepare.push_back(condition);
+          conditionsWithType.push_back(condition);
         }
       }
-      pair.second->prepareConditions(conditionsToPrepare);
+
+      // Find all "interesting" conditions of the type
+      std::set<Condition*> interesting;
+      for (auto action : actions_) {
+        bool eligible = true;
+        for (auto condition : action->conditions_) {
+          if (condition->type == ConditionType::Base && !condition->value) {
+            eligible = false;
+            break;
+          }
+        }
+        if (eligible) {
+          for (auto condition : action->conditions_) {
+            if (condition->type == pair.first) {
+              interesting.insert(condition);
+            }
+          }
+        }
+      }
+      pair.second->prepareConditions(conditionsWithType,
+          std::vector<Condition*>(interesting.begin(), interesting.end()));
     }
 
     // Invoke actions that have all their conditions met

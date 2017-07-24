@@ -33,7 +33,8 @@ public:
   IOCondition* canDo(int fd, IOType type);
   void removeCondition(int fd, IOType type);
 
-  virtual void prepareConditions(std::vector<Condition*> const& conditions) override;
+  virtual void prepareConditions(std::vector<Condition*> const& conditions,
+      std::vector<Condition*> const& interesting) override;
 
 private:
   IOConditionManager();
