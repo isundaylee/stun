@@ -1,0 +1,7 @@
+{
+  "extra_compiler_flags": [
+    "-isystem", "/usr/lib/llvm-3.8/lib/clang/3.8.0/include"
+  ],
+  "ignored_compiler_flags": [
+  ]
+}

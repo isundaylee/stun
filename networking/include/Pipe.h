@@ -7,6 +7,7 @@
 #include <event/FIFO.h>
 #include <event/IOCondition.h>
 
+#include <stddef.h>
 #include <unistd.h>
 
 #include <memory>

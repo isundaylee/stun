@@ -103,6 +103,7 @@ public:
 
   ServerHandler& operator=(ServerHandler&& move) {
     AbstractHandler::operator=(std::move(move));
+    return *this;
   }
 
 protected:
@@ -172,6 +173,7 @@ public:
   ClientHandler& operator=(ClientHandler&& move) {
     AbstractHandler::operator=(std::move(move));
     std::swap(host_, move.host_);
+    return *this;
   }
 
   virtual void start() override {

@@ -18,12 +18,14 @@ public:
     std::swap(func_, move.func_);
     std::swap(method_, move.method_);
     std::swap(target, move.target);
+    return *this;
   }
 
   Callback& operator=(std::function<void ()> func) {
     func_ = func;
     method_ = nullptr;
     target = nullptr;
+    return *this;
   }
 
   template <typename T, void (T::*Method)()>
