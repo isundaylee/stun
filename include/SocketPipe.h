@@ -65,7 +65,7 @@ public:
     LOG() << "SocketPipe started listening on port " << actualPort << std::endl;
 
     bound_ = true;
-    this->startWatchers();
+    this->startActions();
 
     return actualPort;
   }
@@ -86,7 +86,7 @@ public:
 
     LOG() << "SocketPipe connected to " << host << ":" << port << std::endl;
 
-    this->startWatchers();
+    this->startActions();
   }
 
   virtual void open() override {

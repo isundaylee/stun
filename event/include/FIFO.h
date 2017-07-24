@@ -18,8 +18,11 @@ public:
     updateConditions();
   }
 
-  FIFO(FIFO&& move);
-  FIFO& operator=(FIFO&& move);
+  FIFO(FIFO&& move) :
+      capacity_(move.capacity_),
+      queue_(std::move(move.queue_)),
+      canPush_(std::move(canPush_)),
+      canPop_(std::move(canPop_)) {}
 
   Condition* canPush() {
     return canPush_.get();
@@ -47,6 +50,14 @@ public:
     queue_.pop();
     updateConditions();
     return result;
+  }
+
+  T const& front() {
+    if (queue_.size() == 0) {
+      throw std::runtime_error("Trying to call front() on an empty FIFO.");
+    }
+
+    return queue_.front();
   }
 
 private:

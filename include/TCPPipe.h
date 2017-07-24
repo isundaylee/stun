@@ -4,7 +4,6 @@
 #include <Pipe.h>
 #include <SocketPipe.h>
 
-#include <ev/ev++.h>
 #include <netdb.h>
 
 #include <functional>
@@ -31,6 +30,7 @@ private:
       SocketPipe(SocketType::TCP) {
     fd_ = fd;
     connected_ = true;
+    startActions();
   }
 };
 

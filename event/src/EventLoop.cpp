@@ -89,10 +89,26 @@ void EventLoop::run() {
     }
 
     // Invoke actions that have all their conditions met
-    for (auto action : actions_) {
-      if (action->canInvoke()) {
-        action->invoke();
+    while (true) {
+      bool stablized = true;
+      for (auto action : actions_) {
+        if (action->canInvoke()) {
+          stablized = false;
+          action->invoke();
+        }
       }
+      resetExternalConditions();
+      if (stablized) {
+        break;
+      }
+    }
+  }
+}
+
+void EventLoop::resetExternalConditions() {
+  for (auto condition : conditions_) {
+    if (condition->type != ConditionType::Base) {
+      condition->value = false;
     }
   }
 }

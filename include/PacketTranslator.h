@@ -1,28 +1,25 @@
 #pragma once
 
-#include <FIFO.h>
 #include <Util.h>
 
-#include <ev/ev++.h>
+#include <event/Action.h>
+#include <event/FIFO.h>
 
 #include <functional>
 
 namespace stun {
 
-const ev_tstamp kPacketTranslatorInterval = 0.001;
-
 template <typename X, typename Y>
 class PacketTranslator {
 public:
-  PacketTranslator(FIFO<X>& source, FIFO<Y>& target) :
+  PacketTranslator(event::FIFO<X>* source, event::FIFO<Y>* target) :
       source_(source),
-      target_(target) {
-    timer_.set<PacketTranslator, &PacketTranslator::doTranslate>(this);
-    timer_.set(0.0, kPacketTranslatorInterval);
-  }
+      target_(target),
+      translator_() {}
 
   void start() {
-    timer_.start();
+    translator_.reset(new event::Action({source_->canPop(), target_->canPush()}));
+    translator_->callback.setMethod<PacketTranslator, &PacketTranslator::doTranslate>(this);
   }
 
   std::function<Y (X const&)> transform = [](X const& t) {
@@ -36,24 +33,19 @@ private:
   PacketTranslator(PacketTranslator&& move) = delete;
   PacketTranslator& operator+=(PacketTranslator&& move) = delete;
 
-  void doTranslate(ev::timer& watcher, int events) {
-    if (events & EV_ERROR) {
-      throwUnixError("PacketTranslator doTranslate()");
-    }
-
-    while (!source_.empty() && !target_.full()) {
-      X packet = source_.pop();
+  void doTranslate() {
+    while (source_->canPop()->value && target_->canPush()->value) {
+      X packet = source_->pop();
       Y result = transform(packet);
       if (result.size > 0) {
-        target_.push(result);
+        target_->push(result);
       }
     }
   }
 
-  FIFO<X>& source_;
-  FIFO<Y>& target_;
-
-  ev::timer timer_;
+  event::FIFO<X>* source_;
+  event::FIFO<Y>* target_;
+  std::unique_ptr<event::Action> translator_;
 };
 
 }

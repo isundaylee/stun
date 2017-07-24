@@ -7,7 +7,6 @@ cxx_binary(
         'src/**/*.cpp',
     ], excludes = ['src/sandbox.cpp']),
     deps = [
-        '//libev:ev',
         '//event:event',
     ],
 )

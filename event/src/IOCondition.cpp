@@ -44,11 +44,6 @@ IOConditionManager::IOConditionManager() :
 
 void IOConditionManager::prepareConditions(std::vector<Condition*> const& conditions,
     std::vector<Condition*> const& interesting) {
-  // Resetting all conditions first
-  for (auto condition : conditions) {
-    condition->value = false;
-  }
-
   // Let's poll!
   struct pollfd polls[interesting.size()];
   for (size_t i=0; i<interesting.size(); i++) {
@@ -73,7 +68,7 @@ void IOConditionManager::prepareConditions(std::vector<Condition*> const& condit
     }
 
     if (polls[i].revents & POLLERR) {
-      throw std::runtime_error("Error response from poll()");
+      throw std::runtime_error("Error response from poll(): " + std::to_string(polls[i].revents));
     }
 
     if (polls[i].revents & mask) {

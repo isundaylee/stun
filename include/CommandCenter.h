@@ -132,7 +132,7 @@ protected:
       client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
 
       // Configure sender and receiver
-      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ, dataPipe_->outboundQ));
+      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
       sender_->transform = [](TunnelPacket const& in) {
         UDPPacket out;
         out.size = in.size;
@@ -141,7 +141,7 @@ protected:
       };
       sender_->start();
 
-      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ, tun_->outboundQ));
+      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
       receiver_->transform = [](UDPPacket const& in) {
         TunnelPacket out;
         out.size = in.size;
@@ -209,7 +209,7 @@ protected:
       client.setLinkAddress(tun_->getDeviceName(), clientIP_, serverIP_);
 
       // Configure sender and receiver
-      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ, dataPipe_->outboundQ));
+      sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
       sender_->transform = [](TunnelPacket const& in) {
         UDPPacket out;
         out.size = in.size;
@@ -218,7 +218,7 @@ protected:
       };
       sender_->start();
 
-      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ, tun_->outboundQ));
+      receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
       receiver_->transform = [](UDPPacket const& in) {
         TunnelPacket out;
         out.size = in.size;

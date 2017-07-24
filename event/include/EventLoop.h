@@ -44,6 +44,8 @@ private:
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
 
   static EventLoop* instance;
+
+  void resetExternalConditions();
 };
 
 }

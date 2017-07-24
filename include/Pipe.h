@@ -1,9 +1,12 @@
 #pragma once
 
-#include <FIFO.h>
 #include <Util.h>
 
-#include <ev/ev++.h>
+#include <event/Action.h>
+#include <event/Callback.h>
+#include <event/FIFO.h>
+#include <event/IOCondition.h>
+
 #include <unistd.h>
 
 #include <memory>
@@ -11,7 +14,7 @@
 
 namespace stun {
 
-const ev_tstamp kPipeStatsInterval = 1.0;
+const double kPipeStatsInterval = 1.0;
 const size_t kBytesPerKiloBit = 1024 / 8;
 const size_t kPipePacketBufferSize = 4096;
 
@@ -55,20 +58,17 @@ struct PipePacket {
 template <typename P>
 class Pipe {
 public:
-  FIFO<P> inboundQ;
-  FIFO<P> outboundQ;
+  std::unique_ptr<event::FIFO<P>> inboundQ;
+  std::unique_ptr<event::FIFO<P>> outboundQ;
 
   std::string name = "UNNAMED-BAD";
   bool shouldOutputStats = false;
 
   Pipe(int inboundQueueSize, int outboundQueueSize) :
-      inboundQ(inboundQueueSize),
-      outboundQ(outboundQueueSize),
+      inboundQ(new event::FIFO<P>(inboundQueueSize)),
+      outboundQ(new event::FIFO<P>(outboundQueueSize)),
       inboundBytes(0),
-      outboundBytes(0),
-      inboundWatcher_(new ev::io()),
-      outboundWatcher_(new ev::io()),
-      statsWatcher_(new ev::timer()) {}
+      outboundBytes(0) {}
 
   Pipe(Pipe&& move) :
       inboundQ(std::move(move.inboundQ)),
@@ -80,64 +80,55 @@ public:
     fd_ = move.fd_;
     move.fd_ = 0;
 
+    sender = std::move(move.sender);
+    receiver = std::move(move.receiver);
     onClose = std::move(move.onClose);
-    move.onClose = []() {};
-    inboundWatcher_ = std::move(move.inboundWatcher_);
-    outboundWatcher_ = std::move(move.outboundWatcher_);
-    statsWatcher_ = std::move(move.statsWatcher_);
 
-    this->startWatchers();
+    if (!!sender) {
+      sender->callback.target = this;
+      receiver->callback.target = this;
+    }
+
+    onClose.target = this;
   }
 
   ~Pipe() {
     close();
   }
 
-  std::function<void (void)> onClose = []() {};
 
   virtual void open() = 0;
 
+  event::Callback onClose;
+
 protected:
-  void startWatchers() {
-    assertTrue(fd_ != 0, "startWatchers() called when fd_ is 0");
+  void startActions() {
+    assertTrue(fd_ != 0, "startActions() called when fd_ is 0");
 
-    inboundWatcher_->set<Pipe, &Pipe::doReceive>(this);
-    inboundWatcher_->set(fd_, EV_READ);
-    inboundWatcher_->start();
+    receiver.reset(new event::Action({event::IOConditionManager::canRead(fd_), inboundQ->canPush()}));
+    receiver->callback.setMethod<Pipe, &Pipe::doReceive>(this);
 
-    outboundWatcher_->set<Pipe, &Pipe::doSend>(this);
-    outboundWatcher_->set(fd_, EV_WRITE);
-
-    outboundQ.onBecomeNonEmpty = [this]() {
-      outboundWatcher_->start();
-    };
-
-    statsWatcher_->set<Pipe, &Pipe::doStats>(this);
-    statsWatcher_->set(0.0, kPipeStatsInterval);
-    statsWatcher_->start();
+    sender.reset(new event::Action({event::IOConditionManager::canWrite(fd_), outboundQ->canPop()}));
+    sender->callback.setMethod<Pipe, &Pipe::doSend>(this);
   }
 
-  void stopWatchers() {
-    inboundWatcher_->stop();
-    outboundWatcher_->stop();
-    statsWatcher_->stop();
-
-    outboundQ.onBecomeNonEmpty = []() {};
+  void stopActions() {
+    receiver.reset();
+    sender.reset();
   }
 
   virtual bool write(P const& packet) = 0;
   virtual bool read(P& packet) = 0;
 
   virtual void close() {
-    if (!!inboundWatcher_) {
-      stopWatchers();
+    if (fd_ == 0) {
+      return;
     }
 
-    if (fd_ != 0) {
-      ::close(fd_);
-      fd_ = 0;
-      onClose();
-    }
+    event::IOConditionManager::close(fd_);
+    ::close(fd_);
+    fd_ = 0;
+    onClose.invoke();
   }
 
   int fd_ = 0;
@@ -146,46 +137,25 @@ private:
   Pipe(Pipe const&) = delete;
   Pipe& operator=(Pipe const&) = delete;
 
-  void doReceive(ev::io& watcher, int events) {
-    if (events & EV_ERROR) {
-      throwUnixError("doReceive()");
-    }
-
-    if (inboundQ.full()) {
-      return;
-    }
-
+  void doReceive() {
     P packet;
     if (read(packet)) {
       inboundBytes += packet.size;
-      inboundQ.push(packet);
+      inboundQ->push(packet);
     }
   }
 
-  void doSend(ev::io& watcher, int events) {
-    if (events & EV_ERROR) {
-      throwUnixError("doSend()");
-    }
-
-    if (outboundQ.empty()) {
-      outboundWatcher_->stop();
-      return;
-    }
-
-    while (!outboundQ.empty()) {
-      P packet = outboundQ.front();
+  void doSend() {
+    while (outboundQ->canPop()->value) {
+      P packet = outboundQ->front();
       if (write(packet)) {
         outboundBytes += packet.size;
-        outboundQ.pop();
+        outboundQ->pop();
       };
     }
   }
 
-  void doStats(ev::timer& watcher, int events) {
-    if (events & EV_ERROR) {
-      throwUnixError("doStats()");
-    }
-
+  void doStats() {
     if (shouldOutputStats) {
       LOG() << name << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
           << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps" << std::endl;
@@ -195,9 +165,8 @@ private:
     outboundBytes = 0;
   }
 
-  std::unique_ptr<ev::io> inboundWatcher_;
-  std::unique_ptr<ev::io> outboundWatcher_;
-  std::unique_ptr<ev::timer> statsWatcher_;
+  std::unique_ptr<event::Action> receiver;
+  std::unique_ptr<event::Action> sender;
 
   size_t inboundBytes;
   size_t outboundBytes;

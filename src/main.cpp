@@ -1,7 +1,8 @@
 #include <Util.h>
 #include <CommandCenter.h>
 
-#include <ev/ev++.h>
+#include <event/EventLoop.h>
+
 #include <unistd.h>
 
 #include <iostream>
@@ -11,7 +12,7 @@
 using namespace stun;
 
 int main(int argc, char* argv[]) {
-  ev::default_loop loop;
+  event::EventLoop loop;
 
   bool server = false;
   if (argc > 1 && (strcmp(argv[1], "server") == 0)) {
@@ -24,9 +25,10 @@ int main(int argc, char* argv[]) {
     center.serve(2859);
   } else {
     center.connect("54.174.137.123", 2859);
+    // center.connect("127.0.0.1", 2859);
   }
 
-  loop.run(0);
+  loop.run();
 
   return 0;
 }

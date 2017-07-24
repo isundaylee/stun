@@ -4,7 +4,6 @@
 #include <Pipe.h>
 #include <SocketPipe.h>
 
-#include <ev/ev++.h>
 #include <netdb.h>
 
 #include <functional>

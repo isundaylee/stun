@@ -45,7 +45,7 @@ void Tunnel::open() {
 
   name = "tunnel " + devName_;
   this->fd_ = fd_;
-  this->startWatchers();
+  this->startActions();
 }
 
 bool Tunnel::read(TunnelPacket& packet) {

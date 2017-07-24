@@ -44,7 +44,7 @@ class Messenger {
 public:
   Messenger(TCPPipe& client) :
       bufferUsed_(0),
-      translator_(client.inboundQ, client.outboundQ),
+      translator_(client.inboundQ.get(), client.outboundQ.get()),
       client_(client) {
     translator_.transform = [this](TCPPacket const& in) {
       assertTrue(bufferUsed_ + in.size <= kMessengerReceiveBufferSize, "Messenger receive buffer overflow.");
@@ -98,7 +98,7 @@ public:
     *((MessengerLengthHeaderType*) packet.buffer) = message.size;
     memcpy(packet.buffer + sizeof(MessengerLengthHeaderType), message.buffer, message.size);
 
-    client_.outboundQ.push(packet);
+    client_.outboundQ->push(packet);
     LOG() << client_.name << " sent: " << message.getType() << " - " << message.getBody() << std::endl;
   }
 

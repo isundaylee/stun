@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <stdexcept>
 
 namespace event {
 
@@ -8,29 +9,47 @@ class Callback {
 public:
   Callback() {}
 
-  Callback& operator=(std::function<void ()> func) {
-    func_ = func;
-    target_ = nullptr;
-  }
-
   Callback(Callback&& move) :
       func_(std::move(move.func_)),
       method_(std::move(move.method_)),
-      target_(std::move(move.target_)) {}
+      target(std::move(move.target)) {}
 
   Callback& operator=(Callback&& move) {
     std::swap(func_, move.func_);
     std::swap(method_, move.method_);
-    std::swap(target_, move.target_);
+    std::swap(target, move.target);
+  }
+
+  Callback& operator=(std::function<void ()> func) {
+    func_ = func;
+    method_ = nullptr;
+    target = nullptr;
+  }
+
+  template <typename T, void (T::*Method)()>
+  void setMethod(T* object) {
+    func_ = nullptr;
+
+    method_ = [](void* object) {
+      (((T*) object)->*Method)();
+    };
+
+    target = object;
   }
 
   void invoke() {
-    if (target_ == nullptr) {
+    if (!!func_) {
       func_();
-    } else {
-      method_(target_);
+    } else if (!!method_) {
+      if (target == nullptr) {
+        throw std::runtime_error("Invoking an Callable with an empty target.");
+      }
+
+      method_(target);
     }
   }
+
+  void* target = nullptr;
 
 private:
   Callback(Callback const& copy) = delete;
@@ -38,7 +57,6 @@ private:
 
   std::function<void ()> func_;
   std::function<void (void*)> method_;
-  void* target_ = nullptr;
 };
 
 }
