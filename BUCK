@@ -8,6 +8,7 @@ cxx_binary(
     ], excludes = ['src/sandbox.cpp']),
     deps = [
         '//event:event',
+        '//common:common',
     ],
 )
 
