@@ -25,7 +25,8 @@ int main(int argc, char* argv[]) {
     center.serve(2859);
   } else {
     // center.connect("54.174.137.123", 2859);
-    center.connect("127.0.0.1", 2859);
+    // center.connect("127.0.0.1", 2859);
+    center.connect("tencent.ljh.me", 2859);
   }
 
   loop.run();

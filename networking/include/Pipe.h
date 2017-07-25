@@ -8,6 +8,7 @@
 #include <event/IOCondition.h>
 
 #include <stddef.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <memory>
@@ -46,6 +47,15 @@ struct PipePacket {
   }
 
   ~PipePacket() { free(buffer); }
+
+  void fill(std::string str) {
+    strcpy(buffer, str.c_str());
+    size = str.length() + 1;
+  }
+
+  std::string toString() {
+    return std::string(buffer, size);
+  }
 
   friend void swap(PipePacket& lhs, PipePacket& rhs) noexcept {
     using std::swap;

@@ -15,7 +15,13 @@ bool TCPPipe::read(TCPPacket& packet) {
     return false;
   }
 
-  TCPPipe clientPipe(client);
+  std::string peerAddr = getAddr((struct sockaddr*)&clientAddr);
+  int peerPort = getPort((struct sockaddr*)&clientAddr);
+
+  LOG() << name << " accepted incoming client from " << peerAddr << ":"
+        << peerPort << std::endl;
+
+  TCPPipe clientPipe(client, peerAddr, peerPort);
   onAccept(std::move(clientPipe));
 
   return false;

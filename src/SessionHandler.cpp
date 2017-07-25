@@ -19,7 +19,10 @@ SessionHandler::SessionHandler(SessionHandler&& move)
     : commandPipe_(std::move(move.commandPipe_)),
       dataPipe_(std::move(move.dataPipe_)),
       messenger_(std::move(move.messenger_)), tun_(std::move(move.tun_)),
-      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)),
+      primer_(std::move(move.primer_)), sender_(std::move(move.sender_)),
+      receiver_(std::move(move.receiver_)),
+      myTunnelAddr_(std::move(move.myTunnelAddr_)),
+      peerTunnelAddr_(std::move(move.peerTunnelAddr_)),
       clientIndex(std::move(move.clientIndex)),
       center_(std::move(move.center_)) {
   attachHandler();
@@ -31,8 +34,11 @@ SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
   swap(dataPipe_, move.dataPipe_);
   swap(messenger_, move.messenger_);
   swap(tun_, move.tun_);
+  swap(primer_, move.primer_);
   swap(sender_, move.sender_);
   swap(receiver_, move.receiver_);
+  swap(myTunnelAddr_, move.myTunnelAddr_);
+  swap(peerTunnelAddr_, move.peerTunnelAddr_);
   swap(clientIndex, move.clientIndex);
   swap(center_, move.center_);
   attachHandler();
@@ -90,9 +96,9 @@ void SessionHandler::createDataTunnel(std::string const& myAddr,
 
 Message SessionHandler::handleMessageFromClient(Message const& message) {
   std::string type = message.getType();
+  json body = message.getBody();
 
-  if (type == "hello") {
-    // Set up data pipe
+  if (type == "hello") { // Set up data pipe
     dataPipe_.reset(new UDPPipe());
     dataPipe_->name = "DATA-" + std::to_string(clientIndex);
     dataPipe_->shouldOutputStats = true;
@@ -100,18 +106,22 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     int port = dataPipe_->bind(0);
 
     // Acquire IP addresses
-    std::string const& myAddr = center_->addrPool->acquire();
-    std::string const& peerAddr = center_->addrPool->acquire();
-    LOG() << "Acquired IP address: mine = " << myAddr << ", peer = " << peerAddr
+    myTunnelAddr_ = center_->addrPool->acquire();
+    peerTunnelAddr_ = center_->addrPool->acquire();
+    LOG() << commandPipe_->name << " "
+          << "acquired IP address: mine = " << myTunnelAddr_
+          << ", peer = " << peerTunnelAddr_ << std::endl;
+
+    return Message("config", json{
+                                 {"server_ip", myTunnelAddr_},
+                                 {"client_ip", peerTunnelAddr_},
+                                 {"data_port", port},
+                             });
+  } else if (type == "primed") {
+    LOG() << commandPipe_->name << " data channel successfully primed"
           << std::endl;
-
-    createDataTunnel(myAddr, peerAddr);
-
-    return Message(
-        "config",
-        json{
-            {"server_ip", myAddr}, {"client_ip", peerAddr}, {"data_port", port},
-        });
+    createDataTunnel(myTunnelAddr_, peerTunnelAddr_);
+    return Message::null();
   } else {
     unreachable("Unrecognized client message type: " + type);
   }
@@ -128,10 +138,14 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     dataPipe_->name = "DATA-" + std::to_string(clientIndex);
     dataPipe_->shouldOutputStats = true;
     dataPipe_->open();
+    int port = dataPipe_->bind(0);
     dataPipe_->connect(serverAddr_, body["data_port"]);
 
+    primer_.reset(new UDPPrimer(*dataPipe_));
+    primer_->start();
+
     createDataTunnel(body["client_ip"], body["server_ip"]);
-    return Message::null();
+    return Message("primed", "");
   } else {
     unreachable("Unrecognized server message type: " + type);
   }

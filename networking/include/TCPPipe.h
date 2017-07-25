@@ -23,9 +23,12 @@ protected:
   virtual bool read(TCPPacket& packet) override;
 
 private:
-  TCPPipe(int fd) : SocketPipe(SocketType::TCP) {
+  TCPPipe(int fd, std::string peerAddr, int peerPort)
+      : SocketPipe(SocketType::TCP) {
     fd_ = fd;
     connected_ = true;
+    this->peerAddr = peerAddr;
+    this->peerPort = peerPort;
     startActions();
   }
 };

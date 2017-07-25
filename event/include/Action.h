@@ -22,6 +22,12 @@ public:
   Callback callback;
 
 private:
+  Action(Action const& copy) = delete;
+  Action& operator=(Action const& copy) = delete;
+
+  Action(Action const&& move) = delete;
+  Action& operator=(Action const&& move) = delete;
+
   std::vector<Condition*> conditions_;
 };
 }

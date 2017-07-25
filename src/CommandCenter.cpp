@@ -18,6 +18,7 @@ void CommandCenter::serve(int port) {
     handleAccept(std::move(client));
   };
 
+  commandServer.name = "CENTER";
   commandServer.open();
   commandServer.bind(port);
 }

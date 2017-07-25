@@ -28,8 +28,12 @@ public:
         bound_(false), connected_(false) {}
 
   SocketPipe(SocketPipe&& move)
-      : Pipe<P>(std::move(move)), type_(move.type_), bound_(move.bound_),
+      : Pipe<P>(std::move(move)), peerAddr(move.peerAddr),
+        peerPort(move.peerPort), type_(move.type_), bound_(move.bound_),
         connected_(move.connected_) {}
+
+  std::string peerAddr;
+  int peerPort;
 
   int bind(int port) {
     assertTrue(!bound_, "Calling bind() on a bound SocketPipe");
@@ -65,7 +69,8 @@ public:
 
   void connect(std::string const& host, int port) {
     assertTrue(!connected_, "Connecting while already connected");
-    assertTrue(!bound_, "Connecting while already bound");
+    assertTrue((type_ == SocketType::UDP) || !bound_,
+               "Connecting while already bound");
 
     LOG() << "SocketPipe connecting to " << host << ":" << port << std::endl;
 
@@ -74,6 +79,8 @@ public:
     int ret = ::connect(this->fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
     checkUnixError(ret, "connecting in SocketPipe", EINPROGRESS);
     connected_ = true;
+    this->peerAddr = host;
+    this->peerPort = port;
 
     freeaddrinfo(peerAddr);
 
@@ -99,6 +106,10 @@ public:
   }
 
 protected:
+  SocketType type_;
+  bool bound_;
+  bool connected_;
+
   virtual bool read(P& packet) override {
     if (!connected_ && !bound_) {
       return false;
@@ -134,6 +145,10 @@ protected:
       int ret = ::connect(this->fd_, (sockaddr*)&peerAddr, peerAddrSize);
       checkUnixError(ret, "connecting in SocketPipe");
       connected_ = true;
+      this->peerAddr = getAddr((sockaddr*)&peerAddr);
+      this->peerPort = getPort((sockaddr*)&peerAddr);
+      LOG() << this->name << " received first UDP packet from "
+            << this->peerAddr << ":" << this->peerPort << std::endl;
     }
 
     return true;
@@ -155,9 +170,17 @@ protected:
     connected_ = false;
   }
 
-  SocketType type_;
-  bool bound_;
-  bool connected_;
+  std::string getAddr(struct sockaddr* addrInfo) {
+    assertTrue(addrInfo->sa_family == AF_INET,
+               "Unsupported sa_family: " + std::to_string(addrInfo->sa_family));
+    return std::string(inet_ntoa(((sockaddr_in*)addrInfo)->sin_addr));
+  }
+
+  int getPort(struct sockaddr* addrInfo) {
+    assertTrue(addrInfo->sa_family == AF_INET,
+               "Unsupported sa_family: " + std::to_string(addrInfo->sa_family));
+    return ((sockaddr_in*)addrInfo)->sin_port;
+  }
 
 private:
   SocketPipe(SocketPipe const& copy) = delete;
