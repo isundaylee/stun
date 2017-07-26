@@ -11,5 +11,6 @@ cxx_binary(
     srcs = ['sandbox.cpp'],
     deps = [
         '//event:event',
+        '//common:common',
     ],
 )

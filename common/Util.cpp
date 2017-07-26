@@ -9,20 +9,6 @@
 #include <stdexcept>
 #include <string>
 
-const size_t kUtilTimestampBufferSize = 64;
-
-std::string logHeader() {
-  char timestampBuffer[kUtilTimestampBufferSize];
-  time_t rawTime;
-  struct tm* timeInfo;
-
-  time(&rawTime);
-  timeInfo = localtime(&rawTime);
-
-  strftime(timestampBuffer, kUtilTimestampBufferSize, "[%F %H:%M:%S] ",
-           timeInfo);
-  return std::string(timestampBuffer);
-}
 
 void throwUnixError(std::string const& action) {
   throw std::runtime_error("Error while " + action + ": " +
@@ -63,11 +49,4 @@ bool checkRetryableError(int ret, std::string const& action,
     return false;
   }
   return true;
-}
-
-void logf(char const* format, ...) {
-  va_list argptr;
-  va_start(argptr, format);
-  vprintf(format, argptr);
-  va_end(argptr);
 }

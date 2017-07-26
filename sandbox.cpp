@@ -6,12 +6,18 @@
 #include <event/Timer.h>
 #include <event/Trigger.h>
 
+#include <common/Logger.h>
+
 #include <fcntl.h>
 #include <unistd.h>
 
 #include <iostream>
 
 int main(int argc, char* argv[]) {
+  Logger logger;
+  logger << "hello" << 1 << std::endl;
+  logger << "world" << 1 << std::endl;
+
   event::EventLoop loop;
   event::FIFO<char> fifo(4);
 
