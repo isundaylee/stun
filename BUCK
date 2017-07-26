@@ -10,6 +10,6 @@ cxx_binary(
     name = 'sandbox',
     srcs = ['sandbox.cpp'],
     deps = [
-        '//stun:stun',
+        '//event:event',
     ],
 )

@@ -3,6 +3,8 @@
 #include <event/EventLoop.h>
 #include <event/FIFO.h>
 #include <event/IOCondition.h>
+#include <event/Timer.h>
+#include <event/Trigger.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -39,6 +41,15 @@ int main(int argc, char* argv[]) {
   consumer.callback = [&fifo, fb]() {
     char c = fifo.pop();
     write(fb, &c, 1);
+  };
+
+  // A timer that puts '0' into /tmp/b every 10 ms.
+  event::Timer timer(10);
+  event::Action speaker({timer.didFire(), event::IOConditionManager::canWrite(fb)});
+  speaker.callback = [&timer, fb]() {
+    char c = '0';
+    write(fb, &c, 1);
+    timer.extend(10);
   };
 
   loop.run();

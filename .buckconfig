@@ -1,3 +1,5 @@
 [cxx]
-cc = /usr/bin/clang++
-cxxflags = -g -std=c++11
+  cxxpp = /usr/bin/clang++
+  cxx = /usr/bin/clang++
+  ld = /usr/bin/clang++
+  cxxflags = -g -std=c++11

@@ -1,5 +1,6 @@
 #include "event/EventLoop.h"
 #include "event/Action.h"
+#include "event/IOCondition.h"
 
 #include <iostream>
 #include <stdexcept>
@@ -14,6 +15,12 @@ EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {
   }
 
   EventLoop::instance = this;
+
+  // This is needed to force IOConditionManager to initialize and attach its
+  // preparer, even in the case that the program doesn't actually use IO.
+  // Otherwise we have no blocking operation on the event loop, and the CPU
+  // usage is going to skyrocket
+  IOConditionManager::canRead(0);
 }
 
 void EventLoop::addAction(Action* action) { actions_.insert(action); }

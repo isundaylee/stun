@@ -14,31 +14,26 @@ namespace event {
 const int kReadPollMask = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
 const int kWritePollMask = POLLOUT;
 
-IOConditionManager* IOConditionManager::instance = nullptr;
-
 IOConditionManager::IOConditionManager() : conditions_() {
   EventLoop::getCurrentLoop()->addConditionManager(this, ConditionType::IO);
 }
 
-/* static */ IOConditionManager* IOConditionManager::getInstance() {
-  if (IOConditionManager::instance == nullptr) {
-    IOConditionManager::instance = new IOConditionManager();
-  }
-
-  return IOConditionManager::instance;
+/* static */ IOConditionManager& IOConditionManager::getInstance() {
+  static IOConditionManager instance;
+  return instance;
 }
 
 /* static */ IOCondition* IOConditionManager::canRead(int fd) {
-  return getInstance()->canDo(fd, IOType::Read);
+  return getInstance().canDo(fd, IOType::Read);
 }
 
 /* static */ IOCondition* IOConditionManager::canWrite(int fd) {
-  return getInstance()->canDo(fd, IOType::Write);
+  return getInstance().canDo(fd, IOType::Write);
 }
 
 /* static */ void IOConditionManager::close(int fd) {
-  getInstance()->removeCondition(fd, IOType::Read);
-  getInstance()->removeCondition(fd, IOType::Write);
+  getInstance().removeCondition(fd, IOType::Read);
+  getInstance().removeCondition(fd, IOType::Write);
 }
 
 void IOConditionManager::prepareConditions(
@@ -56,6 +51,12 @@ void IOConditionManager::prepareConditions(
   int ret = poll(polls, interesting.size(), -1);
 
   if (ret < 0) {
+    if (errno == EINTR) {
+      // We have probably been interrupted by signals set by another condition
+      // type. We should return and give the runloop a chance to proceed.
+      return;
+    }
+
     throw std::runtime_error("Error encountered while poll()-ing: " +
                              std::string(strerror(errno)));
   }

@@ -28,9 +28,6 @@ public:
   static IOCondition* canWrite(int fd);
   static void close(int fd);
 
-  IOCondition* canDo(int fd, IOType type);
-  void removeCondition(int fd, IOType type);
-
   virtual void
   prepareConditions(std::vector<Condition*> const& conditions,
                     std::vector<Condition*> const& interesting) override;
@@ -44,9 +41,11 @@ private:
   IOConditionManager(IOConditionManager const&& move) = delete;
   IOConditionManager& operator=(IOConditionManager const&& move) = delete;
 
-  static IOConditionManager* instance;
-  static IOConditionManager* getInstance();
-
   std::map<std::pair<IOType, int>, std::unique_ptr<IOCondition>> conditions_;
+
+  static IOConditionManager& getInstance();
+
+  IOCondition* canDo(int fd, IOType type);
+  void removeCondition(int fd, IOType type);
 };
 }
