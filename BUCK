@@ -1,26 +1,15 @@
 cxx_binary(
     name = 'main',
-    headers = subdir_glob([
-        ('include', '*.h')
-    ]),
-    srcs = glob([
-        'src/**/*.cpp',
-    ], excludes = ['src/sandbox.cpp']),
+    srcs = ['main.cpp'],
     deps = [
-        '//event:event',
-        '//common:common',
-        '//networking:networking',
+        '//stun:stun',
     ],
 )
 
 cxx_binary(
     name = 'sandbox',
-    headers = subdir_glob([
-        ('include', '*.h')
-    ]),
-    srcs = glob(['src/**/*.cpp'], excludes = ['src/main.cpp']),
+    srcs = ['sandbox.cpp'],
     deps = [
-        '//event:event',
-        '//common:common',
-    ]
+        '//stun:stun',
+    ],
 )

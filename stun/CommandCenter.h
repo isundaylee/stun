@@ -1,6 +1,6 @@
 #pragma once
 
-#include <SessionHandler.h>
+#include <stun/SessionHandler.h>
 
 #include <networking/IPAddressPool.h>
 #include <networking/Messenger.h>

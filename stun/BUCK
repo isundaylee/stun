@@ -1,0 +1,12 @@
+cxx_library(
+    name = 'stun',
+    visibility = ['PUBLIC'],
+    exported_headers = glob(['*.h']),
+    srcs = glob(['*.cpp']),
+    deps = [
+        '//common:common',
+        '//networking:networking',
+        '//event:event',
+        '//json:json'
+    ],
+)

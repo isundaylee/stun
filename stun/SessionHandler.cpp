@@ -1,6 +1,6 @@
-#include "SessionHandler.h"
+#include "stun/SessionHandler.h"
 
-#include <CommandCenter.h>
+#include <stun/CommandCenter.h>
 
 namespace stun {
 

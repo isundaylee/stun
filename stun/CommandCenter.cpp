@@ -1,6 +1,6 @@
-#include "CommandCenter.h"
+#include "stun/CommandCenter.h"
 
-#include <SessionHandler.h>
+#include <stun/SessionHandler.h>
 
 #include <common/Util.h>
 #include <networking/Messenger.h>
