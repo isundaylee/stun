@@ -4,7 +4,7 @@
 
 #include <networking/IPAddressPool.h>
 #include <networking/Messenger.h>
-#include <networking/NetlinkClient.h>
+#include <networking/InterfaceConfig.h>
 #include <networking/TCPPipe.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPPipe.h>

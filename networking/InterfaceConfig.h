@@ -11,10 +11,10 @@ namespace networking {
 const size_t kNetlinkClientReplyBufferSize = (1U << 16);
 const size_t kNetlinkRequestAttrBufferSize = (1U << 10);
 
-class NetlinkClient {
+class InterfaceConfig {
 public:
-  NetlinkClient();
-  ~NetlinkClient();
+  InterfaceConfig();
+  ~InterfaceConfig();
 
   void newLink(std::string const& deviceName);
   void setLinkAddress(std::string const& deviceName,
@@ -22,8 +22,8 @@ public:
                       std::string const& peerAddress);
 
 private:
-  NetlinkClient(NetlinkClient const&) = delete;
-  NetlinkClient& operator=(NetlinkClient const&) = delete;
+  InterfaceConfig(InterfaceConfig const&) = delete;
+  InterfaceConfig& operator=(InterfaceConfig const&) = delete;
 
   template <typename R> void sendRequest(R& req);
   void waitForReply(std::function<void(struct nlmsghdr*)> callback);

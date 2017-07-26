@@ -1,4 +1,4 @@
-#include "networking/NetlinkClient.h"
+#include "networking/InterfaceConfig.h"
 
 #include <common/Util.h>
 
@@ -18,7 +18,7 @@ namespace networking {
 
 const int kNetlinkMTU = 1000;
 
-NetlinkClient::NetlinkClient() {
+InterfaceConfig::InterfaceConfig() {
   socket_ = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
   requestSeq_ = 0;
 
@@ -36,9 +36,9 @@ NetlinkClient::NetlinkClient() {
   kernelAddress_.nl_family = AF_NETLINK;
 }
 
-NetlinkClient::~NetlinkClient() { close(socket_); }
+InterfaceConfig::~InterfaceConfig() { close(socket_); }
 
-template <typename T> void NetlinkClient::sendRequest(T& request) {
+template <typename T> void InterfaceConfig::sendRequest(T& request) {
   struct msghdr rtnl_msg;
   struct iovec io;
 
@@ -54,7 +54,7 @@ template <typename T> void NetlinkClient::sendRequest(T& request) {
   sendmsg(socket_, (struct msghdr*)&rtnl_msg, 0);
 }
 
-void NetlinkClient::waitForReply(
+void InterfaceConfig::waitForReply(
     std::function<void(struct nlmsghdr*)> callback) {
   while (true) {
     int len;
@@ -74,7 +74,7 @@ void NetlinkClient::waitForReply(
 
     len = recvmsg(socket_, &rtnl_reply, 0);
     if (len == kNetlinkClientReplyBufferSize) {
-      throw std::runtime_error("NetlinkClient buffer size too small.");
+      throw std::runtime_error("InterfaceConfig buffer size too small.");
     }
 
     if (len) {
@@ -130,7 +130,7 @@ template <typename M> struct NetlinkRequest {
 
 typedef NetlinkRequest<struct rtgenmsg> NetlinkListLinkRequest;
 
-int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
+int InterfaceConfig::getInterfaceIndex(std::string const& deviceName) {
   NetlinkListLinkRequest req;
 
   req.fillHeader(RTM_GETLINK, NLM_F_DUMP);
@@ -181,7 +181,7 @@ int NetlinkClient::getInterfaceIndex(std::string const& deviceName) {
 
 typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
-void NetlinkClient::newLink(std::string const& deviceName) {
+void InterfaceConfig::newLink(std::string const& deviceName) {
   LOG() << "Turning up link " << deviceName << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
 
@@ -201,7 +201,7 @@ void NetlinkClient::newLink(std::string const& deviceName) {
 
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 
-void NetlinkClient::setLinkAddress(std::string const& deviceName,
+void InterfaceConfig::setLinkAddress(std::string const& deviceName,
                                    std::string const& localAddress,
                                    std::string const& peerAddress) {
   LOG() << "Setting link " << deviceName << "'s address to " << localAddress

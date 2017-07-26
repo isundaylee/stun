@@ -68,7 +68,7 @@ void SessionHandler::createDataTunnel(std::string const& myAddr,
   // Establish tunnel
   tun_.reset(new Tunnel(TunnelType::TUN));
   tun_->open();
-  NetlinkClient client;
+  InterfaceConfig client;
   client.newLink(tun_->getDeviceName());
   client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
 
