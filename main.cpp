@@ -12,8 +12,8 @@
 #include <unistd.h>
 
 #include <iostream>
-#include <stdexcept>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 using namespace stun;
@@ -35,7 +35,12 @@ int main(int argc, char* argv[]) {
   event::Timer statsTimer(kStatsDumpingInterval);
   event::Action statsDumper({statsTimer.didFire()});
   statsDumper.callback = [&statsTimer]() {
-    stats::StatsManager::dump(LOG());
+    stats::StatsManager::dump(
+        LOG(), [](std::string const& name, std::string const& metric) {
+          return (name.find("DATA") == std::string::npos) &&
+                 (name.find("COMMAND") == std::string::npos) &&
+                 (name.find("CENTER") == std::string::npos);
+        });
     statsTimer.extend(kStatsDumpingInterval);
   };
 

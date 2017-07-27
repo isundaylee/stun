@@ -1,11 +1,12 @@
 #pragma once
 
+#include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <queue>
 #include <set>
 #include <string>
-#include <iomanip>
 
 namespace stats {
 
@@ -45,15 +46,33 @@ public:
   static void removeStat(StatBase* stat);
 
   template <typename O> static void dump(O& output) {
+    dump(output, [](std::string const&, std::string const&) { return true; });
+  }
+
+  template <typename O>
+  static void
+  dump(O& output,
+       std::function<bool(std::string const&, std::string const&)> filter) {
     std::map<std::string, std::vector<StatBase*>> statsByName;
     for (StatBase* stat : getInstance().stats_) {
       statsByName[stat->name_].push_back(stat);
     }
 
     for (auto const& pair : statsByName) {
-      output << "Stats for " << std::left << std::setw(kNamePaddingLength) << pair.first << ": ";
-      bool isFirst = true;
+      std::vector<StatBase*> filteredStats;
       for (auto const& stat : pair.second) {
+        if (filter(stat->name_, stat->metric_)) {
+          filteredStats.push_back(stat);
+        }
+      }
+      if (filteredStats.empty()) {
+        continue;
+      }
+
+      output << "Stats for " << std::left << std::setw(kNamePaddingLength)
+             << pair.first << ": ";
+      bool isFirst = true;
+      for (auto const& stat : filteredStats) {
         if (isFirst) {
           isFirst = false;
         } else {
