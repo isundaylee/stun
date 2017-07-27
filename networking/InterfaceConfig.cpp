@@ -87,6 +87,9 @@ void InterfaceConfig::waitForReply(
           if (err->error == 0) {
             // it's ACK, not an actual error
             return;
+          } else if (-err->error == EEXIST) {
+            LOG() << "Got EEXIST from netlink -- usually this is OK"
+                  << std::endl;
           } else {
             throw std::runtime_error("Got NLMSG_ERROR from netlink: " +
                                      std::string(strerror(-err->error)));
@@ -250,5 +253,57 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
   waitForReply([](struct nlmsghdr* msg) {});
 
   LOG() << "Successfully added a route" << std::endl;
+}
+
+typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
+
+std::string InterfaceConfig::getRoute(std::string const& destAddr) {
+  NetlinkChangeRouteRequest req;
+  req.fillHeader(RTM_GETROUTE, NLM_F_ACK);
+  req.msg.rtm_family = AF_INET;
+  req.msg.rtm_table = RT_TABLE_MAIN;
+  req.msg.rtm_protocol = RTPROT_BOOT;
+  req.msg.rtm_scope = RT_SCOPE_UNIVERSE;
+  req.msg.rtm_type = RTN_UNICAST;
+  req.msg.rtm_dst_len = 32;
+
+  struct in_addr dest;
+  inet_pton(AF_INET, destAddr.c_str(), &dest);
+  req.addAttr(RTA_DST, sizeof(dest), &dest);
+
+  std::string gateway = "";
+
+  sendRequest(req);
+  waitForReply([&gateway](struct nlmsghdr* msg) {
+    switch (msg->nlmsg_type) {
+    case 24:
+      struct rtmsg* route;
+      struct rtattr* attr;
+      int len;
+
+      route = (rtmsg*)NLMSG_DATA(msg);
+      len = msg->nlmsg_len - NLMSG_LENGTH(sizeof(*route));
+
+      for (attr = RTM_RTA(route); RTA_OK(attr, len);
+           attr = RTA_NEXT(attr, len)) {
+        switch (attr->rta_type) {
+        case RTA_GATEWAY:
+          char addressBuffer[32];
+          inet_ntop(AF_INET, RTA_DATA(attr), addressBuffer,
+                    sizeof(addressBuffer));
+          gateway = std::string(addressBuffer);
+          break;
+        }
+      }
+
+      break;
+    default:
+      throw std::runtime_error("Unexpected nlmsg_type " +
+                               std::to_string(msg->nlmsg_type));
+    }
+  });
+
+  assertTrue(!gateway.empty(), "Error getting route to " + destAddr);
+  return gateway;
 }
 }

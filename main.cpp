@@ -4,6 +4,7 @@
 #include <stun/CommandCenter.h>
 
 #include <networking/IPTables.h>
+#include <networking/InterfaceConfig.h>
 
 #include <event/EventLoop.h>
 #include <event/Timer.h>

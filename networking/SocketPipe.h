@@ -79,7 +79,7 @@ public:
     int ret = ::connect(this->fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
     checkUnixError(ret, "connecting in SocketPipe", EINPROGRESS);
     connected_ = true;
-    this->peerAddr = host;
+    this->peerAddr = getAddr(peerAddr->ai_addr);
     this->peerPort = port;
 
     freeaddrinfo(peerAddr);

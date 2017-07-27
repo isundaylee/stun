@@ -14,6 +14,11 @@ SubnetAddress::SubnetAddress(std::string const& subnet) {
   prefixLen = std::stoi(subnet.substr(slashPos + 1));
 }
 
+SubnetAddress::SubnetAddress(std::string const& addr, int prefixLen) {
+  this->addr = addr;
+  this->prefixLen = prefixLen;
+}
+
 std::string SubnetAddress::toString() const {
   return addr + "/" + std::to_string(prefixLen);
 }

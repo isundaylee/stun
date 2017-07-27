@@ -25,6 +25,7 @@ public:
 
   void newRoute(SubnetAddress const& destSubnet,
                 std::string const& gatewayAddr);
+  std::string getRoute(std::string const& destAddr);
 
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;

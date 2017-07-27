@@ -144,8 +144,11 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
 
     createDataTunnel("TUNNEL", body["client_ip"], body["server_ip"]);
 
+    InterfaceConfig config;
+    std::string gatewayToServer = config.getRoute(commandPipe_->peerAddr);
+    config.newRoute(SubnetAddress(commandPipe_->peerAddr, 32), gatewayToServer);
+
     if (common::Configerator::hasKey("forward_subnets")) {
-      InterfaceConfig config;
       for (auto const& subnet : common::Configerator::getStringArray("forward_subnets")) {
         config.newRoute(SubnetAddress(subnet), body["server_ip"]);
       }

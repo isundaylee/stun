@@ -7,7 +7,8 @@ namespace networking {
 
 class SubnetAddress {
 public:
-  SubnetAddress(std::string const& addr);
+  SubnetAddress(std::string const& subnet);
+  SubnetAddress(std::string const& addr, int prefixLen);
 
   std::string toString() const;
 
