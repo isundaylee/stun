@@ -1,0 +1,11 @@
+cxx_library(
+    name = 'stats',
+    visibility = [
+        'PUBLIC',
+    ],
+    exported_headers = glob(['*.h']),
+    srcs = glob(['*.cpp']),
+    deps = [
+        '//common:common',
+    ],
+)
