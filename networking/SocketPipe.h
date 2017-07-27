@@ -59,7 +59,7 @@ public:
       checkUnixError(ret, "listening on a SocketPipe's socket");
     }
 
-    LOG() << "SocketPipe started listening on port " << actualPort << std::endl;
+    LOG() << this->name_ << " started listening on port " << actualPort << std::endl;
 
     bound_ = true;
     this->startActions();
@@ -72,7 +72,7 @@ public:
     assertTrue((type_ == SocketType::UDP) || !bound_,
                "Connecting while already bound");
 
-    LOG() << "SocketPipe connecting to " << host << ":" << port << std::endl;
+    LOG() << this->name_ << " connecting to " << host << ":" << port << std::endl;
 
     struct addrinfo* peerAddr = getAddr(host, port);
 
@@ -84,7 +84,7 @@ public:
 
     freeaddrinfo(peerAddr);
 
-    LOG() << "SocketPipe connected to " << host << ":" << port << std::endl;
+    LOG() << this->name_ << " connected to " << host << ":" << port << std::endl;
 
     this->startActions();
   }
@@ -122,7 +122,7 @@ protected:
                        (sockaddr*)&peerAddr, &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
-      LOG() << "Goodbye, " << this->name_ << " (less peacfully)!" << std::endl;
+      LOG() << this->name_ << "said goodbye (less peafully)" << std::endl;
       close();
       return false;
     }
@@ -136,7 +136,7 @@ protected:
 
     if (ret == 0) {
       // the socket is closed
-      LOG() << "Goodbye, " << this->name_ << "!" << std::endl;
+      LOG() << this->name_ << " said goodbye" << std::endl;
       close();
       return false;
     }

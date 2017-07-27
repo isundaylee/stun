@@ -25,8 +25,6 @@ void CommandCenter::serve(int port) {
 }
 
 void CommandCenter::handleAccept(TCPPipe&& client) {
-  LOG() << "A new client connected" << std::endl;
-
   size_t clientIndex = numClients;
   numClients++;
 

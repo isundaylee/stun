@@ -13,7 +13,6 @@ StatBase::StatBase(std::string metric, Prefix prefix /* = Prefix::None */)
 }
 
 StatBase::~StatBase() {
-  std::cout << "REMOVING A STAT! " << std::endl;
   StatsManager::removeStat(this);
 }
 

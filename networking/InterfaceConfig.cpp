@@ -173,9 +173,6 @@ int InterfaceConfig::getInterfaceIndex(std::string const& deviceName) {
     throw std::runtime_error("Cannot find device " + deviceName);
   }
 
-  LOG() << "Interface index for device " << deviceName << " is " << index
-        << std::endl;
-
   return index;
 }
 

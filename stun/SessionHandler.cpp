@@ -68,8 +68,8 @@ void SessionHandler::createDataTunnel(std::string const& tunnelName,
                                       std::string const& peerAddr) {
   // Establish tunnel
   tun_.reset(new Tunnel(TunnelType::TUN));
-  tun_->open();
   tun_->setName(tunnelName);
+  tun_->open();
   InterfaceConfig client;
   client.newLink(tun_->getDeviceName());
   client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
@@ -110,9 +110,6 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     // Acquire IP addresses
     myTunnelAddr_ = center_->addrPool->acquire();
     peerTunnelAddr_ = center_->addrPool->acquire();
-    LOG() << "Client " << clientIndex
-          << " acquired IP address: mine = " << myTunnelAddr_
-          << ", peer = " << peerTunnelAddr_ << std::endl;
 
     return Message("config", json{
                                  {"server_ip", myTunnelAddr_},
@@ -120,8 +117,6 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
                                  {"data_port", port},
                              });
   } else if (type == "primed") {
-    LOG() << "Client " << clientIndex << "'s data channel successfully primed"
-          << std::endl;
     createDataTunnel("TUNNEL-" + std::to_string(clientIndex), myTunnelAddr_,
                      peerTunnelAddr_);
     return Message::null();
