@@ -1,5 +1,7 @@
 #include "common/Configerator.h"
 
+#include <common/Util.h>
+
 namespace common {
 
 Configerator* Configerator::instance_ = nullptr;
@@ -15,12 +17,22 @@ Configerator::Configerator(std::string configPath) {
   Configerator::instance_ = this;
 }
 
-/* static */ std::string Configerator::getString(std::string const& key) {
-  if (instance_->config_.find(key) == instance_->config_.end()) {
-    throw std::runtime_error("Cannot find config entry '" + key + "'.");
-  }
+/* static */ bool Configerator::hasKey(std::string const& key) {
+  return (instance_->config_.find(key) != instance_->config_.end());
+}
 
+/* static */ std::string Configerator::getString(std::string const& key) {
+  assertHasKey(key);
   return instance_->config_[key];
 }
 
+/* static */ std::vector<std::string>
+Configerator::getStringArray(std::string const& key) {
+  assertHasKey(key);
+  return instance_->config_[key];
+}
+
+/* static */ void Configerator::assertHasKey(std::string const& key) {
+  assertTrue(hasKey(key), "Cannot find config entry '" + key + "'.");
+}
 }

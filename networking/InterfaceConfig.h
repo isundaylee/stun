@@ -1,5 +1,7 @@
 #pragma once
 
+#include <networking/IPAddressPool.h>
+
 #include <functional>
 #include <string>
 
@@ -20,6 +22,9 @@ public:
   void setLinkAddress(std::string const& deviceName,
                       std::string const& localAddress,
                       std::string const& peerAddress);
+
+  void newRoute(SubnetAddress const& destSubnet,
+                std::string const& gatewayAddr);
 
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;

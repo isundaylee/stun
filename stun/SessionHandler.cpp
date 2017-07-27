@@ -143,6 +143,14 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     primer_->start();
 
     createDataTunnel("TUNNEL", body["client_ip"], body["server_ip"]);
+
+    if (common::Configerator::hasKey("forward_subnets")) {
+      InterfaceConfig config;
+      for (auto const& subnet : common::Configerator::getStringArray("forward_subnets")) {
+        config.newRoute(SubnetAddress(subnet), body["server_ip"]);
+      }
+    }
+
     return Message("primed", "");
   } else {
     unreachable("Unrecognized server message type: " + type);

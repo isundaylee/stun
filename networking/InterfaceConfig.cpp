@@ -27,10 +27,9 @@ InterfaceConfig::InterfaceConfig() {
   localAddress_.nl_pid = getpid();
   localAddress_.nl_groups = 0;
 
-  if (bind(socket_, (struct sockaddr*)&localAddress_, sizeof(localAddress_)) <
-      0) {
-    throwUnixError("binding to NETLINK socket");
-  }
+  int ret =
+      bind(socket_, (struct sockaddr*)&localAddress_, sizeof(localAddress_));
+  checkUnixError(ret, "binding to NETLINK socket");
 
   memset(&kernelAddress_, 0, sizeof(kernelAddress_));
   kernelAddress_.nl_family = AF_NETLINK;
@@ -199,8 +198,8 @@ void InterfaceConfig::newLink(std::string const& deviceName) {
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 
 void InterfaceConfig::setLinkAddress(std::string const& deviceName,
-                                   std::string const& localAddress,
-                                   std::string const& peerAddress) {
+                                     std::string const& localAddress,
+                                     std::string const& peerAddress) {
   LOG() << "Setting link " << deviceName << "'s address to " << localAddress
         << " -> " << peerAddress << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
@@ -222,5 +221,34 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
   waitForReply([](struct nlmsghdr* msg) {});
 
   LOG() << "Successfully set link address" << std::endl;
+}
+
+typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
+
+void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
+                               std::string const& gatewayAddr) {
+  LOG() << "Adding a route to " << destSubnet.toString() << " via "
+        << gatewayAddr << std::endl;
+
+  NetlinkChangeRouteRequest req;
+  req.fillHeader(RTM_NEWROUTE, NLM_F_CREATE | NLM_F_ACK);
+  req.msg.rtm_family = AF_INET;
+  req.msg.rtm_table = RT_TABLE_MAIN;
+  req.msg.rtm_protocol = RTPROT_BOOT;
+  req.msg.rtm_scope = RT_SCOPE_UNIVERSE;
+  req.msg.rtm_type = RTN_UNICAST;
+  req.msg.rtm_dst_len = destSubnet.prefixLen;
+
+  struct in_addr gateway;
+  struct in_addr dest;
+  inet_pton(AF_INET, gatewayAddr.c_str(), &gateway);
+  inet_pton(AF_INET, destSubnet.addr.c_str(), &dest);
+  req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
+  req.addAttr(RTA_DST, sizeof(dest), &dest);
+
+  sendRequest(req);
+  waitForReply([](struct nlmsghdr* msg) {});
+
+  LOG() << "Successfully added a route" << std::endl;
 }
 }
