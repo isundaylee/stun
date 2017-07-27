@@ -5,4 +5,7 @@ cxx_library(
     ],
     exported_headers = glob(['*.h']),
     srcs = glob(['*.cpp']),
+    deps = [
+        '//json:json',
+    ],
 )

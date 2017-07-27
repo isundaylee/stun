@@ -1,14 +1,16 @@
+#include <common/Configerator.h>
 #include <common/Util.h>
+
 #include <stun/CommandCenter.h>
 
 #include <event/EventLoop.h>
-
 #include <event/Timer.h>
 #include <stats/StatsManager.h>
 
 #include <unistd.h>
 
 #include <iostream>
+#include <stdexcept>
 #include <memory>
 #include <vector>
 
@@ -16,7 +18,15 @@ using namespace stun;
 
 const int kStatsDumpingInterval = 1000 /* ms */;
 
+std::string getConfigPath() {
+  const char* homeDir = getenv("HOME");
+  assertTrue(homeDir != NULL, "Cannot get $HOME.");
+
+  return std::string(homeDir) + "/.stunrc";
+}
+
 int main(int argc, char* argv[]) {
+  common::Configerator config(getConfigPath());
   event::EventLoop loop;
 
   // Set up periodic stats dumping
@@ -27,17 +37,14 @@ int main(int argc, char* argv[]) {
     statsTimer.extend(kStatsDumpingInterval);
   };
 
-  bool server = false;
-  if (argc > 1 && (strcmp(argv[1], "server") == 0)) {
-    server = true;
-  }
+  std::string role = common::Configerator::getString("role");
 
-  LOG() << "Running as " << (server ? "server" : "client") << std::endl;
+  LOG() << "Running as " << role << std::endl;
   CommandCenter center;
-  if (server) {
+  if (role == "server") {
     center.serve(2859);
   } else {
-    std::string server = (argc > 1 ? std::string(argv[1]) : "localhost");
+    std::string server = common::Configerator::getString("server");
     center.connect(server, 2859);
   }
 
