@@ -6,22 +6,40 @@
 
 namespace networking {
 
+SubnetAddress::SubnetAddress(std::string const& subnet) {
+  std::size_t slashPos = subnet.find('/');
+  assertTrue(slashPos != std::string::npos, "Invalid address_pool: " + subnet);
+
+  addr = subnet.substr(0, slashPos);
+  prefixLen = std::stoi(subnet.substr(slashPos + 1));
+}
+
+std::string SubnetAddress::toString() const {
+  return addr + "/" + std::to_string(prefixLen);
+}
+
 const uint32_t kLastOctetMask = 0xff;
 
-IPAddressPool::IPAddressPool(std::string const& subnet, size_t prefixLen)
-    : prefixLen_(prefixLen),
-      subnetMask_(((1U << prefixLen) - 1) << (32 - prefixLen)),
+IPAddressPool::IPAddressPool(SubnetAddress const& subnet)
+    : prefixLen_(subnet.prefixLen),
+      subnetMask_(((1U << subnet.prefixLen) - 1) << (32 - subnet.prefixLen)),
       hostMask_(~subnetMask_) {
-  assertTrue(1 <= prefixLen && prefixLen <= 32,
-             "Invalid prefixLen" + std::to_string(prefixLen));
-  inet_pton(AF_INET, subnet.c_str(), &subnet_);
+  assertTrue(1 <= subnet.prefixLen && subnet.prefixLen <= 32,
+             "Invalid prefixLen" + std::to_string(subnet.prefixLen));
+  inet_pton(AF_INET, subnet.addr.c_str(), &subnet_);
   current_ = subnet_;
 }
 
 std::string IPAddressPool::acquire() {
+  if (!reusables_.empty()) {
+    std::string addr = reusables_.front();
+    reusables_.pop();
+    return addr;
+  }
+
   char* octets = (char*)&current_;
 
-  assertTrue(octets[3] < 0xff, "TODO: do a proper address increment");
+  assertTrue(octets[3] < 0x7f, "TODO: do a proper address increment");
   octets[3]++;
 
   std::string addr =
@@ -30,4 +48,6 @@ std::string IPAddressPool::acquire() {
 
   return addr;
 }
+
+void IPAddressPool::release(std::string const& addr) { reusables_.push(addr); }
 }

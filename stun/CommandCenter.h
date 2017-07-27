@@ -1,10 +1,12 @@
 #pragma once
 
+#include <common/Configerator.h>
+
 #include <stun/SessionHandler.h>
 
 #include <networking/IPAddressPool.h>
-#include <networking/Messenger.h>
 #include <networking/InterfaceConfig.h>
+#include <networking/Messenger.h>
 #include <networking/TCPPipe.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPPipe.h>
@@ -21,7 +23,7 @@ class SessionHandler;
 
 class CommandCenter {
 public:
-  CommandCenter() : addrPool(new IPAddressPool("10.100.0.0", 16)) {}
+  CommandCenter() {}
 
   void serve(int port);
   void connect(std::string const& host, int port);

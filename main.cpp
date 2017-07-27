@@ -3,6 +3,8 @@
 
 #include <stun/CommandCenter.h>
 
+#include <networking/IPTables.h>
+
 #include <event/EventLoop.h>
 #include <event/Timer.h>
 #include <stats/StatsManager.h>
@@ -42,6 +44,10 @@ int main(int argc, char* argv[]) {
   LOG() << "Running as " << role << std::endl;
   CommandCenter center;
   if (role == "server") {
+    std::string addressPool = common::Configerator::getString("address_pool");
+    networking::SubnetAddress subnet(addressPool);
+    networking::IPTables::masquerade(subnet);
+
     center.serve(2859);
   } else {
     std::string server = common::Configerator::getString("server");

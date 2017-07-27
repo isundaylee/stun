@@ -3,6 +3,7 @@
 #include <stun/SessionHandler.h>
 
 #include <common/Util.h>
+#include <common/Configerator.h>
 #include <networking/Messenger.h>
 
 #include <algorithm>
@@ -14,6 +15,9 @@ using namespace networking;
 int CommandCenter::numClients = 0;
 
 void CommandCenter::serve(int port) {
+  SubnetAddress addrPoolAddr(common::Configerator::getString("address_pool"));
+  addrPool.reset(new IPAddressPool(addrPoolAddr));
+
   commandServer_.reset(new TCPPipe());
   commandServer_->onAccept = [this](TCPPipe&& client) {
     handleAccept(std::move(client));
