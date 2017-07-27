@@ -4,6 +4,7 @@ cxx_binary(
     deps = [
         '//stun:stun',
     ],
+    linker_flags = ['-static-libstdc++']
 )
 
 cxx_binary(
