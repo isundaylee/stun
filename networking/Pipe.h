@@ -7,6 +7,8 @@
 #include <event/FIFO.h>
 #include <event/IOCondition.h>
 
+#include <stats/RateStat.h>
+
 #include <stddef.h>
 #include <string.h>
 #include <unistd.h>
@@ -53,9 +55,7 @@ struct PipePacket {
     size = str.length() + 1;
   }
 
-  std::string toString() {
-    return std::string(buffer, size);
-  }
+  std::string toString() { return std::string(buffer, size); }
 
   friend void swap(PipePacket& lhs, PipePacket& rhs) noexcept {
     using std::swap;
@@ -69,19 +69,24 @@ public:
   std::unique_ptr<event::FIFO<P>> inboundQ;
   std::unique_ptr<event::FIFO<P>> outboundQ;
 
-  std::string name = "UNNAMED-BAD";
   bool shouldOutputStats = false;
 
   Pipe(int inboundQueueSize, int outboundQueueSize)
       : inboundQ(new event::FIFO<P>(inboundQueueSize)),
-        outboundQ(new event::FIFO<P>(outboundQueueSize)), inboundBytes(0),
-        outboundBytes(0) {}
+        outboundQ(new event::FIFO<P>(outboundQueueSize)),
+        statTxPackets_(new stats::RateStat<size_t>("tx_packets", 0)),
+        statTxBytes_(new stats::RateStat<size_t>("tx_bytes", 0)),
+        statRxPackets_(new stats::RateStat<size_t>("rx_packets", 0)),
+        statRxBytes_(new stats::RateStat<size_t>("rx_bytes", 0)) {}
 
   Pipe(Pipe&& move)
       : inboundQ(std::move(move.inboundQ)),
-        outboundQ(std::move(move.outboundQ)), name(std::move(move.name)),
+        outboundQ(std::move(move.outboundQ)), name_(std::move(move.name_)),
         shouldOutputStats(move.shouldOutputStats),
-        inboundBytes(move.inboundBytes), outboundBytes(move.outboundBytes) {
+        statTxPackets_(std::move(move.statTxPackets_)),
+        statTxBytes_(std::move(move.statTxBytes_)),
+        statRxPackets_(std::move(move.statRxPackets_)),
+        statRxBytes_(std::move(move.statRxBytes_)) {
     fd_ = move.fd_;
     move.fd_ = 0;
 
@@ -93,13 +98,18 @@ public:
       sender->callback.target = this;
       receiver->callback.target = this;
     }
-
-    onClose.target = this;
   }
 
   ~Pipe() { close(); }
 
   virtual void open() = 0;
+  void setName(std::string const& name) {
+    statTxPackets_->setName(name);
+    statTxBytes_->setName(name);
+    statRxPackets_->setName(name);
+    statRxBytes_->setName(name);
+    name_ = name;
+  }
 
   event::Callback onClose;
 
@@ -136,6 +146,7 @@ protected:
   }
 
   int fd_ = 0;
+  std::string name_ = "UNNAMED-BAD";
 
 private:
   Pipe(Pipe const&) = delete;
@@ -144,7 +155,8 @@ private:
   void doReceive() {
     P packet;
     if (read(packet)) {
-      inboundBytes += packet.size;
+      statRxPackets_->accumulate(1);
+      statRxBytes_->accumulate(packet.size);
       inboundQ->push(packet);
     }
   }
@@ -153,28 +165,19 @@ private:
     while (outboundQ->canPop()->value) {
       P packet = outboundQ->front();
       if (write(packet)) {
-        outboundBytes += packet.size;
+        statTxPackets_->accumulate(1);
+        statTxBytes_->accumulate(packet.size);
         outboundQ->pop();
       };
     }
   }
 
-  void doStats() {
-    if (shouldOutputStats) {
-      LOG() << name
-            << "'s transfer rate: TX = " << (outboundBytes / kBytesPerKiloBit)
-            << " Kbps, RX = " << (inboundBytes / kBytesPerKiloBit) << " Kbps"
-            << std::endl;
-    }
-
-    inboundBytes = 0;
-    outboundBytes = 0;
-  }
+  std::unique_ptr<stats::RateStat<size_t>> statTxPackets_;
+  std::unique_ptr<stats::RateStat<size_t>> statTxBytes_;
+  std::unique_ptr<stats::RateStat<size_t>> statRxPackets_;
+  std::unique_ptr<stats::RateStat<size_t>> statRxBytes_;
 
   std::unique_ptr<event::Action> receiver;
   std::unique_ptr<event::Action> sender;
-
-  size_t inboundBytes;
-  size_t outboundBytes;
 };
 }

@@ -5,17 +5,24 @@
 #include <queue>
 #include <set>
 #include <string>
+#include <iomanip>
 
 namespace stats {
+
+enum Prefix {
+  None = 1,
+  Kilo = 1 << 10,
+  Mega = 1 << 20,
+  Giga = 1 << 30,
+  Tera = 1 << 40,
+};
 
 class StatsManager;
 
 class StatBase {
 protected:
-  StatBase(std::string metric);
+  StatBase(std::string metric, Prefix prefix = Prefix::None);
   ~StatBase();
-
-  bool operator<(StatBase const& rhs) { return id_ < rhs.id_; }
 
 protected:
   std::string name_;
@@ -25,6 +32,7 @@ private:
   static size_t seq_;
 
   size_t id_;
+  Prefix prefix_;
 
   virtual std::string stringValue() = 0;
 
@@ -43,7 +51,7 @@ public:
     }
 
     for (auto const& pair : statsByName) {
-      output << "Stats for " << pair.first << ": ";
+      output << "Stats for " << std::left << std::setw(kNamePaddingLength) << pair.first << ": ";
       bool isFirst = true;
       for (auto const& stat : pair.second) {
         if (isFirst) {
@@ -58,6 +66,8 @@ public:
   }
 
 private:
+  static const size_t kNamePaddingLength = 10;
+
   std::set<StatBase*> stats_;
 
   static StatsManager& getInstance();

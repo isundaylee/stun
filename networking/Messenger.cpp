@@ -44,7 +44,7 @@ void Messenger::doReceive() {
       }
 
       bufferUsed_ -= (totalLen);
-      LOG() << client_.name << " received: " << message.getType() << " - "
+      LOG() << "Messenger received: " << message.getType() << " - "
             << message.getBody() << std::endl;
 
       Message response = handler(message);
@@ -72,7 +72,7 @@ void Messenger::send(Message const& message) {
          message.size);
 
   client_.outboundQ->push(packet);
-  LOG() << client_.name << " sent: " << message.getType() << " - "
+  LOG() << "Messenger sent: " << message.getType() << " - "
         << message.getBody() << std::endl;
 }
 }

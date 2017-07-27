@@ -50,7 +50,8 @@ private:
   std::string peerTunnelAddr_;
 
   void attachHandler();
-  void createDataTunnel(std::string const& myAddr, std::string const& peerAddr);
+  void createDataTunnel(std::string const& tunnelName,
+                        std::string const& myAddr, std::string const& peerAddr);
   Message handleMessageFromClient(Message const& message);
   Message handleMessageFromServer(Message const& message);
 };

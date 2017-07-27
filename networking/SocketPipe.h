@@ -122,7 +122,7 @@ protected:
                        (sockaddr*)&peerAddr, &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
-      LOG() << "Goodbye, " << this->name << " (less peacfully)!" << std::endl;
+      LOG() << "Goodbye, " << this->name_ << " (less peacfully)!" << std::endl;
       close();
       return false;
     }
@@ -136,7 +136,7 @@ protected:
 
     if (ret == 0) {
       // the socket is closed
-      LOG() << "Goodbye, " << this->name << "!" << std::endl;
+      LOG() << "Goodbye, " << this->name_ << "!" << std::endl;
       close();
       return false;
     }
@@ -147,7 +147,7 @@ protected:
       connected_ = true;
       this->peerAddr = getAddr((sockaddr*)&peerAddr);
       this->peerPort = getPort((sockaddr*)&peerAddr);
-      LOG() << this->name << " received first UDP packet from "
+      LOG() << this->name_ << " received first UDP packet from "
             << this->peerAddr << ":" << this->peerPort << std::endl;
     }
 

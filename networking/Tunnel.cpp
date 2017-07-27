@@ -42,8 +42,7 @@ void Tunnel::open() {
 
   devName_ = ifr.ifr_name;
   LOG() << "Successfully opened tunnel " << devName_ << std::endl;
-
-  name = "tunnel " + devName_;
+  
   this->fd_ = fd_;
   this->startActions();
 }

@@ -14,13 +14,14 @@ using namespace networking;
 int CommandCenter::numClients = 0;
 
 void CommandCenter::serve(int port) {
-  commandServer.onAccept = [this](TCPPipe&& client) {
+  commandServer_.reset(new TCPPipe());
+  commandServer_->onAccept = [this](TCPPipe&& client) {
     handleAccept(std::move(client));
   };
 
-  commandServer.name = "CENTER";
-  commandServer.open();
-  commandServer.bind(port);
+  commandServer_->setName("CENTER");
+  commandServer_->open();
+  commandServer_->bind(port);
 }
 
 void CommandCenter::handleAccept(TCPPipe&& client) {
@@ -30,27 +31,27 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   numClients++;
 
   client.onClose = [this, clientIndex]() {
-    auto it = std::find_if(servers.begin(), servers.end(),
+    auto it = std::find_if(servers_.begin(), servers_.end(),
                            [clientIndex](SessionHandler const& server) {
                              return server.clientIndex == clientIndex;
                            });
 
-    assertTrue(it != servers.end(), "Cannot find the client to remove.");
-    servers.erase(it);
+    assertTrue(it != servers_.end(), "Cannot find the client to remove.");
+    servers_.erase(it);
   };
 
-  client.name = "COMMAND-" + std::to_string(clientIndex);
-  servers.emplace_back(this, true, "", clientIndex, std::move(client));
-  servers.back().start();
+  client.setName("COMMAND-" + std::to_string(clientIndex));
+  servers_.emplace_back(this, true, "", clientIndex, std::move(client));
+  servers_.back().start();
 }
 
 void CommandCenter::connect(std::string const& host, int port) {
   TCPPipe toServer;
-  toServer.name = "COMMAND";
+  toServer.setName("COMMAND");
   toServer.open();
   toServer.connect(host, port);
 
-  client.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
-  client->start();
+  client_.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
+  client_->start();
 }
 }

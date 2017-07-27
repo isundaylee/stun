@@ -33,8 +33,8 @@ private:
 
   void handleAccept(TCPPipe&& client);
 
-  TCPPipe commandServer;
-  std::vector<SessionHandler> servers;
-  std::unique_ptr<SessionHandler> client;
+  std::unique_ptr<TCPPipe> commandServer_;
+  std::vector<SessionHandler> servers_;
+  std::unique_ptr<SessionHandler> client_;
 };
 }
