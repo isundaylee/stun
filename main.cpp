@@ -37,9 +37,8 @@ int main(int argc, char* argv[]) {
   if (server) {
     center.serve(2859);
   } else {
-    // center.connect("54.174.137.123", 2859);
-    // center.connect("127.0.0.1", 2859);
-    center.connect("tencent.ljh.me", 2859);
+    std::string server = (argc > 1 ? std::string(argv[1]) : "localhost");
+    center.connect(server, 2859);
   }
 
   loop.run();
