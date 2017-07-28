@@ -18,54 +18,6 @@
 
 namespace networking {
 
-const double kPipeStatsInterval = 1.0;
-const size_t kBytesPerKiloBit = 1024 / 8;
-const size_t kPipePacketBufferSize = 4096;
-
-struct PipePacket {
-  char* buffer;
-  int size;
-
-  PipePacket() {
-    size = 0;
-    buffer = new char[kPipePacketBufferSize];
-  }
-
-  PipePacket(PipePacket const& copy) {
-    size = copy.size;
-    buffer = new char[kPipePacketBufferSize];
-    std::copy(copy.buffer, copy.buffer + copy.size, buffer);
-  }
-
-  PipePacket& operator=(PipePacket copy) {
-    swap(copy, *this);
-    return *this;
-  }
-
-  PipePacket(PipePacket&& other) {
-    using std::swap;
-    swap(buffer, other.buffer);
-    swap(size, other.size);
-  }
-
-  ~PipePacket() { free(buffer); }
-
-  void fill(std::string str) {
-    assertTrue(str.length() < kPipePacketBufferSize,
-               "String to be fill()-ed is too long.");
-    strcpy(buffer, str.c_str());
-    size = str.length();
-  }
-
-  std::string toString() { return std::string(buffer, size); }
-
-  friend void swap(PipePacket& lhs, PipePacket& rhs) noexcept {
-    using std::swap;
-    swap(lhs.buffer, rhs.buffer);
-    swap(lhs.size, rhs.size);
-  }
-};
-
 template <typename P> class Pipe {
 public:
   std::unique_ptr<event::FIFO<P>> inboundQ;

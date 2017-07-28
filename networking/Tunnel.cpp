@@ -48,7 +48,7 @@ void Tunnel::open() {
 }
 
 bool Tunnel::read(TunnelPacket& packet) {
-  int ret = ::read(fd_, packet.buffer, kTunnelBufferSize);
+  int ret = ::read(fd_, packet.data, kTunnelBufferSize);
   if (!checkRetryableError(ret, "reading a tunnel packet")) {
     return false;
   }
@@ -62,7 +62,7 @@ bool Tunnel::read(TunnelPacket& packet) {
 }
 
 bool Tunnel::write(TunnelPacket const& packet) {
-  int ret = ::write(fd_, packet.buffer, packet.size);
+  int ret = ::write(fd_, packet.data, packet.size);
   if (!checkRetryableError(ret, "writing a tunnel packet")) {
     return false;
   }

@@ -12,26 +12,28 @@ namespace networking {
 
 using json = nlohmann::json;
 
-struct Message : PipePacket {
-  Message() : PipePacket() {}
+const size_t kMessageSize = 2048;
+
+struct Message : Packet<kMessageSize> {
+  Message() : Packet() {}
 
   static Message null() { return Message(); }
 
-  Message(std::string const& type, json const& body) : PipePacket() {
+  Message(std::string const& type, json const& body) : Packet() {
     json payload = {
         {"type", type}, {"body", body},
     };
     std::string content = payload.dump();
-    memcpy(buffer, content.c_str(), content.length());
+    memcpy(data, content.c_str(), content.length());
     size = content.length();
   }
 
   std::string getType() const {
-    return json::parse(std::string(buffer, size))["type"];
+    return json::parse(std::string(data, size))["type"];
   }
 
   json getBody() const {
-    return json::parse(std::string(buffer, size))["body"];
+    return json::parse(std::string(data, size))["body"];
   }
 };
 

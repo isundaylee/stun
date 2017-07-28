@@ -1,6 +1,7 @@
 #pragma once
 
 #include <networking/Pipe.h>
+#include <networking/Packet.h>
 
 #include <stdio.h>
 
@@ -15,7 +16,10 @@ enum TunnelType {
   TAP,
 };
 
-struct TunnelPacket : PipePacket {};
+const size_t kTunnelPacketSize = 2048;
+
+struct TunnelPacket : Packet<kTunnelPacketSize> {};
+
 
 class Tunnel : public Pipe<TunnelPacket> {
 public:

@@ -10,7 +10,7 @@ void UDPPrimer::start() {
   action_.reset(new event::Action({timer_->didFire()}));
   action_->callback = [this]() {
     UDPPacket packet;
-    packet.fill(kUDPPrimerContent);
+    packet.pack(kUDPPrimerContent);
     outboundQ_->push(packet);
     timer_->extend(kUDPPrimerInterval);
   };
@@ -24,7 +24,7 @@ void UDPPrimerAcceptor::start() {
   listener_->callback = [this]() {
     while (inboundQ_->canPop()->value) {
       UDPPacket packet = inboundQ_->pop();
-      if (packet.toString() == kUDPPrimerContent) {
+      if (packet.unpack<uint64_t>() == kUDPPrimerContent) {
         didFinish_.value = true;
       }
     }

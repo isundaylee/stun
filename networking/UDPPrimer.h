@@ -8,7 +8,7 @@
 
 namespace networking {
 
-const std::string kUDPPrimerContent = "primer";
+const uint64_t kUDPPrimerContent = 0x0123456789ABCDEF;
 const event::Duration kUDPPrimerInterval = 1000;
 
 

@@ -17,8 +17,6 @@ const int kSocketOutboundQueueSize = 32;
 
 const int kSocketPipeListenBacklog = 10;
 
-struct SocketPacket : PipePacket {};
-
 enum SocketType { TCP, UDP };
 
 template <typename P> class SocketPipe : public Pipe<P> {
@@ -59,7 +57,8 @@ public:
       checkUnixError(ret, "listening on a SocketPipe's socket");
     }
 
-    LOG() << this->name_ << " started listening on port " << actualPort << std::endl;
+    LOG() << this->name_ << " started listening on port " << actualPort
+          << std::endl;
 
     bound_ = true;
     this->startActions();
@@ -72,7 +71,8 @@ public:
     assertTrue((type_ == SocketType::UDP) || !bound_,
                "Connecting while already bound");
 
-    LOG() << this->name_ << " connecting to " << host << ":" << port << std::endl;
+    LOG() << this->name_ << " connecting to " << host << ":" << port
+          << std::endl;
 
     struct addrinfo* peerAddr = getAddr(host, port);
 
@@ -84,7 +84,8 @@ public:
 
     freeaddrinfo(peerAddr);
 
-    LOG() << this->name_ << " connected to " << host << ":" << port << std::endl;
+    LOG() << this->name_ << " connected to " << host << ":" << port
+          << std::endl;
 
     this->startActions();
   }
@@ -118,7 +119,7 @@ protected:
     struct sockaddr_storage peerAddr;
     socklen_t peerAddrSize = sizeof(peerAddr);
 
-    int ret = recvfrom(this->fd_, packet.buffer, kPipePacketBufferSize, 0,
+    int ret = recvfrom(this->fd_, packet.data, packet.capacity, 0,
                        (sockaddr*)&peerAddr, &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
@@ -132,6 +133,7 @@ protected:
                      " packet")) {
       return false;
     }
+
     packet.size = ret;
 
     if (ret == 0) {
@@ -155,7 +157,7 @@ protected:
   }
 
   virtual bool write(P const& packet) override {
-    int ret = send(this->fd_, packet.buffer, packet.size, 0);
+    int ret = send(this->fd_, packet.data, packet.size, 0);
     if (!checkRetryableError(
             ret, "sending a UDP " + std::string(type_ == TCP ? "TCP" : "UDP") +
                      " packet")) {

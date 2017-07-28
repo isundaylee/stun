@@ -1,5 +1,6 @@
 #pragma once
 
+#include <networking/Packet.h>
 #include <networking/Pipe.h>
 #include <networking/SocketPipe.h>
 
@@ -9,7 +10,9 @@
 
 namespace networking {
 
-struct UDPPacket : PipePacket {};
+const size_t kUDPPacketSize = 2048;
+
+struct UDPPacket : Packet<kUDPPacketSize> {};
 
 class UDPPipe : public SocketPipe<UDPPacket> {
 public:

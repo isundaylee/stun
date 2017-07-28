@@ -81,8 +81,7 @@ void SessionHandler::createDataTunnel(std::string const& tunnelName,
       tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
   sender_->transform = [](TunnelPacket const& in) {
     UDPPacket out;
-    out.size = in.size;
-    memcpy(out.buffer, in.buffer, in.size);
+    out.fill(in.data, in.size);
     return out;
   };
   sender_->start();
@@ -91,8 +90,7 @@ void SessionHandler::createDataTunnel(std::string const& tunnelName,
       dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
   receiver_->transform = [](UDPPacket const& in) {
     TunnelPacket out;
-    out.size = in.size;
-    memcpy(out.buffer, in.buffer, in.size);
+    out.fill(in.data, in.size);
     return out;
   };
   receiver_->start();

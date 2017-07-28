@@ -1,5 +1,6 @@
 #pragma once
 
+#include <networking/Packet.h>
 #include <networking/Pipe.h>
 #include <networking/SocketPipe.h>
 
@@ -9,7 +10,9 @@
 
 namespace networking {
 
-struct TCPPacket : PipePacket {};
+const size_t kTCPPacketSize = 2048;
+
+struct TCPPacket : Packet<kTCPPacketSize> {};
 
 class TCPPipe : public SocketPipe<TCPPacket> {
 public:

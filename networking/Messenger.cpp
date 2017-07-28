@@ -21,7 +21,7 @@ void Messenger::doReceive() {
     // Append the new content to our buffer.
     assertTrue(bufferUsed_ + in.size <= kMessengerReceiveBufferSize,
                "Messenger receive buffer overflow.");
-    memcpy(buffer_ + bufferUsed_, in.buffer, in.size);
+    memcpy(buffer_ + bufferUsed_, in.data, in.size);
     bufferUsed_ += in.size;
 
     // Deliver complete messages
@@ -34,9 +34,7 @@ void Messenger::doReceive() {
 
       // We have a complete message
       Message message;
-      message.size = messageLen;
-      memcpy(message.buffer, buffer_ + sizeof(MessengerLengthHeaderType),
-             messageLen);
+      message.fill(buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
 
       if (bufferUsed_ > totalLen) {
         // Move the left-over to the front
@@ -55,24 +53,21 @@ void Messenger::doReceive() {
   }
 }
 
-event::Condition* Messenger::canSend() {
-  return outboundQ_->canPush();
-}
+event::Condition* Messenger::canSend() { return outboundQ_->canPush(); }
 
 void Messenger::send(Message const& message) {
   // TODO: Think about large messages later
-  assertTrue(message.size + sizeof(MessengerLengthHeaderType) <=
-                 kPipePacketBufferSize,
+  assertTrue(message.size + sizeof(MessengerLengthHeaderType) <= kMessageSize,
              "Message too large");
 
   TCPPacket packet;
   packet.size = sizeof(MessengerLengthHeaderType) + message.size;
-  *((MessengerLengthHeaderType*)packet.buffer) = message.size;
-  memcpy(packet.buffer + sizeof(MessengerLengthHeaderType), message.buffer,
+  *((MessengerLengthHeaderType*)packet.data) = message.size;
+  memcpy(packet.data + sizeof(MessengerLengthHeaderType), message.data,
          message.size);
 
   client_.outboundQ->push(packet);
-  LOG() << "Messenger sent: " << message.getType() << " - "
-        << message.getBody() << std::endl;
+  LOG() << "Messenger sent: " << message.getType() << " - " << message.getBody()
+        << std::endl;
 }
 }
