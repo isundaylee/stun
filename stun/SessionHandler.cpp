@@ -145,11 +145,25 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     createDataTunnel("TUNNEL", body["client_ip"], body["server_ip"]);
 
     InterfaceConfig config;
-    std::string gatewayToServer = config.getRoute(commandPipe_->peerAddr);
-    config.newRoute(SubnetAddress(commandPipe_->peerAddr, 32), gatewayToServer);
+    std::vector<networking::SubnetAddress> excluded_subnets = {
+        SubnetAddress(commandPipe_->peerAddr, 32)};
+
+    if (common::Configerator::hasKey("excluded_subnets")) {
+      std::vector<std::string> configExcludedSubnets =
+          common::Configerator::getStringArray("excluded_subnets");
+      for (std::string const& exclusion : configExcludedSubnets) {
+        excluded_subnets.push_back(SubnetAddress(exclusion));
+      }
+    }
+
+    std::string originalGateway = config.getRoute(commandPipe_->peerAddr);
+    for (networking::SubnetAddress const& exclusion : excluded_subnets) {
+      config.newRoute(exclusion, originalGateway);
+    }
 
     if (common::Configerator::hasKey("forward_subnets")) {
-      for (auto const& subnet : common::Configerator::getStringArray("forward_subnets")) {
+      for (auto const& subnet :
+           common::Configerator::getStringArray("forward_subnets")) {
         config.newRoute(SubnetAddress(subnet), body["server_ip"]);
       }
     }
