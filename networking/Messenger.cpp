@@ -36,9 +36,27 @@ void Messenger::doReceive() {
       Message message;
       message.fill(buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
 
+      size_t payloadLen = messageLen;
+      for (auto decryptor = encryptors_.rbegin();
+           decryptor != encryptors_.rend(); decryptor++) {
+        payloadLen =
+            (*decryptor)->decrypt(message.data, payloadLen, kMessageSize);
+      }
+      message.size = payloadLen;
+
       if (bufferUsed_ > totalLen) {
         // Move the left-over to the front
         memmove(buffer_, buffer_ + totalLen, bufferUsed_ - (totalLen));
+      }
+
+      if (!message.isValid()) {
+        onInvalidMessage.invoke();
+
+        // We return here because it's unlikely we'll get valid messages, and
+        // more likely than not we'll be gone after the onInvalidMessage
+        // callback
+        // fires.
+        return;
       }
 
       bufferUsed_ -= (totalLen);
@@ -57,17 +75,28 @@ event::Condition* Messenger::canSend() { return outboundQ_->canPush(); }
 
 void Messenger::send(Message const& message) {
   // TODO: Think about large messages later
-  assertTrue(message.size + sizeof(MessengerLengthHeaderType) <= kMessageSize,
+  assertTrue(message.size + sizeof(MessengerLengthHeaderType) <= kTCPPacketSize,
              "Message too large");
 
   TCPPacket packet;
-  packet.size = sizeof(MessengerLengthHeaderType) + message.size;
-  *((MessengerLengthHeaderType*)packet.data) = message.size;
-  memcpy(packet.data + sizeof(MessengerLengthHeaderType), message.data,
-         message.size);
+  Byte* payload = packet.data + sizeof(MessengerLengthHeaderType);
+  memcpy(payload, message.data, message.size);
+
+  size_t payloadSize = message.size;
+  for (auto const& encryptor : encryptors_) {
+    payloadSize = encryptor->encrypt(
+        payload, payloadSize, kMessageSize - sizeof(MessengerLengthHeaderType));
+  }
+
+  packet.size = sizeof(MessengerLengthHeaderType) + payloadSize;
+  *((MessengerLengthHeaderType*)packet.data) = payloadSize;
 
   client_.outboundQ->push(packet);
   LOG() << "Messenger sent: " << message.getType() << " - " << message.getBody()
         << std::endl;
+}
+
+void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
+  encryptors_.emplace_back(encryptor);
 }
 }

@@ -106,6 +106,12 @@ public:
     this->fd_ = fd_;
   }
 
+  virtual void close() override {
+    Pipe<P>::close();
+    bound_ = false;
+    connected_ = false;
+  }
+
 protected:
   SocketType type_;
   bool bound_;
@@ -164,12 +170,6 @@ protected:
       return false;
     }
     return true;
-  }
-
-  virtual void close() override {
-    Pipe<P>::close();
-    bound_ = false;
-    connected_ = false;
   }
 
   std::string getAddr(struct sockaddr* addrInfo) {

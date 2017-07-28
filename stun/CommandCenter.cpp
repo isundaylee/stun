@@ -53,6 +53,11 @@ void CommandCenter::connect(std::string const& host, int port) {
   toServer.open();
   toServer.connect(host, port);
 
+  toServer.onClose = [this]() {
+    LOG() << "We are disconnected by the server." << std::endl;
+    client_.reset();
+  };
+
   client_.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
   client_->start();
 }

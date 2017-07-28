@@ -1,8 +1,9 @@
 #include "stun/SessionHandler.h"
 
-#include <stun/CommandCenter.h>
-
+#include <common/Configerator.h>
+#include <crypto/AESEncryptor.h>
 #include <event/Trigger.h>
+#include <stun/CommandCenter.h>
 
 namespace stun {
 
@@ -14,7 +15,12 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
     : center_(center), isServer_(isServer), serverAddr_(serverAddr),
       clientIndex(clientIndex), commandPipe_(new TCPPipe(std::move(client))),
       messenger_(new Messenger(*commandPipe_)) {
-  attachHandler();
+  if (common::Configerator::hasKey("secret")) {
+    messenger_->addEncryptor(new crypto::AESEncryptor(
+        crypto::AESKey(common::Configerator::getString("secret"))));
+  }
+
+  attachHandlers();
 }
 
 SessionHandler::SessionHandler(SessionHandler&& move)
@@ -27,7 +33,7 @@ SessionHandler::SessionHandler(SessionHandler&& move)
       peerTunnelAddr_(std::move(move.peerTunnelAddr_)),
       clientIndex(std::move(move.clientIndex)),
       center_(std::move(move.center_)) {
-  attachHandler();
+  attachHandlers();
 }
 
 SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
@@ -43,7 +49,7 @@ SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
   swap(peerTunnelAddr_, move.peerTunnelAddr_);
   swap(clientIndex, move.clientIndex);
   swap(center_, move.center_);
-  attachHandler();
+  attachHandlers();
   return *this;
 }
 
@@ -58,7 +64,13 @@ void SessionHandler::start() {
   }
 }
 
-void SessionHandler::attachHandler() {
+void SessionHandler::attachHandlers() {
+  messenger_->onInvalidMessage = [this]() {
+    LOG() << "Disconnected client " << clientIndex
+          << " due to invalid command message." << std::endl;
+    commandPipe_->close();
+  };
+
   messenger_->handler = [this](Message const& message) {
     return (isServer_ ? handleMessageFromClient(message)
                       : handleMessageFromServer(message));
@@ -128,7 +140,7 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
                                  {"client_ip", peerTunnelAddr_},
                                  {"data_port", port},
                              });
-  }  else {
+  } else {
     unreachable("Unrecognized client message type: " + type);
   }
 }

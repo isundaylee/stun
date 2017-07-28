@@ -5,7 +5,23 @@
 
 namespace crypto {
 
+const Byte kAESKeyPaddingByte = 0xFB;
+
 AESKey::AESKey(Byte* data, size_t size) : key(data, size) {}
+
+AESKey::AESKey(std::string const& key) {
+  Byte data[CryptoPP::AES::MAX_KEYLENGTH];
+
+  assertTrue(key.length() <= CryptoPP::AES::MAX_KEYLENGTH,
+             "AES encryption key is too long.");
+
+  memset(data, kAESKeyPaddingByte, sizeof(data));
+  memcpy(data, key.c_str(), key.length());
+
+  this->key.Assign(data, key.length() <= CryptoPP::AES::MIN_KEYLENGTH
+                             ? CryptoPP::AES::MIN_KEYLENGTH
+                             : CryptoPP::AES::MAX_KEYLENGTH);
+}
 
 AESEncryptor::AESEncryptor(AESKey const& key) : key_(key) {}
 

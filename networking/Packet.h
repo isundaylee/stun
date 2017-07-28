@@ -1,5 +1,7 @@
 #pragma once
 
+#include <common/Util.h>
+
 #include <string.h>
 #include <unistd.h>
 
@@ -11,9 +13,9 @@ template <int L> struct Packet {
   static const size_t capacity = L;
 
   size_t size;
-  char* data;
+  Byte* data;
 
-  Packet() : size(0) { data = new char[L]; }
+  Packet() : size(0) { data = new Byte[L]; }
 
   ~Packet() {
     if (data != nullptr) {
@@ -22,7 +24,7 @@ template <int L> struct Packet {
   }
 
   Packet(Packet const& copy) : size(copy.size) {
-    data = new char[L];
+    data = new Byte[L];
     memcpy(data, copy.data, copy.size);
   }
 
@@ -36,13 +38,13 @@ template <int L> struct Packet {
     std::swap(data, other.data);
   }
 
-  void fill(char* buffer, size_t size) {
+  void fill(Byte* buffer, size_t size) {
     this->size = size;
     memcpy(data, buffer, size);
   }
 
   template <typename T> void pack(T const& obj) {
-    fill((char*)&obj, sizeof(obj));
+    fill((Byte*)&obj, sizeof(obj));
   }
 
   template <typename T> T unpack() {

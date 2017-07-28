@@ -10,5 +10,6 @@ cxx_library(
         '//event:event',
         '//json:json',
         '//stats:stats',
+        '//crypto:crypto',
     ],
 )

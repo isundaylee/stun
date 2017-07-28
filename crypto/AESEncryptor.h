@@ -8,12 +8,13 @@ namespace crypto {
 
 struct AESKey {
 public:
-  explicit AESKey(Byte* data, size_t size);
+  AESKey(Byte* data, size_t size);
+  AESKey(std::string const& key);
 
   CryptoPP::SecByteBlock key;
 };
 
-class AESEncryptor: Encryptor {
+class AESEncryptor: public Encryptor {
 public:
   explicit AESEncryptor(AESKey const& key);
 

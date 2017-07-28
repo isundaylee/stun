@@ -3,6 +3,7 @@
 #include <json/json.hpp>
 
 #include <common/Util.h>
+#include <crypto/Encryptor.h>
 #include <networking/PacketTranslator.h>
 #include <networking/TCPPipe.h>
 
@@ -29,11 +30,23 @@ struct Message : Packet<kMessageSize> {
   }
 
   std::string getType() const {
-    return json::parse(std::string(data, size))["type"];
+    return json::parse(
+        std::string(reinterpret_cast<char*>(data), size))["type"];
   }
 
   json getBody() const {
-    return json::parse(std::string(data, size))["body"];
+    return json::parse(
+        std::string(reinterpret_cast<char*>(data), size))["body"];
+  }
+
+  bool isValid() const {
+    try {
+      auto type = getType();
+      auto body = getBody();
+    } catch (const json::exception&) {
+      return false;
+    }
+    return true;
   }
 };
 
@@ -47,8 +60,10 @@ public:
 
   event::Condition* canSend();
   void send(Message const& message);
+  void addEncryptor(crypto::Encryptor* encryptor);
 
   std::function<Message(Message const&)> handler;
+  event::Callback onInvalidMessage;
 
 private:
   Messenger(Messenger const& copy) = delete;
@@ -62,9 +77,11 @@ private:
   event::FIFO<TCPPacket>* inboundQ_;
   event::FIFO<TCPPacket>* outboundQ_;
 
+  std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
+
   std::unique_ptr<event::Action> receiver_;
   int bufferUsed_;
-  char buffer_[kMessengerReceiveBufferSize];
+  Byte buffer_[kMessengerReceiveBufferSize];
 
   void doReceive();
 };
