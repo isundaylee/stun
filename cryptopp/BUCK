@@ -1,0 +1,6 @@
+cxx_library(
+    name = 'cryptopp',
+    visibility = ['PUBLIC'],
+    srcs = glob(['*.cpp']),
+    exported_headers = glob(['*.h']),
+)
