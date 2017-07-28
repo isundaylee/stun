@@ -14,5 +14,6 @@ cxx_binary(
         '//event:event',
         '//common:common',
         '//stats:stats',
+        '//crypto:crypto',
     ],
 )

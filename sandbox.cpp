@@ -1,14 +1,4 @@
-#include <event/Action.h>
-#include <event/Condition.h>
-#include <event/EventLoop.h>
-#include <event/FIFO.h>
-#include <event/IOCondition.h>
-#include <event/Timer.h>
-#include <event/Trigger.h>
-
-#include <common/Logger.h>
-
-#include <stats/Stat.h>
+#include <crypto/AESEncryptor.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -16,24 +6,21 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-  common::Logger logger;
-  event::EventLoop loop;
+  Byte key[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  crypto::AESEncryptor enc(crypto::AESKey(key, 16));
 
-  stats::Stat<int> popularity("popularity", 0);
-  popularity.setName("client");
-  stats::Stat<int> age("age", 0);
-  age.setName("client");
+  std::string text = "Hello, world! This is a simply cryptography check ;)";
+  Byte data[128];
+  std::copy(text.begin(), text.end(), data);
+  size_t size = text.length();
 
-  event::Timer timer(0);
-  event::Action statsDumper({timer.didFire()});
-  statsDumper.callback = [&timer, &logger, &popularity, &age]() {
-    stats::StatsManager::dump(logger);
-    popularity.accumulate(10);
-    age.accumulate(1);
-    timer.extend(1000);
-  };
+  size = enc.encrypt(&data[0], size, 128);
+  size = enc.decrypt(&data[0], size, 128);
 
-  loop.run();
+  for (size_t i=0; i<size; i++) {
+    std::cout << "0x" << std::hex << (int) data[i] << " ";
+  }
+  std::cout << std::endl;
 
   return 0;
 }

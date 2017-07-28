@@ -1,14 +1,12 @@
 cxx_library(
-    name = 'networking',
+    name = 'crypto',
     visibility = [
         'PUBLIC',
     ],
     exported_headers = glob(['*.h']),
     srcs = glob(['*.cpp']),
     deps = [
+        '//cryptopp:cryptopp',
         '//common:common',
-        '//event:event',
-        '//json:json',
-        '//stats:stats',
     ],
 )

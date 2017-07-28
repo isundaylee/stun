@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+typedef unsigned char Byte;
+
 void throwUnixError(std::string const& action);
 void throwGetAddrInfoError(int err);
 void assertTrue(bool condition, std::string const& reason);
