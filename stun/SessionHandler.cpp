@@ -2,6 +2,8 @@
 
 #include <stun/CommandCenter.h>
 
+#include <event/Trigger.h>
+
 namespace stun {
 
 using namespace networking;
@@ -111,16 +113,24 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     myTunnelAddr_ = center_->addrPool->acquire();
     peerTunnelAddr_ = center_->addrPool->acquire();
 
+    // Start listening for the UDP primer packet
+    primerAcceptor_.reset(new UDPPrimerAcceptor(*dataPipe_));
+    primerAcceptor_->start();
+    event::Trigger::arm({messenger_->canSend(), primerAcceptor_->didFinish()},
+                        [this]() {
+                          createDataTunnel("TUNNEL-" +
+                                               std::to_string(clientIndex),
+                                           myTunnelAddr_, peerTunnelAddr_);
+                          messenger_->send(Message("primed", ""));
+                          primerAcceptor_.reset();
+                        });
+
     return Message("config", json{
                                  {"server_ip", myTunnelAddr_},
                                  {"client_ip", peerTunnelAddr_},
                                  {"data_port", port},
                              });
-  } else if (type == "primed") {
-    createDataTunnel("TUNNEL-" + std::to_string(clientIndex), myTunnelAddr_,
-                     peerTunnelAddr_);
-    return Message::null();
-  } else {
+  }  else {
     unreachable("Unrecognized client message type: " + type);
   }
 }
@@ -168,7 +178,10 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
       }
     }
 
-    return Message("primed", "");
+    return Message::null();
+  } else if (type == "primed") {
+    primer_.reset();
+    return Message::null();
   } else {
     unreachable("Unrecognized server message type: " + type);
   }

@@ -51,8 +51,10 @@ struct PipePacket {
   ~PipePacket() { free(buffer); }
 
   void fill(std::string str) {
+    assertTrue(str.length() < kPipePacketBufferSize,
+               "String to be fill()-ed is too long.");
     strcpy(buffer, str.c_str());
-    size = str.length() + 1;
+    size = str.length();
   }
 
   std::string toString() { return std::string(buffer, size); }
