@@ -76,9 +76,9 @@ public:
   Pipe(int inboundQueueSize, int outboundQueueSize)
       : inboundQ(new event::FIFO<P>(inboundQueueSize)),
         outboundQ(new event::FIFO<P>(outboundQueueSize)),
-        statTxPackets_(new stats::RateStat<size_t>("tx_packets", 0)),
+        statTxPackets_(new stats::RateStat<size_t>("tx_pkts", 0)),
         statTxBytes_(new stats::RateStat<size_t>("tx_bytes", 0)),
-        statRxPackets_(new stats::RateStat<size_t>("rx_packets", 0)),
+        statRxPackets_(new stats::RateStat<size_t>("rx_pkts", 0)),
         statRxBytes_(new stats::RateStat<size_t>("rx_bytes", 0)) {}
 
   Pipe(Pipe&& move)
