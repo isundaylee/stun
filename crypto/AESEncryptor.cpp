@@ -23,6 +23,20 @@ AESKey::AESKey(std::string const& key) {
                              : CryptoPP::AES::MAX_KEYLENGTH);
 }
 
+/* static */ std::string AESKey::randomStringKey() {
+  char alphabet[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8',
+                     '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+                     'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+                     'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+  size_t n = sizeof(alphabet) / sizeof(alphabet[0]);
+  CryptoPP::AutoSeededRandomPool random;
+  char key[CryptoPP::AES::MAX_KEYLENGTH];
+  for (size_t i = 0; i < CryptoPP::AES::MAX_KEYLENGTH; i++) {
+    key[i] = alphabet[random.GenerateByte() % n];
+  }
+  return std::string(key, CryptoPP::AES::MAX_KEYLENGTH);
+}
+
 AESEncryptor::AESEncryptor(AESKey const& key) : key_(key) {}
 
 /* virtual */ size_t AESEncryptor::encrypt(Byte* data, size_t size,

@@ -26,6 +26,11 @@ Configerator::Configerator(std::string configPath) {
   return instance_->config_[key];
 }
 
+/* static */ int Configerator::getInt(std::string const& key) {
+  assertHasKey(key);
+  return instance_->config_[key];
+}
+
 /* static */ std::vector<std::string>
 Configerator::getStringArray(std::string const& key) {
   assertHasKey(key);

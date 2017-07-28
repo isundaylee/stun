@@ -17,6 +17,7 @@ public:
   static bool hasKey(std::string const& key);
 
   static std::string getString(std::string const& key);
+  static int getInt(std::string const& key);
   static std::vector<std::string> getStringArray(std::string const& key);
 
 private:

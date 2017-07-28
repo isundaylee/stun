@@ -17,6 +17,7 @@ typedef uint64_t Duration;
 class Timer {
 public:
   Timer(Duration timeout);
+  ~Timer();
 
   Condition* didFire();
 

@@ -1,6 +1,7 @@
 #include "event/Timer.h"
 
 #include <iostream>
+#include <set>
 #include <stdexcept>
 #include <utility>
 
@@ -9,6 +10,7 @@ namespace event {
 class TimerManager {
 public:
   static void setTimeout(Time target, Condition* condition);
+  static void removeTimeout(Condition* condition);
 
 private:
   TimerManager();
@@ -17,6 +19,7 @@ private:
 
   static TimerManager* instance_;
   std::priority_queue<TimeoutTrigger> targets_;
+  std::set<Condition*> removed_;
   Time currentTarget_ = 0;
   timer_t timer_;
 
@@ -53,11 +56,14 @@ TimerManager::TimerManager() {
   }
 }
 
-/* static */ void TimerManager::setTimeout(Time target,
-                                           Condition* condition) {
+/* static */ void TimerManager::setTimeout(Time target, Condition* condition) {
   Time now = Timer::getTimeInMilliseconds();
   instance_->targets_.emplace(target, condition);
   instance_->updateTimer(now);
+}
+
+/* static */ void TimerManager::removeTimeout(Condition* condition) {
+  instance_->removed_.insert(condition);
 }
 
 Time Timer::Timer::getTimeInMilliseconds() {
@@ -76,9 +82,15 @@ void TimerManager::fireUntilTarget() {
   Time target = std::max(now, currentTarget_);
   while (!targets_.empty() && targets_.top().first <= target) {
     TimeoutTrigger fired = targets_.top();
-    Time now = Timer::getTimeInMilliseconds();
-    fired.second->value = true;
     targets_.pop();
+
+    if (removed_.find(fired.second) != removed_.end()) {
+      // This timer has already been removed. We should not fire it.
+      removed_.erase(fired.second);
+      continue;
+    }
+
+    fired.second->value = true;
   }
   if (targets_.empty()) {
     return;
@@ -106,6 +118,8 @@ void TimerManager::updateTimer(Time now) {
 }
 
 Timer::Timer(Duration timeout) : didFire_(new Condition()) { reset(timeout); }
+
+Timer::~Timer() { TimerManager::removeTimeout(didFire_.get()); }
 
 Condition* Timer::didFire() { return didFire_.get(); }
 

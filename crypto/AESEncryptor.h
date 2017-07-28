@@ -11,6 +11,8 @@ public:
   AESKey(Byte* data, size_t size);
   AESKey(std::string const& key);
 
+  static std::string randomStringKey();
+
   CryptoPP::SecByteBlock key;
 };
 
