@@ -86,7 +86,7 @@ Vagrant.configure(2) do |config|
       pushd /opt/watchman
       ./autogen.sh
       ./configure
-      make -j4
+      make -j
       sudo make install
     fi
 
