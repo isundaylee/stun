@@ -12,9 +12,7 @@ StatBase::StatBase(std::string metric, Prefix prefix /* = Prefix::None */)
   StatsManager::addStat(this);
 }
 
-StatBase::~StatBase() {
-  StatsManager::removeStat(this);
-}
+StatBase::~StatBase() { StatsManager::removeStat(this); }
 
 /* static */ StatsManager& StatsManager::getInstance() {
   static StatsManager instance;

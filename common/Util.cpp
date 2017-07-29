@@ -9,7 +9,6 @@
 #include <stdexcept>
 #include <string>
 
-
 void throwUnixError(std::string const& action) {
   throw std::runtime_error("Error while " + action + ": " +
                            std::string(strerror(errno)));

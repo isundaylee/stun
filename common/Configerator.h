@@ -2,9 +2,9 @@
 
 #include <json/json.hpp>
 
-#include <string>
-#include <stdexcept>
 #include <fstream>
+#include <stdexcept>
+#include <string>
 
 namespace common {
 
@@ -26,5 +26,4 @@ private:
 
   static void assertHasKey(std::string const& key);
 };
-
 }

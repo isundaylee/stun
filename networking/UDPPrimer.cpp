@@ -2,8 +2,7 @@
 
 namespace networking {
 
-UDPPrimer::UDPPrimer(UDPPipe& pipe)
-    : outboundQ_(pipe.outboundQ.get()) {}
+UDPPrimer::UDPPrimer(UDPPipe& pipe) : outboundQ_(pipe.outboundQ.get()) {}
 
 void UDPPrimer::start() {
   timer_.reset(new event::Timer(0));

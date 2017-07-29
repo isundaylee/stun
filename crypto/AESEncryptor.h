@@ -16,7 +16,7 @@ public:
   CryptoPP::SecByteBlock key;
 };
 
-class AESEncryptor: public Encryptor {
+class AESEncryptor : public Encryptor {
 public:
   explicit AESEncryptor(AESKey const& key);
 

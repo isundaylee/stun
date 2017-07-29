@@ -11,7 +11,6 @@ namespace networking {
 const uint64_t kUDPPrimerContent = 0x0123456789ABCDEF;
 const event::Duration kUDPPrimerInterval = 1000;
 
-
 class UDPPrimer {
 public:
   UDPPrimer(UDPPipe& pipe);
@@ -32,7 +31,7 @@ private:
 
 class UDPPrimerAcceptor {
 public:
-  UDPPrimerAcceptor(UDPPipe &pipe);
+  UDPPrimerAcceptor(UDPPipe& pipe);
 
   void start();
   event::Condition* didFinish();

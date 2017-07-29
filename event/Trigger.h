@@ -4,8 +4,8 @@
 #include <event/Condition.h>
 
 #include <functional>
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace event {
 

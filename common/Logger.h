@@ -44,10 +44,8 @@ private:
     time(&rawTime);
     timeInfo = localtime(&rawTime);
 
-    strftime(timestampBuffer, kTimestampBufferSize, "[%F %H:%M:%S] ",
-             timeInfo);
+    strftime(timestampBuffer, kTimestampBufferSize, "[%F %H:%M:%S] ", timeInfo);
     return std::string(timestampBuffer);
   }
 };
-
 }
