@@ -90,7 +90,7 @@ void TimerManager::fireUntilTarget() {
       continue;
     }
 
-    fired.second->value = true;
+    fired.second->fire();
   }
   if (targets_.empty()) {
     return;
@@ -123,7 +123,7 @@ Timer::~Timer() { TimerManager::removeTimeout(didFire_.get()); }
 
 Condition* Timer::didFire() { return didFire_.get(); }
 
-void Timer::reset() { didFire_.get()->value = false; }
+void Timer::reset() { didFire_.get()->arm(); }
 
 void Timer::reset(Duration timeout) {
   reset();

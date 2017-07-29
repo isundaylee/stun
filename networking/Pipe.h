@@ -97,7 +97,7 @@ protected:
     event::IOConditionManager::close(fd_);
     ::close(fd_);
     fd_ = 0;
-    didClose_->value = true;
+    didClose_->fire();
   }
 
   int fd_ = 0;
@@ -117,7 +117,7 @@ private:
   }
 
   void doSend() {
-    while (outboundQ->canPop()->value) {
+    while (*outboundQ->canPop()) {
       P packet = outboundQ->front();
       if (write(packet)) {
         statTxPackets_->accumulate(1);

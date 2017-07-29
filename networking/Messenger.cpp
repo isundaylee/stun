@@ -15,7 +15,7 @@ void Messenger::start() {
 }
 
 void Messenger::doReceive() {
-  while (inboundQ_->canPop()->value) {
+  while (*inboundQ_->canPop()) {
     TCPPacket in = inboundQ_->pop();
 
     // Append the new content to our buffer.

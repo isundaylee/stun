@@ -20,7 +20,7 @@ void Action::invoke() {
 
 bool Action::canInvoke() {
   for (auto condition : conditions_) {
-    if (!condition->value) {
+    if (!*condition) {
       return false;
     }
   }

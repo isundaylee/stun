@@ -61,8 +61,8 @@ private:
   std::unique_ptr<Condition> canPop_;
 
   void updateConditions() {
-    canPush_->value = (queue_.size() < capacity_);
-    canPop_->value = (queue_.size() > 0);
+    canPush_->set(queue_.size() < capacity_);
+    canPop_->set(queue_.size() > 0);
   }
 };
 }

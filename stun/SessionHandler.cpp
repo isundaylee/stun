@@ -65,7 +65,7 @@ void SessionHandler::start() {
 
   if (!isServer_) {
     assertTrue(
-        messenger_->canSend()->value,
+        (bool)*messenger_->canSend(),
         "How can I not be able to send at the very start of a connection?");
     messenger_->send(Message("hello", ""));
   }

@@ -21,10 +21,10 @@ UDPPrimerAcceptor::UDPPrimerAcceptor(UDPPipe& pipe)
 void UDPPrimerAcceptor::start() {
   listener_.reset(new event::Action({inboundQ_->canPop()}));
   listener_->callback = [this]() {
-    while (inboundQ_->canPop()->value) {
+    while (*inboundQ_->canPop()) {
       UDPPacket packet = inboundQ_->pop();
       if (packet.unpack<uint64_t>() == kUDPPrimerContent) {
-        didFinish_.value = true;
+        didFinish_.fire();
       }
     }
   };

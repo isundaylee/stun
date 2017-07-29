@@ -78,7 +78,7 @@ void IOConditionManager::prepareConditions(
     }
 
     if (polls[i].revents & mask) {
-      condition->value = true;
+      condition->fire();
     }
   }
 }

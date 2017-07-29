@@ -76,7 +76,7 @@ void EventLoop::run() {
       for (auto action : actions_) {
         bool eligible = true;
         for (auto condition : action->conditions_) {
-          if (condition->type == ConditionType::Base && !condition->value) {
+          if (condition->type == ConditionType::Base && !(*condition)) {
             eligible = false;
             break;
           }
@@ -118,7 +118,7 @@ void EventLoop::run() {
 void EventLoop::resetExternalConditions() {
   for (auto condition : conditions_) {
     if (condition->type != ConditionType::Base) {
-      condition->value = false;
+      condition->arm();
     }
   }
 }

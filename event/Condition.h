@@ -6,11 +6,20 @@ namespace event {
 
 class Condition {
 public:
-  Condition(ConditionType type = ConditionType::Base);
-  ~Condition();
+  Condition(ConditionType type = ConditionType::Base)
+      : type(type), value_(false) {
+    EventLoop::getCurrentLoop()->addCondition(this);
+  }
+
+  ~Condition() { EventLoop::getCurrentLoop()->removeCondition(this); }
 
   ConditionType type;
-  bool value;
+
+  explicit operator bool() const { return value_; }
+
+  void arm() { value_ = false; }
+  void fire() { value_ = true; }
+  void set(bool value) { value_ = value; }
 
 private:
   Condition(Condition const& copy) = delete;
@@ -18,5 +27,7 @@ private:
 
   Condition(Condition const&& move) = delete;
   Condition& operator=(Condition const&& move) = delete;
+
+  bool value_;
 };
 }
