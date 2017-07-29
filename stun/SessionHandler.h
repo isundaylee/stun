@@ -16,7 +16,10 @@ class CommandCenter;
 
 class SessionHandler {
 public:
+  // Session state
   size_t clientIndex;
+  std::string myTunnelAddr;
+  std::string peerTunnelAddr;
 
   SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
                  size_t clientIndex, TCPPipe&& client);
@@ -48,9 +51,6 @@ private:
   std::unique_ptr<crypto::Encryptor> aesEncryptor_;
   std::unique_ptr<PacketTranslator<TunnelPacket, UDPPacket>> sender_;
   std::unique_ptr<PacketTranslator<UDPPacket, TunnelPacket>> receiver_;
-
-  std::string myTunnelAddr_;
-  std::string peerTunnelAddr_;
 
   void attachHandlers();
   void createDataTunnel(std::string const& tunnelName,

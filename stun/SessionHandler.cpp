@@ -26,6 +26,8 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
 
 SessionHandler::SessionHandler(SessionHandler&& move)
     : clientIndex(std::move(move.clientIndex)),
+      myTunnelAddr(std::move(move.myTunnelAddr)),
+      peerTunnelAddr(std::move(move.peerTunnelAddr)),
       center_(std::move(move.center_)), isServer_(std::move(move.isServer_)),
       serverAddr_(std::move(move.serverAddr_)),
       commandPipe_(std::move(move.commandPipe_)),
@@ -35,9 +37,7 @@ SessionHandler::SessionHandler(SessionHandler&& move)
       primerAcceptor_(std::move(move.primerAcceptor_)),
       padder_(std::move(move.padder_)),
       aesEncryptor_(std::move(move.aesEncryptor_)),
-      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)),
-      myTunnelAddr_(std::move(move.myTunnelAddr_)),
-      peerTunnelAddr_(std::move(move.peerTunnelAddr_)) {
+      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)) {
   attachHandlers();
 }
 
@@ -52,8 +52,8 @@ SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
   swap(aesEncryptor_, move.aesEncryptor_);
   swap(sender_, move.sender_);
   swap(receiver_, move.receiver_);
-  swap(myTunnelAddr_, move.myTunnelAddr_);
-  swap(peerTunnelAddr_, move.peerTunnelAddr_);
+  swap(myTunnelAddr, move.myTunnelAddr);
+  swap(peerTunnelAddr, move.peerTunnelAddr);
   swap(clientIndex, move.clientIndex);
   swap(center_, move.center_);
   attachHandlers();
@@ -143,8 +143,8 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     int port = dataPipe_->bind(0);
 
     // Acquire IP addresses
-    myTunnelAddr_ = center_->addrPool->acquire();
-    peerTunnelAddr_ = center_->addrPool->acquire();
+    myTunnelAddr = center_->addrPool->acquire();
+    peerTunnelAddr = center_->addrPool->acquire();
 
     // Prepare encryptor config
     std::string aesKey = crypto::AESKey::randomStringKey();
@@ -160,14 +160,14 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
                         [this, paddingMinSize, aesKey]() {
                           createDataTunnel("TUNNEL-" +
                                                std::to_string(clientIndex),
-                                           myTunnelAddr_, peerTunnelAddr_,
+                                           myTunnelAddr, peerTunnelAddr,
                                            paddingMinSize, aesKey);
                           messenger_->send(Message("primed", ""));
                           primerAcceptor_.reset();
                         });
 
-    return Message("config", json{{"server_ip", myTunnelAddr_},
-                                  {"client_ip", peerTunnelAddr_},
+    return Message("config", json{{"server_ip", myTunnelAddr},
+                                  {"client_ip", peerTunnelAddr},
                                   {"data_port", port},
                                   {"padding_min_size", paddingMinSize},
                                   {"aes_key", aesKey}});

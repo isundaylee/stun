@@ -42,6 +42,8 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
                                });
 
         assertTrue(it != servers_.end(), "Cannot find the client to remove.");
+        addrPool->release(it->myTunnelAddr);
+        addrPool->release(it->peerTunnelAddr);
         servers_.erase(it);
       });
 
