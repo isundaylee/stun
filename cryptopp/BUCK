@@ -3,4 +3,5 @@ cxx_library(
     visibility = ['PUBLIC'],
     srcs = glob(['*.cpp']),
     exported_headers = glob(['*.h']),
+    compiler_flags = ['-Wno-everything'],
 )

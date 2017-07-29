@@ -23,12 +23,7 @@ std::string SubnetAddress::toString() const {
   return addr + "/" + std::to_string(prefixLen);
 }
 
-const uint32_t kLastOctetMask = 0xff;
-
-IPAddressPool::IPAddressPool(SubnetAddress const& subnet)
-    : prefixLen_(subnet.prefixLen),
-      subnetMask_(((1U << subnet.prefixLen) - 1) << (32 - subnet.prefixLen)),
-      hostMask_(~subnetMask_) {
+IPAddressPool::IPAddressPool(SubnetAddress const& subnet) {
   assertTrue(1 <= subnet.prefixLen && subnet.prefixLen <= 32,
              "Invalid prefixLen" + std::to_string(subnet.prefixLen));
   inet_pton(AF_INET, subnet.addr.c_str(), &subnet_);

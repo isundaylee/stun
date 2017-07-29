@@ -36,8 +36,8 @@ public:
 
   Pipe(Pipe&& move)
       : inboundQ(std::move(move.inboundQ)),
-        outboundQ(std::move(move.outboundQ)), name_(std::move(move.name_)),
-        shouldOutputStats(move.shouldOutputStats),
+        outboundQ(std::move(move.outboundQ)),
+        shouldOutputStats(move.shouldOutputStats), name_(std::move(move.name_)),
         statTxPackets_(std::move(move.statTxPackets_)),
         statTxBytes_(std::move(move.statTxBytes_)),
         statRxPackets_(std::move(move.statRxPackets_)),

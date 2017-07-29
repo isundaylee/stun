@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <queue>
+#include <string>
 
 namespace networking {
 
@@ -26,9 +26,6 @@ public:
 private:
   uint32_t subnet_;
   uint32_t current_;
-  uint32_t subnetMask_;
-  uint32_t hostMask_;
-  size_t prefixLen_;
 
   std::queue<std::string> reusables_;
 };

@@ -10,8 +10,8 @@ public:
   Callback() {}
 
   Callback(Callback&& move)
-      : func_(std::move(move.func_)), method_(std::move(move.method_)),
-        target(std::move(move.target)) {}
+      : target(std::move(move.target)), func_(std::move(move.func_)),
+        method_(std::move(move.method_)) {}
 
   Callback& operator=(Callback&& move) {
     std::swap(func_, move.func_);

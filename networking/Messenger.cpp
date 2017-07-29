@@ -5,8 +5,8 @@ namespace networking {
 typedef uint32_t MessengerLengthHeaderType;
 
 Messenger::Messenger(TCPPipe& client)
-    : bufferUsed_(0), inboundQ_(client.inboundQ.get()),
-      outboundQ_(client.outboundQ.get()), client_(client) {}
+    : client_(client), inboundQ_(client.inboundQ.get()),
+      outboundQ_(client.outboundQ.get()), bufferUsed_(0) {}
 
 void Messenger::start() {
   receiver_.reset(

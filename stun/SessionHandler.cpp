@@ -13,8 +13,8 @@ using namespace networking;
 SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
                                std::string serverAddr, size_t clientIndex,
                                TCPPipe&& client)
-    : center_(center), isServer_(isServer), serverAddr_(serverAddr),
-      clientIndex(clientIndex), commandPipe_(new TCPPipe(std::move(client))),
+    : clientIndex(clientIndex), center_(center), isServer_(isServer),
+      serverAddr_(serverAddr), commandPipe_(new TCPPipe(std::move(client))),
       messenger_(new Messenger(*commandPipe_)) {
   if (common::Configerator::hasKey("secret")) {
     messenger_->addEncryptor(new crypto::AESEncryptor(
@@ -25,16 +25,19 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
 }
 
 SessionHandler::SessionHandler(SessionHandler&& move)
-    : commandPipe_(std::move(move.commandPipe_)),
-      dataPipe_(std::move(move.dataPipe_)),
-      messenger_(std::move(move.messenger_)), tun_(std::move(move.tun_)),
-      primer_(std::move(move.primer_)), padder_(std::move(move.padder_)),
+    : clientIndex(std::move(move.clientIndex)),
+      center_(std::move(move.center_)), isServer_(std::move(move.isServer_)),
+      serverAddr_(std::move(move.serverAddr_)),
+      commandPipe_(std::move(move.commandPipe_)),
+      messenger_(std::move(move.messenger_)),
+      dataPipe_(std::move(move.dataPipe_)), tun_(std::move(move.tun_)),
+      primer_(std::move(move.primer_)),
+      primerAcceptor_(std::move(move.primerAcceptor_)),
+      padder_(std::move(move.padder_)),
       aesEncryptor_(std::move(move.aesEncryptor_)),
       sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)),
       myTunnelAddr_(std::move(move.myTunnelAddr_)),
-      peerTunnelAddr_(std::move(move.peerTunnelAddr_)),
-      clientIndex(std::move(move.clientIndex)),
-      center_(std::move(move.center_)) {
+      peerTunnelAddr_(std::move(move.peerTunnelAddr_)) {
   attachHandlers();
 }
 
@@ -184,7 +187,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     dataPipe_->setName("DATA");
     dataPipe_->shouldOutputStats = true;
     dataPipe_->open();
-    int port = dataPipe_->bind(0);
+    dataPipe_->bind(0);
     dataPipe_->connect(serverAddr_, body["data_port"]);
 
     primer_.reset(new UDPPrimer(*dataPipe_));

@@ -16,8 +16,6 @@
 
 namespace networking {
 
-const int kNetlinkMTU = 1000;
-
 InterfaceConfig::InterfaceConfig() {
   socket_ = socket(AF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
   requestSeq_ = 0;
