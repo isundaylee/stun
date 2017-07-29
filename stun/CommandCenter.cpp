@@ -2,8 +2,9 @@
 
 #include <stun/SessionHandler.h>
 
-#include <common/Util.h>
 #include <common/Configerator.h>
+#include <common/Util.h>
+#include <event/Trigger.h>
 #include <networking/Messenger.h>
 
 #include <algorithm>
@@ -32,15 +33,17 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   size_t clientIndex = numClients;
   numClients++;
 
-  client.onClose = [this, clientIndex]() {
-    auto it = std::find_if(servers_.begin(), servers_.end(),
-                           [clientIndex](SessionHandler const& server) {
-                             return server.clientIndex == clientIndex;
-                           });
+  event::Trigger::arm(
+      {client.didClose()},
+      [this, clientIndex]() {
+        auto it = std::find_if(servers_.begin(), servers_.end(),
+                               [clientIndex](SessionHandler const& server) {
+                                 return server.clientIndex == clientIndex;
+                               });
 
-    assertTrue(it != servers_.end(), "Cannot find the client to remove.");
-    servers_.erase(it);
-  };
+        assertTrue(it != servers_.end(), "Cannot find the client to remove.");
+        servers_.erase(it);
+      });
 
   client.setName("COMMAND-" + std::to_string(clientIndex));
   servers_.emplace_back(this, true, "", clientIndex, std::move(client));
@@ -53,10 +56,12 @@ void CommandCenter::connect(std::string const& host, int port) {
   toServer.open();
   toServer.connect(host, port);
 
-  toServer.onClose = [this]() {
-    LOG() << "We are disconnected by the server." << std::endl;
-    client_.reset();
-  };
+  event::Trigger::arm({toServer.didClose()},
+                      [this]() {
+                        LOG() << "We are disconnected by the server."
+                              << std::endl;
+                        client_.reset();
+                      });
 
   client_.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
   client_->start();

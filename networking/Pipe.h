@@ -31,7 +31,8 @@ public:
         statTxPackets_(new stats::RateStat<size_t>("tx_pkts", 0)),
         statTxBytes_(new stats::RateStat<size_t>("tx_bytes", 0)),
         statRxPackets_(new stats::RateStat<size_t>("rx_pkts", 0)),
-        statRxBytes_(new stats::RateStat<size_t>("rx_bytes", 0)) {}
+        statRxBytes_(new stats::RateStat<size_t>("rx_bytes", 0)),
+        didClose_(new event::Condition()) {}
 
   Pipe(Pipe&& move)
       : inboundQ(std::move(move.inboundQ)),
@@ -40,13 +41,13 @@ public:
         statTxPackets_(std::move(move.statTxPackets_)),
         statTxBytes_(std::move(move.statTxBytes_)),
         statRxPackets_(std::move(move.statRxPackets_)),
-        statRxBytes_(std::move(move.statRxBytes_)) {
+        statRxBytes_(std::move(move.statRxBytes_)),
+        didClose_(std::move(move.didClose_)) {
     fd_ = move.fd_;
     move.fd_ = 0;
 
     sender = std::move(move.sender);
     receiver = std::move(move.receiver);
-    onClose = std::move(move.onClose);
 
     if (!!sender) {
       sender->callback.target = this;
@@ -65,7 +66,7 @@ public:
     name_ = name;
   }
 
-  event::Callback onClose;
+  event::Condition* didClose() { return didClose_.get(); }
 
 protected:
   void startActions() {
@@ -96,7 +97,7 @@ protected:
     event::IOConditionManager::close(fd_);
     ::close(fd_);
     fd_ = 0;
-    onClose.invoke();
+    didClose_->value = true;
   }
 
   int fd_ = 0;
@@ -133,5 +134,7 @@ private:
 
   std::unique_ptr<event::Action> receiver;
   std::unique_ptr<event::Action> sender;
+
+  std::unique_ptr<event::Condition> didClose_;
 };
 }

@@ -1,5 +1,7 @@
 #include "event/Action.h"
 
+#include <iostream>
+
 namespace event {
 
 Action::Action(std::vector<Condition*> conditions) : conditions_(conditions) {

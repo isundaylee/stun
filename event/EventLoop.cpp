@@ -101,6 +101,10 @@ void EventLoop::run() {
         if (action->canInvoke()) {
           stablized = false;
           action->invoke();
+          // Invoking the current action could have caused some of the actions
+          // to be removed from actions_. Therefore we break and start looking
+          // again.
+          break;
         }
       }
       resetExternalConditions();
