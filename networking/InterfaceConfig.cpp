@@ -227,9 +227,10 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
 typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 
 void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
-                               std::string const& gatewayAddr) {
+                               RouteDestination const& routeDest) {
   LOG() << "Adding a route to " << destSubnet.toString() << " via "
-        << gatewayAddr << std::endl;
+        << routeDest.gatewayAddr << " (dev" << routeDest.interfaceIndex << ")"
+        << std::endl;
 
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_NEWROUTE, NLM_F_CREATE | NLM_F_ACK);
@@ -240,12 +241,20 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
   req.msg.rtm_type = RTN_UNICAST;
   req.msg.rtm_dst_len = destSubnet.prefixLen;
 
-  struct in_addr gateway;
   struct in_addr dest;
-  inet_pton(AF_INET, gatewayAddr.c_str(), &gateway);
   inet_pton(AF_INET, destSubnet.addr.c_str(), &dest);
-  req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
   req.addAttr(RTA_DST, sizeof(dest), &dest);
+
+  if (!routeDest.gatewayAddr.empty()) {
+    struct in_addr gateway;
+    inet_pton(AF_INET, routeDest.gatewayAddr.c_str(), &gateway);
+    req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
+  }
+
+  if (routeDest.interfaceIndex >= 0) {
+    int interfaceIndex = routeDest.interfaceIndex;
+    req.addAttr(RTA_OIF, sizeof(routeDest.interfaceIndex), &interfaceIndex);
+  }
 
   sendRequest(req);
   waitForReply([](struct nlmsghdr* msg) {});
@@ -255,7 +264,7 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
 
 typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
 
-std::string InterfaceConfig::getRoute(std::string const& destAddr) {
+RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_GETROUTE, NLM_F_ACK);
   req.msg.rtm_family = AF_INET;
@@ -269,10 +278,11 @@ std::string InterfaceConfig::getRoute(std::string const& destAddr) {
   inet_pton(AF_INET, destAddr.c_str(), &dest);
   req.addAttr(RTA_DST, sizeof(dest), &dest);
 
+  int interface = -1;
   std::string gateway = "";
 
   sendRequest(req);
-  waitForReply([&gateway](struct nlmsghdr* msg) {
+  waitForReply([&interface, &gateway](struct nlmsghdr* msg) {
     switch (msg->nlmsg_type) {
     case 24:
       struct rtmsg* route;
@@ -285,6 +295,9 @@ std::string InterfaceConfig::getRoute(std::string const& destAddr) {
       for (attr = RTM_RTA(route); RTA_OK(attr, len);
            attr = RTA_NEXT(attr, len)) {
         switch (attr->rta_type) {
+        case RTA_OIF:
+          interface = *(int*)RTA_DATA(attr);
+          break;
         case RTA_GATEWAY:
           char addressBuffer[32];
           inet_ntop(AF_INET, RTA_DATA(attr), addressBuffer,
@@ -296,12 +309,13 @@ std::string InterfaceConfig::getRoute(std::string const& destAddr) {
 
       break;
     default:
-      throw std::runtime_error("Unexpected nlmsg_type " +
-                               std::to_string(msg->nlmsg_type));
+      assertTrue(false,
+                 "Unexpected nlmsg_type " + std::to_string(msg->nlmsg_type));
     }
   });
 
-  assertTrue(!gateway.empty(), "Error getting route to " + destAddr);
-  return gateway;
+  assertTrue((interface >= 0) || !gateway.empty(),
+             "Error getting route to " + destAddr);
+  return RouteDestination(interface, gateway);
 }
 }

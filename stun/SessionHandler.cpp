@@ -208,15 +208,18 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
       }
     }
 
-    std::string originalGateway = config.getRoute(commandPipe_->peerAddr);
+    networking::RouteDestination originalRouteDest =
+        config.getRoute(commandPipe_->peerAddr);
     for (networking::SubnetAddress const& exclusion : excluded_subnets) {
-      config.newRoute(exclusion, originalGateway);
+      config.newRoute(exclusion, originalRouteDest);
     }
 
     if (common::Configerator::hasKey("forward_subnets")) {
+      std::string serverIP = body["server_ip"];
       for (auto const& subnet :
            common::Configerator::getStringArray("forward_subnets")) {
-        config.newRoute(SubnetAddress(subnet), body["server_ip"]);
+        networking::RouteDestination routeDest(serverIP);
+        config.newRoute(SubnetAddress(subnet), routeDest);
       }
     }
 

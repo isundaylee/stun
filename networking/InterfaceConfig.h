@@ -13,6 +13,17 @@ namespace networking {
 const size_t kNetlinkClientReplyBufferSize = (1U << 16);
 const size_t kNetlinkRequestAttrBufferSize = (1U << 10);
 
+struct RouteDestination {
+public:
+  int interfaceIndex;
+  std::string const& gatewayAddr;
+
+  RouteDestination(int interfaceIndex, std::string const& gatewayAddr)
+      : interfaceIndex(interfaceIndex), gatewayAddr(gatewayAddr) {}
+  explicit RouteDestination(std::string const& gatewayAddr)
+      : interfaceIndex(-1), gatewayAddr(gatewayAddr) {}
+};
+
 class InterfaceConfig {
 public:
   InterfaceConfig();
@@ -24,8 +35,8 @@ public:
                       std::string const& peerAddress);
 
   void newRoute(SubnetAddress const& destSubnet,
-                std::string const& gatewayAddr);
-  std::string getRoute(std::string const& destAddr);
+                RouteDestination const& routeDest);
+  RouteDestination getRoute(std::string const& destAddr);
 
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;
