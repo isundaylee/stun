@@ -14,5 +14,6 @@ cxx_binary(
         '//common:common',
         '//stats:stats',
         '//crypto:crypto',
+        '//networking:networking',
     ],
 )
