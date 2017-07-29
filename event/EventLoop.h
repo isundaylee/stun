@@ -28,6 +28,7 @@ public:
   void addAction(Action* action);
   void removeAction(Action* action);
   void addCondition(Condition* condition);
+  bool hasCondition(Condition* condition);
   void removeCondition(Condition* condition);
   void addConditionManager(ConditionManager* manager, ConditionType type);
 

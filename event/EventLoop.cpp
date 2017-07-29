@@ -31,6 +31,10 @@ void EventLoop::addCondition(Condition* condition) {
   conditions_.insert(condition);
 }
 
+bool EventLoop::hasCondition(Condition* condition) {
+  return (conditions_.find(condition) != conditions_.end());
+}
+
 void EventLoop::removeCondition(Condition* condition) {
   conditions_.erase(condition);
 }
@@ -76,6 +80,10 @@ void EventLoop::run() {
       for (auto action : actions_) {
         bool eligible = true;
         for (auto condition : action->conditions_) {
+          if (!hasCondition(condition)) {
+            continue;
+          }
+
           if (condition->type == ConditionType::Base && !(*condition)) {
             eligible = false;
             break;
@@ -83,6 +91,10 @@ void EventLoop::run() {
         }
         if (eligible) {
           for (auto condition : action->conditions_) {
+            if (!hasCondition(condition)) {
+              continue;
+            }
+
             if (condition->type == pair.first) {
               interesting.insert(condition);
             }
