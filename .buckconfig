@@ -2,4 +2,5 @@
   cxxpp = /usr/bin/clang++
   cxx = /usr/bin/clang++
   ld = /usr/bin/clang++
-  cxxflags = -g -std=c++11
+  ldflags = -fsanitize=address -static-libstdc++
+  cxxflags = -g -std=c++11 -fsanitize=address
