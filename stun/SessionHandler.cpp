@@ -99,7 +99,7 @@ void SessionHandler::createDataTunnel(std::string const& tunnelName,
 
   // Prepare Encryptor-s
   if (paddingMinSize != 0) {
-    padder_.reset(new crypto::Padder(1000));
+    padder_.reset(new crypto::Padder(paddingMinSize));
   }
   aesEncryptor_.reset(new crypto::AESEncryptor(crypto::AESKey(aesKey)));
 
