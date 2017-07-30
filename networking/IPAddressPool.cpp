@@ -8,7 +8,7 @@ namespace networking {
 
 SubnetAddress::SubnetAddress(std::string const& subnet) {
   std::size_t slashPos = subnet.find('/');
-  assertTrue(slashPos != std::string::npos, "Invalid address_pool: " + subnet);
+  assertTrue(slashPos != std::string::npos, "Invalid subnet: " + subnet);
 
   addr = subnet.substr(0, slashPos);
   prefixLen = std::stoi(subnet.substr(slashPos + 1));

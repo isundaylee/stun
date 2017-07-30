@@ -16,7 +16,7 @@ const size_t kNetlinkRequestAttrBufferSize = (1U << 10);
 struct RouteDestination {
 public:
   int interfaceIndex;
-  std::string const& gatewayAddr;
+  std::string gatewayAddr;
 
   RouteDestination(int interfaceIndex, std::string const& gatewayAddr)
       : interfaceIndex(interfaceIndex), gatewayAddr(gatewayAddr) {}
