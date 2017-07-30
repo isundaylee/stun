@@ -63,20 +63,21 @@ void IOConditionManager::prepareConditions(
 
   // Enable connections according to poll result
   for (size_t i = 0; i < interesting.size(); i++) {
-    IOCondition* condition = (IOCondition*)interesting[i];
-    int mask =
-        (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     if (polls[i].revents & POLLNVAL) {
       throw std::runtime_error("Invalid file descriptor. Be sure to call "
                                "IOConditionManager::close(fd) before "
                                "close()-ing the file descriptor.");
     }
 
-    if (polls[i].revents & POLLERR) {
+    if (((polls[i].revents & POLLERR) != 0) &&
+        ((polls[i].revents & POLLRDHUP) == 0)) {
       throw std::runtime_error("Error response from poll(): " +
                                std::to_string(polls[i].revents));
     }
 
+    IOCondition* condition = (IOCondition*)interesting[i];
+    int mask =
+        (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     if (polls[i].revents & mask) {
       condition->fire();
     }
