@@ -23,6 +23,8 @@ struct TunnelPacket : Packet<kTunnelPacketSize> {};
 class Tunnel : public Pipe<TunnelPacket> {
 public:
   Tunnel(TunnelType type);
+  Tunnel(Tunnel&& move)
+      : Pipe(std::move(move)), type_(move.type_), devName_(move.devName_) {}
 
   std::string const& getDeviceName() { return devName_; }
 

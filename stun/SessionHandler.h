@@ -2,6 +2,9 @@
 
 #include <stddef.h>
 
+#include <stun/DataPipe.h>
+#include <stun/Dispatcher.h>
+
 #include <networking/Messenger.h>
 #include <networking/TCPPipe.h>
 #include <networking/Tunnel.h>
@@ -43,19 +46,11 @@ private:
   std::unique_ptr<Messenger> messenger_;
 
   // Data connection
-  std::unique_ptr<UDPPipe> dataPipe_;
-  std::unique_ptr<Tunnel> tun_;
-  std::unique_ptr<UDPPrimer> primer_;
-  std::unique_ptr<UDPPrimerAcceptor> primerAcceptor_;
-  std::unique_ptr<crypto::Encryptor> padder_;
-  std::unique_ptr<crypto::Encryptor> aesEncryptor_;
-  std::unique_ptr<PacketTranslator<TunnelPacket, UDPPacket>> sender_;
-  std::unique_ptr<PacketTranslator<UDPPacket, TunnelPacket>> receiver_;
+  std::unique_ptr<Dispatcher> dispatcher_;
 
   void attachHandlers();
-  void createDataTunnel(std::string const& tunnelName,
-                        std::string const& myAddr, std::string const& peerAddr,
-                        size_t paddingMinSize, std::string const& aesKey);
+  Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,
+                      std::string const& peerAddr);
   Message handleMessageFromClient(Message const& message);
   Message handleMessageFromServer(Message const& message);
 };

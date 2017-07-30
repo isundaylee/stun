@@ -5,6 +5,7 @@
 #include <crypto/Padder.h>
 #include <event/Trigger.h>
 #include <stun/CommandCenter.h>
+#include <stun/Dispatcher.h>
 
 namespace stun {
 
@@ -32,26 +33,15 @@ SessionHandler::SessionHandler(SessionHandler&& move)
       serverAddr_(std::move(move.serverAddr_)),
       commandPipe_(std::move(move.commandPipe_)),
       messenger_(std::move(move.messenger_)),
-      dataPipe_(std::move(move.dataPipe_)), tun_(std::move(move.tun_)),
-      primer_(std::move(move.primer_)),
-      primerAcceptor_(std::move(move.primerAcceptor_)),
-      padder_(std::move(move.padder_)),
-      aesEncryptor_(std::move(move.aesEncryptor_)),
-      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)) {
+      dispatcher_(std::move(move.dispatcher_)) {
   attachHandlers();
 }
 
 SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
   using std::swap;
   swap(commandPipe_, move.commandPipe_);
-  swap(dataPipe_, move.dataPipe_);
   swap(messenger_, move.messenger_);
-  swap(tun_, move.tun_);
-  swap(primer_, move.primer_);
-  swap(padder_, move.padder_);
-  swap(aesEncryptor_, move.aesEncryptor_);
-  swap(sender_, move.sender_);
-  swap(receiver_, move.receiver_);
+  swap(dispatcher_, move.dispatcher_);
   swap(myTunnelAddr, move.myTunnelAddr);
   swap(peerTunnelAddr, move.peerTunnelAddr);
   swap(clientIndex, move.clientIndex);
@@ -100,93 +90,87 @@ void SessionHandler::attachHandlers() {
   };
 }
 
-void SessionHandler::createDataTunnel(std::string const& tunnelName,
-                                      std::string const& myAddr,
-                                      std::string const& peerAddr,
-                                      size_t paddingMinSize,
-                                      std::string const& aesKey) {
-  // Establish tunnel
-  tun_.reset(new Tunnel(TunnelType::TUN));
-  tun_->setName(tunnelName);
-  tun_->open();
-  InterfaceConfig client;
-  client.newLink(tun_->getDeviceName());
-  client.setLinkAddress(tun_->getDeviceName(), myAddr, peerAddr);
+Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
+                                    std::string const& myTunnelAddr,
+                                    std::string const& peerTunnelAddr) {
+  Tunnel tunnel(TunnelType::TUN);
+  tunnel.setName(tunnelName);
+  tunnel.open();
 
-  // Prepare Encryptor-s
-  if (paddingMinSize != 0) {
-    padder_.reset(new crypto::Padder(paddingMinSize));
+  // Configure the new interface
+  InterfaceConfig config;
+  config.newLink(tunnel.getDeviceName());
+  config.setLinkAddress(tunnel.getDeviceName(), myTunnelAddr, peerTunnelAddr);
+
+  // Configure iptables to route traffic into the new tunnel
+  std::vector<networking::SubnetAddress> excluded_subnets = {
+      SubnetAddress(commandPipe_->peerAddr, 32)};
+
+  // Create routing rules for subnets NOT to forward
+  if (common::Configerator::hasKey("excluded_subnets")) {
+    std::vector<std::string> configExcludedSubnets =
+        common::Configerator::getStringArray("excluded_subnets");
+    for (std::string const& exclusion : configExcludedSubnets) {
+      excluded_subnets.push_back(SubnetAddress(exclusion));
+    }
   }
-  aesEncryptor_.reset(new crypto::AESEncryptor(crypto::AESKey(aesKey)));
 
-  // Configure sender and receiver
-  sender_.reset(new PacketTranslator<TunnelPacket, UDPPacket>(
-      tun_->inboundQ.get(), dataPipe_->outboundQ.get()));
-  sender_->transform = [this](TunnelPacket const& in) {
-    UDPPacket out;
-    out.fill(in.data, in.size);
-    if (!!padder_) {
-      out.size = padder_->encrypt(out.data, out.size, out.capacity);
-    }
-    out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
-    return out;
-  };
-  sender_->start();
+  networking::RouteDestination originalRouteDest =
+      config.getRoute(commandPipe_->peerAddr);
+  for (networking::SubnetAddress const& exclusion : excluded_subnets) {
+    config.newRoute(exclusion, originalRouteDest);
+  }
 
-  receiver_.reset(new PacketTranslator<UDPPacket, TunnelPacket>(
-      dataPipe_->inboundQ.get(), tun_->outboundQ.get()));
-  receiver_->transform = [this](UDPPacket const& in) {
-    TunnelPacket out;
-    out.fill(in.data, in.size);
-    out.size = aesEncryptor_->decrypt(out.data, out.size, out.capacity);
-    if (!!padder_) {
-      out.size = padder_->decrypt(out.data, out.size, out.capacity);
+  // Create routing rules for subnets to forward
+  if (common::Configerator::hasKey("forward_subnets")) {
+    std::string serverIP = peerTunnelAddr;
+    for (auto const& subnet :
+         common::Configerator::getStringArray("forward_subnets")) {
+      networking::RouteDestination routeDest(serverIP);
+      config.newRoute(SubnetAddress(subnet), routeDest);
     }
-    return out;
-  };
-  receiver_->start();
+  }
+
+  return tunnel;
 }
 
 Message SessionHandler::handleMessageFromClient(Message const& message) {
   std::string type = message.getType();
   json body = message.getBody();
 
-  if (type == "hello") { // Set up data pipe
-    dataPipe_.reset(new UDPPipe());
-    dataPipe_->setName("Data " + std::to_string(clientIndex));
-    dataPipe_->shouldOutputStats = true;
-    dataPipe_->open();
-    int port = dataPipe_->bind(0);
-
+  if (type == "hello") {
     // Acquire IP addresses
     myTunnelAddr = center_->addrPool->acquire();
     peerTunnelAddr = center_->addrPool->acquire();
 
-    // Prepare encryptor config
+    // Set up the data tunnel. Data pipes will be set up in a later stage.
+    dispatcher_.reset(
+        new Dispatcher(createTunnel("Tunnel " + std::to_string(clientIndex),
+                                    myTunnelAddr, peerTunnelAddr)));
+
+    return Message("config", json{{"server_tunnel_ip", myTunnelAddr},
+                                  {"client_tunnel_ip", peerTunnelAddr}});
+  } else if (type == "config_done") {
+    UDPPipe udpPipe;
+    udpPipe.setName("Data " + std::to_string(clientIndex));
+    udpPipe.open();
+    int port = udpPipe.bind(0);
+
+    // Prepare encryption config
     std::string aesKey = crypto::AESKey::randomStringKey();
     size_t paddingMinSize = 0;
     if (common::Configerator::hasKey("padding_to")) {
       paddingMinSize = common::Configerator::getInt("padding_to");
     }
 
-    // Start listening for the UDP primer packet
-    primerAcceptor_.reset(new UDPPrimerAcceptor(*dataPipe_));
-    primerAcceptor_->start();
-    event::Trigger::arm({messenger_->canSend(), primerAcceptor_->didFinish()},
-                        [this, paddingMinSize, aesKey]() {
-                          createDataTunnel("Tunnel " +
-                                               std::to_string(clientIndex),
-                                           myTunnelAddr, peerTunnelAddr,
-                                           paddingMinSize, aesKey);
-                          messenger_->send(Message("primed", ""));
-                          primerAcceptor_.reset();
-                        });
+    DataPipe* dataPipe =
+        new DataPipe(std::move(udpPipe), aesKey, paddingMinSize);
+    dispatcher_->addDataPipe(dataPipe);
+    dispatcher_->start();
 
-    return Message("config", json{{"server_ip", myTunnelAddr},
-                                  {"client_ip", peerTunnelAddr},
-                                  {"data_port", port},
-                                  {"padding_min_size", paddingMinSize},
-                                  {"aes_key", aesKey}});
+    return Message("new_data_pipe", json{{"port", port},
+                                         {"aes_key", aesKey},
+                                         {"padding_to_size", paddingMinSize}});
   } else {
     unreachable("Unrecognized client message type: " + type);
   }
@@ -198,50 +182,24 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
   std::vector<Message> replies;
 
   if (type == "config") {
-    // Create data pipe
-    dataPipe_.reset(new UDPPipe());
-    dataPipe_->setName("Data");
-    dataPipe_->shouldOutputStats = true;
-    dataPipe_->open();
-    dataPipe_->bind(0);
-    dataPipe_->connect(serverAddr_, body["data_port"]);
+    dispatcher_.reset(new Dispatcher(createTunnel(
+        "Tunnel", body["client_tunnel_ip"], body["server_tunnel_ip"])));
 
-    primer_.reset(new UDPPrimer(*dataPipe_));
-    primer_->start();
+    return Message("config_done", "");
+  } else if (type == "new_data_pipe") {
+    UDPPipe udpPipe;
 
-    createDataTunnel("Tunnel", body["client_ip"], body["server_ip"],
-                     body["padding_min_size"], body["aes_key"]);
+    udpPipe.setName("Data");
+    udpPipe.open();
+    udpPipe.bind(0);
+    udpPipe.connect(serverAddr_, body["port"]);
 
-    InterfaceConfig config;
-    std::vector<networking::SubnetAddress> excluded_subnets = {
-        SubnetAddress(commandPipe_->peerAddr, 32)};
+    DataPipe* dataPipe = new DataPipe(std::move(udpPipe), body["aes_key"],
+                                      body["padding_to_size"]);
+    dataPipe->setPrePrimed();
+    dispatcher_->addDataPipe(dataPipe);
+    dispatcher_->start();
 
-    if (common::Configerator::hasKey("excluded_subnets")) {
-      std::vector<std::string> configExcludedSubnets =
-          common::Configerator::getStringArray("excluded_subnets");
-      for (std::string const& exclusion : configExcludedSubnets) {
-        excluded_subnets.push_back(SubnetAddress(exclusion));
-      }
-    }
-
-    networking::RouteDestination originalRouteDest =
-        config.getRoute(commandPipe_->peerAddr);
-    for (networking::SubnetAddress const& exclusion : excluded_subnets) {
-      config.newRoute(exclusion, originalRouteDest);
-    }
-
-    if (common::Configerator::hasKey("forward_subnets")) {
-      std::string serverIP = body["server_ip"];
-      for (auto const& subnet :
-           common::Configerator::getStringArray("forward_subnets")) {
-        networking::RouteDestination routeDest(serverIP);
-        config.newRoute(SubnetAddress(subnet), routeDest);
-      }
-    }
-
-    return Message::null();
-  } else if (type == "primed") {
-    primer_.reset();
     return Message::null();
   } else {
     unreachable("Unrecognized server message type: " + type);
