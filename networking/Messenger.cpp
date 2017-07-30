@@ -80,8 +80,11 @@ void Messenger::doReceive() {
       }
 
       bufferUsed_ -= (totalLen);
-      LOG() << "Messenger received: " << message.getType() << " - "
-            << message.getBody() << std::endl;
+
+      if (message.getType() != kMessengerHeartBeatMessageType) {
+        LOG_T("Messenger") << "Received: " << message.getType() << " - "
+                           << message.getBody() << std::endl;
+      }
 
       if (message.getType() == kMessengerHeartBeatMessageType) {
         heartbeatMissedTimer_->reset(kMessengerHeartBeatTimeout);
@@ -116,8 +119,11 @@ void Messenger::send(Message const& message) {
   *((MessengerLengthHeaderType*)packet.data) = payloadSize;
 
   client_.outboundQ->push(packet);
-  LOG() << "Messenger sent: " << message.getType() << " - " << message.getBody()
-        << std::endl;
+
+  if (message.getType() != kMessengerHeartBeatMessageType) {
+    LOG_T("Messenger") << "Sent: " << message.getType() << " = "
+                       << message.getBody() << std::endl;
+  }
 }
 
 void Messenger::addEncryptor(crypto::Encryptor* encryptor) {

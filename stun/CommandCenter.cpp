@@ -24,7 +24,7 @@ void CommandCenter::serve(int port) {
     handleAccept(std::move(client));
   };
 
-  commandServer_->setName("CENTER");
+  commandServer_->setName("Center");
   commandServer_->open();
   commandServer_->bind(port);
 }
@@ -47,20 +47,20 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
         servers_.erase(it);
       });
 
-  client.setName("COMMAND-" + std::to_string(clientIndex));
+  client.setName("Command " + std::to_string(clientIndex));
   servers_.emplace_back(this, true, "", clientIndex, std::move(client));
   servers_.back().start();
 }
 
 void CommandCenter::connect(std::string const& host, int port) {
   TCPPipe toServer;
-  toServer.setName("COMMAND");
+  toServer.setName("Command");
   toServer.open();
   toServer.connect(host, port);
 
   event::Trigger::arm({toServer.didClose()},
                       [this]() {
-                        LOG() << "We are disconnected." << std::endl;
+                        LOG_T("Command") << "We are disconnected." << std::endl;
                         client_.reset();
                       });
 

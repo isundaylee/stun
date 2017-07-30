@@ -41,7 +41,7 @@ void Tunnel::open() {
   checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   devName_ = ifr.ifr_name;
-  LOG() << name_ << " is opened successfully as " << devName_ << std::endl;
+  LOG_T(name_) << "Opened successfully as " << devName_ << std::endl;
 
   this->fd_ = fd_;
   this->startActions();

@@ -76,19 +76,21 @@ void SessionHandler::attachHandlers() {
       {messenger_->didReceiveInvalidMessage()},
       [this]() {
         if (isServer_) {
-          LOG() << "Disconnected client " << clientIndex
-                << " due to invalid command message." << std::endl;
+          LOG_T("Session") << "Disconnected client " << clientIndex
+                           << " due to invalid command message." << std::endl;
         } else {
-          LOG() << "Disconnected from server due to invalid command message."
-                << std::endl;
+          LOG_T("Session")
+              << "Disconnected from server due to invalid command message."
+              << std::endl;
         }
         commandPipe_->close();
       });
 
   event::Trigger::arm({messenger_->didMissHeartbeat()},
                       [this]() {
-                        LOG() << "Disconnected due to missed heartbeats."
-                              << std::endl;
+                        LOG_T("Session")
+                            << "Disconnected due to missed heartbeats."
+                            << std::endl;
                         commandPipe_->close();
                       });
 
@@ -151,7 +153,7 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
 
   if (type == "hello") { // Set up data pipe
     dataPipe_.reset(new UDPPipe());
-    dataPipe_->setName("DATA-" + std::to_string(clientIndex));
+    dataPipe_->setName("Data " + std::to_string(clientIndex));
     dataPipe_->shouldOutputStats = true;
     dataPipe_->open();
     int port = dataPipe_->bind(0);
@@ -172,7 +174,7 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     primerAcceptor_->start();
     event::Trigger::arm({messenger_->canSend(), primerAcceptor_->didFinish()},
                         [this, paddingMinSize, aesKey]() {
-                          createDataTunnel("TUNNEL-" +
+                          createDataTunnel("Tunnel " +
                                                std::to_string(clientIndex),
                                            myTunnelAddr, peerTunnelAddr,
                                            paddingMinSize, aesKey);
@@ -198,7 +200,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
   if (type == "config") {
     // Create data pipe
     dataPipe_.reset(new UDPPipe());
-    dataPipe_->setName("DATA");
+    dataPipe_->setName("Data");
     dataPipe_->shouldOutputStats = true;
     dataPipe_->open();
     dataPipe_->bind(0);
@@ -207,7 +209,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     primer_.reset(new UDPPrimer(*dataPipe_));
     primer_->start();
 
-    createDataTunnel("TUNNEL", body["client_ip"], body["server_ip"],
+    createDataTunnel("Tunnel", body["client_ip"], body["server_ip"],
                      body["padding_min_size"], body["aes_key"]);
 
     InterfaceConfig config;

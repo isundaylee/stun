@@ -37,17 +37,17 @@ int main(int argc, char* argv[]) {
   event::Action statsDumper({statsTimer.didFire()});
   statsDumper.callback = [&statsTimer]() {
     stats::StatsManager::dump(
-        LOG(), [](std::string const& name, std::string const& metric) {
-          return (name.find("DATA") == std::string::npos) &&
-                 (name.find("COMMAND") == std::string::npos) &&
-                 (name.find("CENTER") == std::string::npos);
+        LOG_T("Stats"), [](std::string const& name, std::string const& metric) {
+          return (name.find("Data") == std::string::npos) &&
+                 (name.find("Command") == std::string::npos) &&
+                 (name.find("Center") == std::string::npos);
         });
     statsTimer.extend(kStatsDumpingInterval);
   };
 
   std::string role = common::Configerator::getString("role");
 
-  LOG() << "Running as " << role << std::endl;
+  LOG_T("Main") << "Running as " << role << std::endl;
   CommandCenter center;
   if (role == "server") {
     std::string addressPool = common::Configerator::getString("address_pool");

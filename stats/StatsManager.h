@@ -69,8 +69,8 @@ public:
         continue;
       }
 
-      output << "Stats for " << std::left << std::setw(kNamePaddingLength)
-             << pair.first << ": ";
+      output << std::left << std::setw(kNamePaddingLength) << pair.first
+             << ": ";
       bool isFirst = true;
       for (auto const& stat : filteredStats) {
         if (isFirst) {

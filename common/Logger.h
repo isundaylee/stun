@@ -2,9 +2,12 @@
 
 #include <iostream>
 
-#define LOG() ::common::Logger::getDefault()
+#define LOG() ::common::Logger::getDefault("Untagged")
+#define LOG_T(tag) ::common::Logger::getDefault(tag)
 
 namespace common {
+
+static const size_t kLoggerTagPaddingTo = 9;
 
 class Logger {
 public:
@@ -12,7 +15,10 @@ public:
 
   template <typename T> Logger& operator<<(const T& v) {
     if (!linePrimed_) {
-      out_ << logHeader();
+      out_ << logHeader() << "[" << tag_ << "] ";
+      for (size_t i = tag_.length(); i < kLoggerTagPaddingTo; i++) {
+        out_ << " ";
+      }
       linePrimed_ = true;
     }
     out_ << v;
@@ -25,8 +31,9 @@ public:
     return *this;
   }
 
-  static Logger& getDefault() {
+  static Logger& getDefault(std::string const& tag) {
     static Logger defaultLogger;
+    defaultLogger.tag_ = tag;
     return defaultLogger;
   }
 
@@ -34,6 +41,7 @@ private:
   const size_t kTimestampBufferSize = 64;
 
   bool linePrimed_ = false;
+  std::string tag_;
   std::ostream& out_;
 
   std::string logHeader() {

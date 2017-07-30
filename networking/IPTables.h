@@ -21,8 +21,8 @@ public:
     runCommand("-t nat -A POSTROUTING -s " + sourceSubnet.toString() +
                " -j MASQUERADE" + kIPTablesCommenClause);
 
-    LOG() << "Successfully set iptables MASQUERADE for traffic from subnet "
-          << sourceSubnet.toString() << "." << std::endl;
+    LOG_T("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
+                      << "." << std::endl;
   }
 
   static void clear() {
@@ -46,8 +46,8 @@ public:
       runCommand("-t nat -D POSTROUTING " + std::to_string(*it));
     }
 
-    LOG() << "Removed " << rulesToDelete.size() << " iptables rules."
-          << std::endl;
+    LOG_T("IPTables") << "Removed " << rulesToDelete.size()
+                      << " iptables rules." << std::endl;
   }
 
 private:

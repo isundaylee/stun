@@ -57,8 +57,8 @@ public:
       checkUnixError(ret, "listening on a SocketPipe's socket");
     }
 
-    LOG() << this->name_ << " started listening on port " << actualPort
-          << std::endl;
+    LOG_T(this->name_) << "Started listening on port " << actualPort
+                       << std::endl;
 
     bound_ = true;
     this->startActions();
@@ -71,8 +71,7 @@ public:
     assertTrue((type_ == SocketType::UDP) || !bound_,
                "Connecting while already bound");
 
-    LOG() << this->name_ << " connecting to " << host << ":" << port
-          << std::endl;
+    LOG_T(this->name_) << "Connecting to " << host << ":" << port << std::endl;
 
     struct addrinfo* peerAddr = getAddr(host, port);
 
@@ -84,8 +83,7 @@ public:
 
     freeaddrinfo(peerAddr);
 
-    LOG() << this->name_ << " connected to " << host << ":" << port
-          << std::endl;
+    LOG_T(this->name_) << "Connected to " << host << ":" << port << std::endl;
 
     this->startActions();
   }
@@ -129,7 +127,7 @@ protected:
                        (sockaddr*)&peerAddr, &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
-      LOG() << this->name_ << "said goodbye (less peafully)" << std::endl;
+      LOG_T(this->name_) << "Said goodbye (less peafully)" << std::endl;
       close();
       return false;
     }
@@ -144,7 +142,7 @@ protected:
 
     if (ret == 0) {
       // the socket is closed
-      LOG() << this->name_ << " said goodbye" << std::endl;
+      LOG_T(this->name_) << "Said goodbye" << std::endl;
       close();
       return false;
     }
@@ -155,8 +153,8 @@ protected:
       connected_ = true;
       this->peerAddr = getAddr((sockaddr*)&peerAddr);
       this->peerPort = getPort((sockaddr*)&peerAddr);
-      LOG() << this->name_ << " received first UDP packet from "
-            << this->peerAddr << ":" << this->peerPort << std::endl;
+      LOG_T(this->name_) << "Received first UDP packet from " << this->peerAddr
+                         << ":" << this->peerPort << std::endl;
     }
 
     return true;
