@@ -137,7 +137,7 @@ void EventLoop::run() {
 void EventLoop::resetExternalConditions() {
   for (auto condition : conditions_) {
     if (condition->type != ConditionType::Base) {
-      condition->arm();
+      static_cast<BaseCondition*>(condition)->arm();
     }
   }
 }

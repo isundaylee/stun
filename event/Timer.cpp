@@ -10,13 +10,13 @@ namespace event {
 
 class TimerManager {
 public:
-  static void setTimeout(Time target, Condition* condition);
-  static void removeTimeout(Condition* condition);
+  static void setTimeout(Time target, BaseCondition* condition);
+  static void removeTimeout(BaseCondition* condition);
 
 private:
   TimerManager();
 
-  typedef std::pair<Time, Condition*> TimeoutTrigger;
+  typedef std::pair<Time, BaseCondition*> TimeoutTrigger;
 
   static TimerManager* instance_;
   std::vector<TimeoutTrigger> targets_;
@@ -61,7 +61,8 @@ void TimerManager::sortTargets() {
   std::sort(targets_.begin(), targets_.end(), std::greater<TimeoutTrigger>());
 }
 
-/* static */ void TimerManager::setTimeout(Time target, Condition* condition) {
+/* static */ void TimerManager::setTimeout(Time target,
+                                           BaseCondition* condition) {
   auto existing =
       std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
                    [condition](TimeoutTrigger const& trigger) {
@@ -79,7 +80,7 @@ void TimerManager::sortTargets() {
   instance_->updateTimer(now);
 }
 
-/* static */ void TimerManager::removeTimeout(Condition* condition) {
+/* static */ void TimerManager::removeTimeout(BaseCondition* condition) {
   auto existing =
       std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
                    [condition](TimeoutTrigger const& trigger) {
@@ -139,7 +140,9 @@ void TimerManager::updateTimer(Time now) {
   currentTarget_ = now + timeout;
 }
 
-Timer::Timer(Duration timeout) : didFire_(new Condition()) { reset(timeout); }
+Timer::Timer(Duration timeout) : didFire_(new BaseCondition()) {
+  reset(timeout);
+}
 
 Timer::~Timer() { TimerManager::removeTimeout(didFire_.get()); }
 

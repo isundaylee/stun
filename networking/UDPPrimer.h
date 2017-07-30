@@ -34,7 +34,7 @@ public:
   UDPPrimerAcceptor(UDPPipe& pipe);
 
   void start();
-  event::Condition* didFinish();
+  event::Condition* didFinish() const;
 
 private:
   UDPPrimerAcceptor(UDPPrimerAcceptor const& copy) = delete;
@@ -44,7 +44,7 @@ private:
   UDPPrimerAcceptor& operator=(UDPPrimerAcceptor&& move) = delete;
 
   event::FIFO<UDPPacket>* inboundQ_;
-  event::Condition didFinish_;
+  std::unique_ptr<event::BaseCondition> didFinish_;
   std::unique_ptr<event::Action> listener_;
 };
 }

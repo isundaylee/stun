@@ -13,10 +13,10 @@ enum IOType {
   Write,
 };
 
-class IOCondition : public Condition {
+class IOCondition : public BaseCondition {
 public:
   IOCondition(int fd, IOType type)
-      : Condition(ConditionType::IO), fd(fd), type(type) {}
+      : BaseCondition(ConditionType::IO), fd(fd), type(type) {}
 
   int fd;
   IOType type;

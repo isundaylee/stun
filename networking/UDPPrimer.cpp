@@ -16,7 +16,7 @@ void UDPPrimer::start() {
 }
 
 UDPPrimerAcceptor::UDPPrimerAcceptor(UDPPipe& pipe)
-    : inboundQ_(pipe.inboundQ.get()) {}
+    : inboundQ_(pipe.inboundQ.get()), didFinish_(new event::BaseCondition()) {}
 
 void UDPPrimerAcceptor::start() {
   listener_.reset(new event::Action({inboundQ_->canPop()}));
@@ -24,11 +24,13 @@ void UDPPrimerAcceptor::start() {
     while (inboundQ_->canPop()->eval()) {
       UDPPacket packet = inboundQ_->pop();
       if (packet.unpack<uint64_t>() == kUDPPrimerContent) {
-        didFinish_.fire();
+        didFinish_->fire();
       }
     }
   };
 }
 
-event::Condition* UDPPrimerAcceptor::didFinish() { return &didFinish_; }
+event::Condition* UDPPrimerAcceptor::didFinish() const {
+  return didFinish_.get();
+}
 }

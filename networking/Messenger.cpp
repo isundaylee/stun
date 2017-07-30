@@ -13,8 +13,8 @@ static const event::Duration kMessengerHeartBeatTimeout = 10000;
 Messenger::Messenger(TCPPipe& client)
     : client_(client), inboundQ_(client.inboundQ.get()),
       outboundQ_(client.outboundQ.get()), bufferUsed_(0),
-      didReceiveInvalidMessage_(new event::Condition()),
-      didMissHeartbeat_(new event::Condition()) {}
+      didReceiveInvalidMessage_(new event::BaseCondition()),
+      didMissHeartbeat_(new event::BaseCondition()) {}
 
 void Messenger::start() {
   receiver_.reset(

@@ -29,6 +29,6 @@ public:
 
 private:
   Time target_;
-  std::unique_ptr<Condition> didFire_;
+  std::unique_ptr<BaseCondition> didFire_;
 };
 }

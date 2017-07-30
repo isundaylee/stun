@@ -50,6 +50,6 @@ private:
   std::unique_ptr<PacketTranslator<DataPacket, UDPPacket>> sender_;
   std::unique_ptr<PacketTranslator<UDPPacket, DataPacket>> receiver_;
 
-  std::unique_ptr<event::Condition> isPrimed_;
+  std::unique_ptr<event::BaseCondition> isPrimed_;
 };
 }

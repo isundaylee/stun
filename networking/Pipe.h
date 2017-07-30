@@ -32,7 +32,7 @@ public:
         statTxBytes_(new stats::RateStat<size_t>("tx_bytes", 0)),
         statRxPackets_(new stats::RateStat<size_t>("rx_pkts", 0)),
         statRxBytes_(new stats::RateStat<size_t>("rx_bytes", 0)),
-        didClose_(new event::Condition()) {}
+        didClose_(new event::BaseCondition()) {}
 
   Pipe(Pipe&& move)
       : inboundQ(std::move(move.inboundQ)),
@@ -135,6 +135,6 @@ private:
   std::unique_ptr<event::Action> receiver;
   std::unique_ptr<event::Action> sender;
 
-  std::unique_ptr<event::Condition> didClose_;
+  std::unique_ptr<event::BaseCondition> didClose_;
 };
 }

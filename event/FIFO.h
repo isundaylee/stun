@@ -10,8 +10,8 @@ namespace event {
 template <typename T> class FIFO {
 public:
   FIFO(std::size_t capacity)
-      : capacity_(capacity), queue_(), canPush_(new Condition()),
-        canPop_(new Condition()) {
+      : capacity_(capacity), queue_(), canPush_(new BaseCondition()),
+        canPop_(new BaseCondition()) {
     updateConditions();
   }
 
@@ -57,8 +57,8 @@ private:
   std::size_t capacity_;
   std::queue<T> queue_;
 
-  std::unique_ptr<Condition> canPush_;
-  std::unique_ptr<Condition> canPop_;
+  std::unique_ptr<BaseCondition> canPush_;
+  std::unique_ptr<BaseCondition> canPop_;
 
   void updateConditions() {
     canPush_->set(queue_.size() < capacity_);

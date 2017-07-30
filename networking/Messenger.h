@@ -90,8 +90,8 @@ private:
   std::unique_ptr<event::Timer> heartbeatMissedTimer_;
   std::unique_ptr<event::Action> heartbeatSender_;
 
-  std::unique_ptr<event::Condition> didReceiveInvalidMessage_;
-  std::unique_ptr<event::Condition> didMissHeartbeat_;
+  std::unique_ptr<event::BaseCondition> didReceiveInvalidMessage_;
+  std::unique_ptr<event::BaseCondition> didMissHeartbeat_;
 
   void doReceive();
 };

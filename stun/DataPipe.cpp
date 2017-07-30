@@ -9,7 +9,7 @@ DataPipe::DataPipe(networking::UDPPipe&& pipe, std::string const& aesKey,
     : inboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
       pipe_(std::move(pipe)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
-      isPrimed_(new event::Condition()) {}
+      isPrimed_(new event::BaseCondition()) {}
 
 DataPipe::DataPipe(DataPipe&& move)
     : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),

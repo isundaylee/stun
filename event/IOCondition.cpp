@@ -42,7 +42,7 @@ void IOConditionManager::prepareConditions(
   // Let's poll!
   struct pollfd polls[interesting.size()];
   for (size_t i = 0; i < interesting.size(); i++) {
-    IOCondition* condition = (IOCondition*)interesting[i];
+    IOCondition* condition = static_cast<IOCondition*>(interesting[i]);
     polls[i].fd = condition->fd;
     polls[i].events =
         (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
@@ -75,7 +75,7 @@ void IOConditionManager::prepareConditions(
                                std::to_string(polls[i].revents));
     }
 
-    IOCondition* condition = (IOCondition*)interesting[i];
+    IOCondition* condition = static_cast<IOCondition*>(interesting[i]);
     int mask =
         (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     if (polls[i].revents & mask) {
