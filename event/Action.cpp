@@ -20,7 +20,8 @@ void Action::invoke() {
 
 bool Action::canInvoke() {
   for (auto condition : conditions_) {
-    if (!EventLoop::getCurrentLoop()->hasCondition(condition) || !*condition) {
+    if (!EventLoop::getCurrentLoop()->hasCondition(condition) ||
+        !condition->eval()) {
       return false;
     }
   }

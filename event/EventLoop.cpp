@@ -84,7 +84,7 @@ void EventLoop::run() {
             continue;
           }
 
-          if (condition->type == ConditionType::Base && !(*condition)) {
+          if (condition->type == ConditionType::Base && !condition->eval()) {
             eligible = false;
             break;
           }

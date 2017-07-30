@@ -33,7 +33,7 @@ private:
   PacketTranslator& operator+=(PacketTranslator&& move) = delete;
 
   void doTranslate() {
-    while (*source_->canPop() && *target_->canPush()) {
+    while (source_->canPop()->eval() && target_->canPush()->eval()) {
       X packet = source_->pop();
       Y result = transform(packet);
       if (result.size > 0) {

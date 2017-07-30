@@ -61,7 +61,7 @@ void DataPipe::start() {
   receiver_->start();
 
   // Prime the passive side's UDP connection if we're the active side
-  if (*isPrimed_) {
+  if (isPrimed_->eval()) {
     outboundQ->push(DataPacket());
   }
 }

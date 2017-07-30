@@ -117,7 +117,7 @@ private:
   }
 
   void doSend() {
-    while (*outboundQ->canPop()) {
+    while (outboundQ->canPop()->eval()) {
       P packet = outboundQ->front();
       if (write(packet)) {
         statTxPackets_->accumulate(1);

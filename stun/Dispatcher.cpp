@@ -19,7 +19,8 @@ void Dispatcher::start() {
 }
 
 void Dispatcher::doSend() {
-  while (*tunnel_.inboundQ->canPop() && *dataPipe_->outboundQ->canPush()) {
+  while (tunnel_.inboundQ->canPop()->eval() &&
+         dataPipe_->outboundQ->canPush()->eval()) {
     TunnelPacket in = tunnel_.inboundQ->pop();
     DataPacket out;
     out.fill(in.data, in.size);
@@ -28,7 +29,8 @@ void Dispatcher::doSend() {
 }
 
 void Dispatcher::doReceive() {
-  while (*dataPipe_->inboundQ->canPop() && *tunnel_.outboundQ->canPush()) {
+  while (dataPipe_->inboundQ->canPop()->eval() &&
+         tunnel_.outboundQ->canPush()->eval()) {
     DataPacket in = dataPipe_->inboundQ->pop();
     TunnelPacket out;
     out.fill(in.data, in.size);

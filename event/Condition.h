@@ -15,8 +15,7 @@ public:
 
   ConditionType type;
 
-  explicit operator bool() const { return value_; }
-
+  bool eval() { return value_; }
   void arm() { value_ = false; }
   void fire() { value_ = true; }
   void set(bool value) { value_ = value; }
