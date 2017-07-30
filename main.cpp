@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   statsDumper.callback = [&statsTimer]() {
     stats::StatsManager::dump(
         LOG_T("Stats"), [](std::string const& name, std::string const& metric) {
-          return (name.find("Data") == std::string::npos) &&
+          return (name.find("Tunnel") == std::string::npos) &&
                  (name.find("Command") == std::string::npos) &&
                  (name.find("Center") == std::string::npos);
         });

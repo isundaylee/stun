@@ -36,6 +36,7 @@ template <int L> struct Packet {
   Packet& operator=(Packet other) {
     std::swap(size, other.size);
     std::swap(data, other.data);
+    return *this;
   }
 
   void fill(Byte* buffer, size_t size) {

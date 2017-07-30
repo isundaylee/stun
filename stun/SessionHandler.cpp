@@ -147,6 +147,7 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
     dispatcher_.reset(
         new Dispatcher(createTunnel("Tunnel " + std::to_string(clientIndex),
                                     myTunnelAddr, peerTunnelAddr)));
+    dispatcher_->start();
 
     return Message("config", json{{"server_tunnel_ip", myTunnelAddr},
                                   {"client_tunnel_ip", peerTunnelAddr}});
@@ -165,8 +166,8 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
 
     DataPipe* dataPipe =
         new DataPipe(std::move(udpPipe), aesKey, paddingMinSize);
+    dataPipe->start();
     dispatcher_->addDataPipe(dataPipe);
-    dispatcher_->start();
 
     return Message("new_data_pipe", json{{"port", port},
                                          {"aes_key", aesKey},
@@ -184,6 +185,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
   if (type == "config") {
     dispatcher_.reset(new Dispatcher(createTunnel(
         "Tunnel", body["client_tunnel_ip"], body["server_tunnel_ip"])));
+    dispatcher_->start();
 
     return Message("config_done", "");
   } else if (type == "new_data_pipe") {
@@ -197,8 +199,8 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     DataPipe* dataPipe = new DataPipe(std::move(udpPipe), body["aes_key"],
                                       body["padding_to_size"]);
     dataPipe->setPrePrimed();
+    dataPipe->start();
     dispatcher_->addDataPipe(dataPipe);
-    dispatcher_->start();
 
     return Message::null();
   } else {

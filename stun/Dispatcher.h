@@ -25,12 +25,18 @@ private:
   Dispatcher& operator=(Dispatcher&& move) = delete;
 
   networking::Tunnel tunnel_;
-  std::unique_ptr<DataPipe> dataPipe_;
+  std::vector<std::unique_ptr<DataPipe>> dataPipes_;
+
+  std::unique_ptr<event::ComputedCondition> canSend_;
+  std::unique_ptr<event::ComputedCondition> canReceive_;
 
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
 
   void doSend();
   void doReceive();
+
+  bool calculateCanReceive();
+  bool calculateCanSend();
 };
 }

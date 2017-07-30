@@ -29,7 +29,7 @@ public:
 
   template <typename T, R (T::*Method)()> void setMethod(T* object) {
     func_ = nullptr;
-    method_ = [](void* object) { (((T*)object)->*Method)(); };
+    method_ = [](void* object) { return (((T*)object)->*Method)(); };
     target = object;
   }
 
