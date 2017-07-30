@@ -109,16 +109,23 @@ void EventLoop::run() {
     // Invoke actions that have all their conditions met
     while (true) {
       bool stablized = true;
+      std::set<Action*> toInvoke;
+
       for (auto action : actions_) {
         if (action->canInvoke()) {
           stablized = false;
-          action->invoke();
-          // Invoking the current action could have caused some of the actions
-          // to be removed from actions_. Therefore we break and start looking
-          // again.
-          break;
+          toInvoke.insert(action);
         }
       }
+
+      for (auto actionToInvoke : toInvoke) {
+        if (actions_.find(actionToInvoke) != actions_.end()) {
+          // Invoking some previous action in this round could have caused this
+          // action to be removed already. So we need to check.
+          actionToInvoke->invoke();
+        }
+      }
+
       resetExternalConditions();
       if (stablized) {
         break;
