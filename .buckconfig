@@ -3,4 +3,4 @@
   cxx = /usr/bin/clang++
   ld = /usr/bin/clang++
   ldflags = -static-libstdc++ -fsanitize=address
-  cxxflags = -Wall -g -std=c++11 -fno-omit-frame-pointer -fsanitize=address -O1
+  cxxflags = -Wall -g -std=c++11 -fno-omit-frame-pointer -fsanitize=address -O0

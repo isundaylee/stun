@@ -229,7 +229,7 @@ typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
                                RouteDestination const& routeDest) {
   LOG() << "Adding a route to " << destSubnet.toString() << " via "
-        << routeDest.gatewayAddr << " (dev" << routeDest.interfaceIndex << ")"
+        << routeDest.gatewayAddr << " (dev " << routeDest.interfaceIndex << ")"
         << std::endl;
 
   NetlinkChangeRouteRequest req;
