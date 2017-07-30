@@ -62,8 +62,9 @@ public:
   void send(Message const& message);
   void addEncryptor(crypto::Encryptor* encryptor);
 
+  event::Condition* didReceiveInvalidMessage() const;
+
   std::function<Message(Message const&)> handler;
-  event::Callback onInvalidMessage;
 
 private:
   Messenger(Messenger const& copy) = delete;
@@ -82,6 +83,8 @@ private:
   std::unique_ptr<event::Action> receiver_;
   int bufferUsed_;
   Byte buffer_[kMessengerReceiveBufferSize];
+
+  std::unique_ptr<event::Condition> didReceiveInvalidMessage_;
 
   void doReceive();
 };

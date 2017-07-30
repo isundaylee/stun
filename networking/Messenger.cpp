@@ -6,7 +6,8 @@ typedef uint32_t MessengerLengthHeaderType;
 
 Messenger::Messenger(TCPPipe& client)
     : client_(client), inboundQ_(client.inboundQ.get()),
-      outboundQ_(client.outboundQ.get()), bufferUsed_(0) {}
+      outboundQ_(client.outboundQ.get()), bufferUsed_(0),
+      didReceiveInvalidMessage_(new event::Condition()) {}
 
 void Messenger::start() {
   receiver_.reset(
@@ -50,7 +51,7 @@ void Messenger::doReceive() {
       }
 
       if (!message.isValid()) {
-        onInvalidMessage.invoke();
+        didReceiveInvalidMessage_->fire();
 
         // We return here because it's unlikely we'll get valid messages, and
         // more likely than not we'll be gone after the onInvalidMessage
@@ -98,5 +99,9 @@ void Messenger::send(Message const& message) {
 
 void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
   encryptors_.emplace_back(encryptor);
+}
+
+event::Condition* Messenger::didReceiveInvalidMessage() const {
+  return didReceiveInvalidMessage_.get();
 }
 }

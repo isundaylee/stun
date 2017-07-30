@@ -72,11 +72,13 @@ void SessionHandler::start() {
 }
 
 void SessionHandler::attachHandlers() {
-  messenger_->onInvalidMessage = [this]() {
-    LOG() << "Disconnected client " << clientIndex
-          << " due to invalid command message." << std::endl;
-    commandPipe_->close();
-  };
+  event::Trigger::arm({messenger_->didReceiveInvalidMessage()},
+                      [this]() {
+                        LOG() << "Disconnected client " << clientIndex
+                              << " due to invalid command message."
+                              << std::endl;
+                        commandPipe_->close();
+                      });
 
   messenger_->handler = [this](Message const& message) {
     return (isServer_ ? handleMessageFromClient(message)
