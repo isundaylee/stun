@@ -1,5 +1,6 @@
 #pragma once
 
+#include <event/Callback.h>
 #include <event/EventLoop.h>
 
 #include <functional>
@@ -48,10 +49,11 @@ private:
 
 class ComputedCondition : public Condition {
 public:
-  ComputedCondition(ConditionType type = ConditionType::Internal)
-      : Condition(type) {}
+  ComputedCondition() : Condition(ConditionType::Internal) {}
 
-  bool eval() { return false; }
+  Callback<bool> expression;
+
+  bool eval() { return expression.invoke(); }
 
 private:
   ComputedCondition(ComputedCondition const& copy) = delete;
