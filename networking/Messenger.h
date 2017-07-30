@@ -2,10 +2,12 @@
 
 #include <json/json.hpp>
 
-#include <common/Util.h>
-#include <crypto/Encryptor.h>
 #include <networking/PacketTranslator.h>
 #include <networking/TCPPipe.h>
+
+#include <common/Util.h>
+#include <crypto/Encryptor.h>
+#include <event/Timer.h>
 
 #include <vector>
 
@@ -63,6 +65,7 @@ public:
   void addEncryptor(crypto::Encryptor* encryptor);
 
   event::Condition* didReceiveInvalidMessage() const;
+  event::Condition* didMissHeartbeat() const;
 
   std::function<Message(Message const&)> handler;
 
@@ -80,11 +83,15 @@ private:
 
   std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
 
-  std::unique_ptr<event::Action> receiver_;
   int bufferUsed_;
   Byte buffer_[kMessengerReceiveBufferSize];
+  std::unique_ptr<event::Action> receiver_;
+  std::unique_ptr<event::Timer> heartbeatTimer_;
+  std::unique_ptr<event::Timer> heartbeatMissedTimer_;
+  std::unique_ptr<event::Action> heartbeatSender_;
 
   std::unique_ptr<event::Condition> didReceiveInvalidMessage_;
+  std::unique_ptr<event::Condition> didMissHeartbeat_;
 
   void doReceive();
 };

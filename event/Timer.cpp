@@ -1,5 +1,6 @@
 #include "event/Timer.h"
 
+#include <algorithm>
 #include <iostream>
 #include <set>
 #include <stdexcept>
@@ -18,13 +19,13 @@ private:
   typedef std::pair<Time, Condition*> TimeoutTrigger;
 
   static TimerManager* instance_;
-  std::priority_queue<TimeoutTrigger> targets_;
-  std::set<Condition*> removed_;
+  std::vector<TimeoutTrigger> targets_;
   Time currentTarget_ = 0;
   timer_t timer_;
 
   static void handleSignal(int sig, siginfo_t* si, void* uc);
 
+  void sortTargets();
   void updateTimer(Time now);
   void fireUntilTarget();
 };
@@ -56,14 +57,38 @@ TimerManager::TimerManager() {
   }
 }
 
+void TimerManager::sortTargets() {
+  std::sort(targets_.begin(), targets_.end(), std::greater<TimeoutTrigger>());
+}
+
 /* static */ void TimerManager::setTimeout(Time target, Condition* condition) {
+  auto existing =
+      std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
+                   [condition](TimeoutTrigger const& trigger) {
+                     return trigger.second == condition;
+                   });
+
+  if (existing == instance_->targets_.end()) {
+    instance_->targets_.emplace_back(target, condition);
+  } else {
+    existing->first = target;
+  }
+
   Time now = Timer::getTimeInMilliseconds();
-  instance_->targets_.emplace(target, condition);
+  instance_->sortTargets();
   instance_->updateTimer(now);
 }
 
 /* static */ void TimerManager::removeTimeout(Condition* condition) {
-  instance_->removed_.insert(condition);
+  auto existing =
+      std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
+                   [condition](TimeoutTrigger const& trigger) {
+                     return trigger.second == condition;
+                   });
+
+  if (existing != instance_->targets_.end()) {
+    instance_->targets_.erase(existing);
+  }
 }
 
 Time Timer::Timer::getTimeInMilliseconds() {
@@ -80,18 +105,12 @@ void TimerManager::handleSignal(int sig, siginfo_t* si, void* uc) {
 void TimerManager::fireUntilTarget() {
   Time now = Timer::getTimeInMilliseconds();
   Time target = std::max(now, currentTarget_);
-  while (!targets_.empty() && targets_.top().first <= target) {
-    TimeoutTrigger fired = targets_.top();
-    targets_.pop();
-
-    if (removed_.find(fired.second) != removed_.end()) {
-      // This timer has already been removed. We should not fire it.
-      removed_.erase(fired.second);
-      continue;
-    }
-
+  while (!targets_.empty() && targets_.back().first <= target) {
+    TimeoutTrigger fired = targets_.back();
+    targets_.pop_back();
     fired.second->fire();
   }
+  currentTarget_ = 0;
   if (targets_.empty()) {
     return;
   }
@@ -99,11 +118,12 @@ void TimerManager::fireUntilTarget() {
 }
 
 void TimerManager::updateTimer(Time now) {
-  if (currentTarget_ != 0 && targets_.top().first >= currentTarget_) {
+  if (currentTarget_ != 0 && targets_.back().first >= currentTarget_) {
     return;
   }
 
-  Duration timeout = std::max(1L, (int64_t)targets_.top().first - (int64_t)now);
+  Duration timeout =
+      std::max(1L, (int64_t)targets_.back().first - (int64_t)now);
 
   struct itimerspec its;
   its.it_value.tv_sec = timeout / kMillisecondsInASecond;
@@ -115,6 +135,8 @@ void TimerManager::updateTimer(Time now) {
   if (timer_settime(instance_->timer_, 0, &its, NULL) < 0) {
     throw std::runtime_error("Cannot set timer time.");
   }
+
+  currentTarget_ = now + timeout;
 }
 
 Timer::Timer(Duration timeout) : didFire_(new Condition()) { reset(timeout); }

@@ -60,8 +60,7 @@ void CommandCenter::connect(std::string const& host, int port) {
 
   event::Trigger::arm({toServer.didClose()},
                       [this]() {
-                        LOG() << "We are disconnected by the server."
-                              << std::endl;
+                        LOG() << "We are disconnected." << std::endl;
                         client_.reset();
                       });
 

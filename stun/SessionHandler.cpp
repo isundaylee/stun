@@ -72,10 +72,22 @@ void SessionHandler::start() {
 }
 
 void SessionHandler::attachHandlers() {
-  event::Trigger::arm({messenger_->didReceiveInvalidMessage()},
+  event::Trigger::arm(
+      {messenger_->didReceiveInvalidMessage()},
+      [this]() {
+        if (isServer_) {
+          LOG() << "Disconnected client " << clientIndex
+                << " due to invalid command message." << std::endl;
+        } else {
+          LOG() << "Disconnected from server due to invalid command message."
+                << std::endl;
+        }
+        commandPipe_->close();
+      });
+
+  event::Trigger::arm({messenger_->didMissHeartbeat()},
                       [this]() {
-                        LOG() << "Disconnected client " << clientIndex
-                              << " due to invalid command message."
+                        LOG() << "Disconnected due to missed heartbeats."
                               << std::endl;
                         commandPipe_->close();
                       });

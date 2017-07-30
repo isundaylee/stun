@@ -1,18 +1,37 @@
 #include "networking/Messenger.h"
 
+#include <event/Trigger.h>
+
 namespace networking {
 
 typedef uint32_t MessengerLengthHeaderType;
 
+static const std::string kMessengerHeartBeatMessageType = "heartbeat";
+static const event::Duration kMessengerHeartBeatInterval = 1000;
+static const event::Duration kMessengerHeartBeatTimeout = 10000;
+
 Messenger::Messenger(TCPPipe& client)
     : client_(client), inboundQ_(client.inboundQ.get()),
       outboundQ_(client.outboundQ.get()), bufferUsed_(0),
-      didReceiveInvalidMessage_(new event::Condition()) {}
+      didReceiveInvalidMessage_(new event::Condition()),
+      didMissHeartbeat_(new event::Condition()) {}
 
 void Messenger::start() {
   receiver_.reset(
       new event::Action({inboundQ_->canPop(), outboundQ_->canPush()}));
   receiver_->callback.setMethod<Messenger, &Messenger::doReceive>(this);
+
+  heartbeatTimer_.reset(new event::Timer(0));
+  heartbeatSender_.reset(
+      new event::Action({heartbeatTimer_->didFire(), canSend()}));
+  heartbeatSender_->callback = [this]() {
+    send(Message(kMessengerHeartBeatMessageType, ""));
+    heartbeatTimer_->extend(kMessengerHeartBeatInterval);
+  };
+
+  heartbeatMissedTimer_.reset(new event::Timer(kMessengerHeartBeatTimeout));
+  event::Trigger::arm({heartbeatMissedTimer_->didFire()},
+                      [this]() { didMissHeartbeat_->fire(); });
 }
 
 void Messenger::doReceive() {
@@ -64,9 +83,13 @@ void Messenger::doReceive() {
       LOG() << "Messenger received: " << message.getType() << " - "
             << message.getBody() << std::endl;
 
-      Message response = handler(message);
-      if (response.size > 0) {
-        send(response);
+      if (message.getType() == kMessengerHeartBeatMessageType) {
+        heartbeatMissedTimer_->reset(kMessengerHeartBeatTimeout);
+      } else {
+        Message response = handler(message);
+        if (response.size > 0) {
+          send(response);
+        }
       }
     }
   }
@@ -103,5 +126,9 @@ void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
 
 event::Condition* Messenger::didReceiveInvalidMessage() const {
   return didReceiveInvalidMessage_.get();
+}
+
+event::Condition* Messenger::didMissHeartbeat() const {
+  return didMissHeartbeat_.get();
 }
 }

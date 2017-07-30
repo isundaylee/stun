@@ -67,9 +67,9 @@ void IOConditionManager::prepareConditions(
     int mask =
         (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     if (polls[i].revents & POLLNVAL) {
-      throw std::runtime_error(
-          "Invalid file descriptor. Be sure to call "
-          "IOConditionManager::close(fd) before calling the file descriptor.");
+      throw std::runtime_error("Invalid file descriptor. Be sure to call "
+                               "IOConditionManager::close(fd) before "
+                               "close()-ing the file descriptor.");
     }
 
     if (polls[i].revents & POLLERR) {
