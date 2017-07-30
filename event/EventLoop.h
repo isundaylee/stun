@@ -6,7 +6,7 @@
 namespace event {
 
 enum ConditionType {
-  Base,
+  Internal,
   IO,
 };
 

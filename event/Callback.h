@@ -5,7 +5,7 @@
 
 namespace event {
 
-class Callback {
+template <typename R> class Callback {
 public:
   Callback() {}
 
@@ -20,34 +20,29 @@ public:
     return *this;
   }
 
-  Callback& operator=(std::function<void()> func) {
+  Callback& operator=(std::function<R()> func) {
     func_ = func;
     method_ = nullptr;
     target = nullptr;
     return *this;
   }
 
-  template <typename T, void (T::*Method)()> void setMethod(T* object) {
+  template <typename T, R (T::*Method)()> void setMethod(T* object) {
     func_ = nullptr;
-
     method_ = [](void* object) { (((T*)object)->*Method)(); };
-
     target = object;
   }
 
-  bool invoke() {
+  R invoke() {
     if (!!func_) {
-      func_();
-      return true;
+      return func_();
     } else if (!!method_) {
       if (target == nullptr) {
         throw std::runtime_error("Invoking an Callable with an empty target.");
       }
-
-      method_(target);
-      return true;
+      return method_(target);
     } else {
-      return false;
+      throw std::runtime_error("Invoking an empty Callable.");
     }
   }
 
@@ -57,7 +52,7 @@ private:
   Callback(Callback const& copy) = delete;
   Callback& operator=(Callback const& copy) = delete;
 
-  std::function<void()> func_;
-  std::function<void(void*)> method_;
+  std::function<R()> func_;
+  std::function<R(void*)> method_;
 };
 }

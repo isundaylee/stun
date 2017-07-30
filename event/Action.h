@@ -19,7 +19,7 @@ public:
   void invoke();
   bool canInvoke();
 
-  Callback callback;
+  Callback<void> callback;
 
 private:
   Action(Action const& copy) = delete;

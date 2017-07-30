@@ -84,7 +84,7 @@ void EventLoop::run() {
             continue;
           }
 
-          if (condition->type == ConditionType::Base && !condition->eval()) {
+          if (condition->type == ConditionType::Internal && !condition->eval()) {
             eligible = false;
             break;
           }
@@ -136,7 +136,7 @@ void EventLoop::run() {
 
 void EventLoop::resetExternalConditions() {
   for (auto condition : conditions_) {
-    if (condition->type != ConditionType::Base) {
+    if (condition->type != ConditionType::Internal) {
       static_cast<BaseCondition*>(condition)->arm();
     }
   }

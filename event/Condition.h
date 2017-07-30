@@ -2,11 +2,13 @@
 
 #include <event/EventLoop.h>
 
+#include <functional>
+
 namespace event {
 
 class Condition {
 public:
-  Condition(ConditionType type = ConditionType::Base) : type(type) {
+  Condition(ConditionType type = ConditionType::Internal) : type(type) {
     EventLoop::getCurrentLoop()->addCondition(this);
   }
 
@@ -26,7 +28,7 @@ private:
 
 class BaseCondition : public Condition {
 public:
-  BaseCondition(ConditionType type = ConditionType::Base)
+  BaseCondition(ConditionType type = ConditionType::Internal)
       : Condition(type), value_(false) {}
 
   bool eval() { return value_; }
@@ -42,5 +44,20 @@ private:
   BaseCondition& operator=(BaseCondition const&& move) = delete;
 
   bool value_;
+};
+
+class ComputedCondition : public Condition {
+public:
+  ComputedCondition(ConditionType type = ConditionType::Internal)
+      : Condition(type) {}
+
+  bool eval() { return false; }
+
+private:
+  ComputedCondition(ComputedCondition const& copy) = delete;
+  ComputedCondition& operator=(ComputedCondition const& copy) = delete;
+
+  ComputedCondition(ComputedCondition const&& move) = delete;
+  ComputedCondition& operator=(ComputedCondition const&& move) = delete;
 };
 }
