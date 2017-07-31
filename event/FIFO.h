@@ -19,12 +19,12 @@ public:
 
   Condition* canPop() { return canPop_.get(); }
 
-  void push(T element) {
+  void push(T&& element) {
     if (queue_.size() >= capacity_) {
       throw std::runtime_error("Trying to push into a full FIFO.");
     }
 
-    queue_.push(element);
+    queue_.push(std::move(element));
     updateConditions();
   }
 
@@ -33,7 +33,7 @@ public:
       throw std::runtime_error("Trying to pop from an empty FIFO.");
     }
 
-    T result = queue_.front();
+    T result(std::move(queue_.front()));
     queue_.pop();
     updateConditions();
     return result;

@@ -10,7 +10,7 @@ void UDPPrimer::start() {
   action_->callback = [this]() {
     UDPPacket packet;
     packet.pack(kUDPPrimerContent);
-    outboundQ_->push(packet);
+    outboundQ_->push(std::move(packet));
     timer_->extend(kUDPPrimerInterval);
   };
 }

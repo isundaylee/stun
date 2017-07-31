@@ -112,13 +112,13 @@ private:
     if (read(packet)) {
       statRxPackets_->accumulate(1);
       statRxBytes_->accumulate(packet.size);
-      inboundQ->push(packet);
+      inboundQ->push(std::move(packet));
     }
   }
 
   void doSend() {
     while (outboundQ->canPop()->eval()) {
-      P packet = outboundQ->front();
+      P const& packet = outboundQ->front();
       if (write(packet)) {
         statTxPackets_->accumulate(1);
         statTxBytes_->accumulate(packet.size);

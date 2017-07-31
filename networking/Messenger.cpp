@@ -118,7 +118,7 @@ void Messenger::send(Message const& message) {
   packet.size = sizeof(MessengerLengthHeaderType) + payloadSize;
   *((MessengerLengthHeaderType*)packet.data) = payloadSize;
 
-  client_.outboundQ->push(packet);
+  client_.outboundQ->push(std::move(packet));
 
   if (message.getType() != kMessengerHeartBeatMessageType) {
     LOG_T("Messenger") << "Sent: " << message.getType() << " = "

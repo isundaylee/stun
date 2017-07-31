@@ -21,7 +21,7 @@ public:
         .setMethod<PacketTranslator, &PacketTranslator::doTranslate>(this);
   }
 
-  std::function<Y(X const&)> transform = [](X const& t) {
+  std::function<Y(X&&)> transform = [](X&& t) {
     throw std::runtime_error("transform not set in PacketTranslator");
     return Y();
   };
@@ -35,9 +35,9 @@ private:
   void doTranslate() {
     while (source_->canPop()->eval() && target_->canPush()->eval()) {
       X packet = source_->pop();
-      Y result = transform(packet);
+      Y result(transform(std::move(packet)));
       if (result.size > 0) {
-        target_->push(result);
+        target_->push(std::move(result));
       }
     }
   }

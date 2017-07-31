@@ -23,25 +23,19 @@ template <int L> struct Packet {
     }
   }
 
-  Packet(Packet const& copy) : size(copy.size) {
-    data = new Byte[L];
-    memcpy(data, copy.data, copy.size);
-  }
-
   Packet(Packet&& move) : size(move.size) {
     data = move.data;
     move.data = nullptr;
   }
 
-  Packet& operator=(Packet other) {
-    std::swap(size, other.size);
-    std::swap(data, other.data);
-    return *this;
-  }
-
   void fill(Byte* buffer, size_t size) {
     this->size = size;
     memcpy(data, buffer, size);
+  }
+
+  template <typename P> void fill(P&& move) {
+    std::swap(this->size, move.size);
+    std::swap(this->data, move.data);
   }
 
   template <typename T> void pack(T const& obj) {
@@ -53,5 +47,9 @@ template <int L> struct Packet {
     memcpy(&obj, data, sizeof(obj));
     return obj;
   }
+
+private:
+  Packet(Packet const& copy) = delete;
+  Packet& operator=(Packet const& copy) = delete;
 };
 }

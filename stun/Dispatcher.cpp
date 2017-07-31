@@ -44,13 +44,13 @@ void Dispatcher::doSend() {
   while (tunnel_.inboundQ->canPop()->eval() && canSend_->eval()) {
     TunnelPacket in = tunnel_.inboundQ->pop();
     DataPacket out;
-    out.fill(in.data, in.size);
+    out.fill(std::move(in));
 
     bool sent = false;
     for (auto const& dataPipe_ : dataPipes_) {
       if (dataPipe_->isPrimed()->eval() &&
           dataPipe_->outboundQ->canPush()->eval()) {
-        dataPipe_->outboundQ->push(out);
+        dataPipe_->outboundQ->push(std::move(out));
         sent = true;
         break;
       }
@@ -62,19 +62,18 @@ void Dispatcher::doSend() {
 
 void Dispatcher::doReceive() {
   while (canReceive_->eval() && tunnel_.outboundQ->canPush()->eval()) {
-    DataPacket in;
     bool received = false;
     for (auto const& dataPipe_ : dataPipes_) {
       if (dataPipe_->inboundQ->canPop()->eval()) {
-        in = dataPipe_->inboundQ->pop();
+        DataPacket in(dataPipe_->inboundQ->pop());
+        TunnelPacket out;
+        out.fill(std::move(in));
+        tunnel_.outboundQ->push(std::move(out));
         received = true;
         break;
       }
     }
     assertTrue(received, "Cannot find a ready DataPipe to receive from.");
-    TunnelPacket out;
-    out.fill(in.data, in.size);
-    tunnel_.outboundQ->push(out);
   }
 }
 

@@ -34,9 +34,9 @@ void DataPipe::start() {
   // Configure sender and receiver
   sender_.reset(new PacketTranslator<DataPacket, UDPPacket>(
       outboundQ.get(), pipe_.outboundQ.get()));
-  sender_->transform = [this](DataPacket const& in) {
+  sender_->transform = [this](DataPacket&& in) {
     UDPPacket out;
-    out.fill(in.data, in.size);
+    out.fill(std::move(in));
     if (!!padder_) {
       out.size = padder_->encrypt(out.data, out.size, out.capacity);
     }
@@ -47,11 +47,11 @@ void DataPipe::start() {
 
   receiver_.reset(new PacketTranslator<UDPPacket, DataPacket>(
       pipe_.inboundQ.get(), inboundQ.get()));
-  receiver_->transform = [this](UDPPacket const& in) {
+  receiver_->transform = [this](UDPPacket&& in) {
     isPrimed_->fire();
 
     DataPacket out;
-    out.fill(in.data, in.size);
+    out.fill(std::move(in));
     out.size = aesEncryptor_->decrypt(out.data, out.size, out.capacity);
     if (!!padder_) {
       out.size = padder_->decrypt(out.data, out.size, out.capacity);
