@@ -4,6 +4,7 @@
 
 namespace stun {
 
+static const event::Duration kDataPipeProbeInterval = 1000 /* ms */;
 static const size_t kDataPipeFIFOSize = 256;
 
 DataPipe::DataPipe(networking::UDPPipe&& pipe, std::string const& aesKey,
@@ -23,10 +24,14 @@ DataPipe::DataPipe(DataPipe&& move)
     : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
       pipe_(std::move(move.pipe_)), aesKey_(std::move(move.aesKey_)),
       minPaddingTo_(move.minPaddingTo_), ttlTimer_(std::move(move.ttlTimer_)),
+      probeTimer_(std::move(move.probeTimer_)),
+      prober_(std::move(move.prober_)),
       aesEncryptor_(std::move(move.aesEncryptor_)),
       padder_(std::move(move.padder_)), sender_(std::move(move.sender_)),
       receiver_(std::move(move.receiver_)),
-      isPrimed_(std::move(move.isPrimed_)) {}
+      isPrimed_(std::move(move.isPrimed_)) {
+  prober_->callback.target = this;
+}
 
 void DataPipe::setPrePrimed() { isPrimed_->fire(); }
 
@@ -73,5 +78,16 @@ void DataPipe::start() {
   if (isPrimed_->eval()) {
     outboundQ->push(DataPacket());
   }
+
+  // Setup prober
+  probeTimer_.reset(new event::Timer(0));
+  prober_.reset(new event::Action(
+      {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()}));
+  prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
+}
+
+void DataPipe::doProbe() {
+  outboundQ->push(DataPacket());
+  probeTimer_->reset(kDataPipeProbeInterval);
 }
 }

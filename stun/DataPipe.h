@@ -47,11 +47,16 @@ private:
   size_t minPaddingTo_;
   std::unique_ptr<event::Timer> ttlTimer_;
 
+  std::unique_ptr<event::Timer> probeTimer_;
+  std::unique_ptr<event::Action> prober_;
+
   std::unique_ptr<AESEncryptor> aesEncryptor_;
   std::unique_ptr<Padder> padder_;
   std::unique_ptr<PacketTranslator<DataPacket, UDPPacket>> sender_;
   std::unique_ptr<PacketTranslator<UDPPacket, DataPacket>> receiver_;
 
   std::unique_ptr<event::BaseCondition> isPrimed_;
+
+  void doProbe();
 };
 }

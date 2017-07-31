@@ -9,7 +9,7 @@
 
 namespace stun {
 
-static const event::Duration kSessionHandlerRotationGracePeriod = 1000 /* ms */;
+static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 
 using namespace networking;
 

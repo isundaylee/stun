@@ -7,8 +7,8 @@ namespace networking {
 typedef uint32_t MessengerLengthHeaderType;
 
 static const std::string kMessengerHeartBeatMessageType = "heartbeat";
-static const event::Duration kMessengerHeartBeatInterval = 1000;
-static const event::Duration kMessengerHeartBeatTimeout = 10000;
+static const event::Duration kMessengerHeartBeatInterval = 1000 /* ms */;
+static const event::Duration kMessengerHeartBeatTimeout = 10000 /* ms */;
 
 Messenger::Messenger(TCPPipe& client)
     : client_(client), inboundQ_(client.inboundQ.get()),
