@@ -74,11 +74,6 @@ void DataPipe::start() {
   };
   receiver_->start();
 
-  // Prime the passive side's UDP connection if we're the active side
-  if (isPrimed_->eval()) {
-    outboundQ->push(DataPacket());
-  }
-
   // Setup prober
   probeTimer_.reset(new event::Timer(0));
   prober_.reset(new event::Action(

@@ -9,7 +9,6 @@
 #include <networking/TCPPipe.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPPipe.h>
-#include <networking/UDPPrimer.h>
 
 namespace stun {
 
