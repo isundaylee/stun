@@ -18,8 +18,8 @@
 
 namespace networking {
 
-const size_t kTunnelInboundQueueSize = 32;
-const size_t kTunnelOutboundQueueSize = 32;
+const size_t kTunnelInboundQueueSize = 256;
+const size_t kTunnelOutboundQueueSize = 256;
 
 Tunnel::Tunnel(TunnelType type)
     : Pipe(kTunnelInboundQueueSize, kTunnelOutboundQueueSize), type_(type) {}

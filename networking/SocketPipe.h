@@ -12,8 +12,8 @@
 
 namespace networking {
 
-const int kSocketInboundQueueSize = 32;
-const int kSocketOutboundQueueSize = 32;
+const int kSocketInboundQueueSize = 256;
+const int kSocketOutboundQueueSize = 256;
 
 const int kSocketPipeListenBacklog = 10;
 

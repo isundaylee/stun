@@ -2,7 +2,7 @@
 
 namespace stun {
 
-static const size_t kDataPipeFIFOSize = 50;
+static const size_t kDataPipeFIFOSize = 256;
 
 DataPipe::DataPipe(networking::UDPPipe&& pipe, std::string const& aesKey,
                    size_t minPaddingTo)
