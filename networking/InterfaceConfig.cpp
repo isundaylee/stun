@@ -178,7 +178,7 @@ int InterfaceConfig::getInterfaceIndex(std::string const& deviceName) {
 
 typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
-void InterfaceConfig::newLink(std::string const& deviceName) {
+void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
   LOG_T("Interface") << "Turning up link " << deviceName << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
 
@@ -189,6 +189,8 @@ void InterfaceConfig::newLink(std::string const& deviceName) {
   req.msg.ifi_index = interfaceIndex;
   req.msg.ifi_flags = IFF_UP;
   req.msg.ifi_change = IFF_UP;
+
+  req.addAttr(IFLA_MTU, sizeof(mtu), &mtu);
 
   sendRequest(req);
   waitForReply([](struct nlmsghdr* msg) {});

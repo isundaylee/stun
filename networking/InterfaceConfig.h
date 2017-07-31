@@ -29,7 +29,7 @@ public:
   InterfaceConfig();
   ~InterfaceConfig();
 
-  void newLink(std::string const& deviceName);
+  void newLink(std::string const& deviceName, unsigned int mtu);
   void setLinkAddress(std::string const& deviceName,
                       std::string const& localAddress,
                       std::string const& peerAddress);

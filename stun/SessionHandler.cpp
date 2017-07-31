@@ -77,7 +77,7 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
 
   // Configure the new interface
   InterfaceConfig config;
-  config.newLink(tunnel.getDeviceName());
+  config.newLink(tunnel.getDeviceName(), kTunnelEthernetMTU);
   config.setLinkAddress(tunnel.getDeviceName(), myTunnelAddr, peerTunnelAddr);
 
   // Configure iptables to route traffic into the new tunnel

@@ -9,7 +9,8 @@
 
 namespace networking {
 
-const int kTunnelBufferSize = 2000;
+static const unsigned int kTunnelEthernetMTU = 1444;
+static const int kTunnelBufferSize = 2000;
 
 enum TunnelType {
   TUN,
