@@ -23,6 +23,7 @@ public:
   size_t clientIndex;
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
+  size_t dataPipeSeq;
 
   SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
                  size_t clientIndex, TCPPipe&& client);
@@ -51,6 +52,7 @@ private:
   void attachHandlers();
   Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,
                       std::string const& peerAddr);
+  json createDataPipe();
   Message handleMessageFromClient(Message const& message);
   Message handleMessageFromServer(Message const& message);
 };

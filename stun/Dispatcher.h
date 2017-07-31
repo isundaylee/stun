@@ -26,6 +26,7 @@ private:
 
   networking::Tunnel tunnel_;
   std::vector<std::unique_ptr<DataPipe>> dataPipes_;
+  size_t currentDataPipeIndex_;
 
   std::unique_ptr<event::ComputedCondition> canSend_;
   std::unique_ptr<event::ComputedCondition> canReceive_;
