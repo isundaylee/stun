@@ -1,5 +1,7 @@
 #include "stun/Dispatcher.h"
 
+#include <event/Trigger.h>
+
 namespace stun {
 
 Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
@@ -81,5 +83,19 @@ void Dispatcher::doReceive() {
 
 void Dispatcher::addDataPipe(DataPipe* dataPipe) {
   dataPipes_.emplace_back(dataPipe);
+
+  // Trigger to remove the DataPipe upon it closing
+  event::Trigger::arm({dataPipe->didClose()},
+                      [this, dataPipe]() {
+                        auto it = std::find_if(
+                            dataPipes_.begin(), dataPipes_.end(),
+                            [dataPipe](std::unique_ptr<DataPipe> const& pipe) {
+                              return pipe.get() == dataPipe;
+                            });
+
+                        assertTrue(it != dataPipes_.end(),
+                                   "Cannot find the DataPipe to remove.");
+                        dataPipes_.erase(it);
+                      });
 }
 }

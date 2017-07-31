@@ -162,8 +162,17 @@ protected:
 
   virtual bool write(P const& packet) override {
     int ret = send(this->fd_, packet.data, packet.size, 0);
+
+    // Just close the socket if the connection is refused (UDP) or reset (TCP)
+    if (ret < 0 && (errno == ECONNRESET || errno == ECONNREFUSED)) {
+      LOG_T(this->name_) << "Connection is refused/reset. Closing the socket."
+                         << std::endl;
+      close();
+      return false;
+    }
+
     if (!checkRetryableError(
-            ret, "sending a UDP " + std::string(type_ == TCP ? "TCP" : "UDP") +
+            ret, "sending a " + std::string(type_ == TCP ? "TCP" : "UDP") +
                      " packet")) {
       return false;
     }

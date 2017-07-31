@@ -123,7 +123,9 @@ private:
         statTxPackets_->accumulate(1);
         statTxBytes_->accumulate(packet.size);
         outboundQ->pop();
-      };
+      } else {
+        break;
+      }
     }
   }
 

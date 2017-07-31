@@ -28,10 +28,6 @@ public:
   SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
                  size_t clientIndex, TCPPipe&& client);
 
-  SessionHandler(SessionHandler&& move);
-
-  SessionHandler& operator=(SessionHandler&& move);
-
   void start();
 
 protected:
@@ -49,12 +45,17 @@ private:
   // Data connection
   std::unique_ptr<Dispatcher> dispatcher_;
 
+  event::Duration dataPipeRotateInterval_;
+  std::unique_ptr<event::Timer> dataPipeRotationTimer_;
+  std::unique_ptr<event::Action> dataPipeRotator_;
+
   void attachHandlers();
   Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,
                       std::string const& peerAddr);
   json createDataPipe();
   Message handleMessageFromClient(Message const& message);
   Message handleMessageFromServer(Message const& message);
+  void doRotateDataPipe();
 };
 
 class ServerHandler {

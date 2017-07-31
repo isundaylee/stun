@@ -36,20 +36,22 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   event::Trigger::arm(
       {client.didClose()},
       [this, clientIndex]() {
-        auto it = std::find_if(servers_.begin(), servers_.end(),
-                               [clientIndex](SessionHandler const& server) {
-                                 return server.clientIndex == clientIndex;
-                               });
+        auto it = std::find_if(
+            servers_.begin(), servers_.end(),
+            [clientIndex](std::unique_ptr<SessionHandler> const& server) {
+              return server->clientIndex == clientIndex;
+            });
 
         assertTrue(it != servers_.end(), "Cannot find the client to remove.");
-        addrPool->release(it->myTunnelAddr);
-        addrPool->release(it->peerTunnelAddr);
+        addrPool->release((*it)->myTunnelAddr);
+        addrPool->release((*it)->peerTunnelAddr);
         servers_.erase(it);
       });
 
   client.setName("Command " + std::to_string(clientIndex));
-  servers_.emplace_back(this, true, "", clientIndex, std::move(client));
-  servers_.back().start();
+  servers_.emplace_back(
+      new SessionHandler(this, true, "", clientIndex, std::move(client)));
+  servers_.back()->start();
 }
 
 void CommandCenter::connect(std::string const& host, int port) {

@@ -69,12 +69,6 @@ void IOConditionManager::prepareConditions(
                                "close()-ing the file descriptor.");
     }
 
-    if (((polls[i].revents & POLLERR) != 0) &&
-        ((polls[i].revents & POLLRDHUP) == 0)) {
-      throw std::runtime_error("Error response from poll(): " +
-                               std::to_string(polls[i].revents));
-    }
-
     IOCondition* condition = static_cast<IOCondition*>(interesting[i]);
     int mask =
         (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);

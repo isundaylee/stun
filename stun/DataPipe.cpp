@@ -1,20 +1,28 @@
 #include "stun/DataPipe.h"
 
+#include <event/Trigger.h>
+
 namespace stun {
 
 static const size_t kDataPipeFIFOSize = 256;
 
 DataPipe::DataPipe(networking::UDPPipe&& pipe, std::string const& aesKey,
-                   size_t minPaddingTo)
+                   size_t minPaddingTo, event::Duration ttl)
     : inboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
-      pipe_(std::move(pipe)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
-      isPrimed_(new event::BaseCondition()) {}
+      pipe_(new networking::UDPPipe(std::move(pipe))), aesKey_(aesKey),
+      minPaddingTo_(minPaddingTo), isPrimed_(new event::BaseCondition()) {
+  if (ttl != 0) {
+    ttlTimer_.reset(new event::Timer(ttl));
+    networking::UDPPipe* pipe = this->pipe_.get();
+    event::Trigger::arm({ttlTimer_->didFire()}, [pipe]() { pipe->close(); });
+  }
+}
 
 DataPipe::DataPipe(DataPipe&& move)
     : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
       pipe_(std::move(move.pipe_)), aesKey_(std::move(move.aesKey_)),
-      minPaddingTo_(move.minPaddingTo_),
+      minPaddingTo_(move.minPaddingTo_), ttlTimer_(std::move(move.ttlTimer_)),
       aesEncryptor_(std::move(move.aesEncryptor_)),
       padder_(std::move(move.padder_)), sender_(std::move(move.sender_)),
       receiver_(std::move(move.receiver_)),
@@ -23,6 +31,7 @@ DataPipe::DataPipe(DataPipe&& move)
 void DataPipe::setPrePrimed() { isPrimed_->fire(); }
 
 event::Condition* DataPipe::isPrimed() { return isPrimed_.get(); }
+event::Condition* DataPipe::didClose() { return pipe_->didClose(); }
 
 void DataPipe::start() {
   // Prepare Encryptor-s
@@ -33,7 +42,7 @@ void DataPipe::start() {
 
   // Configure sender and receiver
   sender_.reset(new PacketTranslator<DataPacket, UDPPacket>(
-      outboundQ.get(), pipe_.outboundQ.get()));
+      outboundQ.get(), pipe_->outboundQ.get()));
   sender_->transform = [this](DataPacket&& in) {
     UDPPacket out;
     out.fill(std::move(in));
@@ -46,7 +55,7 @@ void DataPipe::start() {
   sender_->start();
 
   receiver_.reset(new PacketTranslator<UDPPacket, DataPacket>(
-      pipe_.inboundQ.get(), inboundQ.get()));
+      pipe_->inboundQ.get(), inboundQ.get()));
   receiver_->transform = [this](UDPPacket&& in) {
     isPrimed_->fire();
 

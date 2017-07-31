@@ -9,6 +9,8 @@
 
 namespace stun {
 
+static const event::Duration kSessionHandlerRotationGracePeriod = 1000 /* ms */;
+
 using namespace networking;
 
 SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
@@ -24,35 +26,6 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
   }
 
   attachHandlers();
-}
-
-SessionHandler::SessionHandler(SessionHandler&& move)
-    : clientIndex(std::move(move.clientIndex)),
-      myTunnelAddr(std::move(move.myTunnelAddr)),
-      peerTunnelAddr(std::move(move.peerTunnelAddr)),
-      dataPipeSeq(std::move(move.dataPipeSeq)),
-      center_(std::move(move.center_)), isServer_(std::move(move.isServer_)),
-      serverAddr_(std::move(move.serverAddr_)),
-      commandPipe_(std::move(move.commandPipe_)),
-      messenger_(std::move(move.messenger_)),
-      dispatcher_(std::move(move.dispatcher_)) {
-  attachHandlers();
-}
-
-SessionHandler& SessionHandler::operator=(SessionHandler&& move) {
-  using std::swap;
-  swap(clientIndex, move.clientIndex);
-  swap(myTunnelAddr, move.myTunnelAddr);
-  swap(peerTunnelAddr, move.peerTunnelAddr);
-  swap(dataPipeSeq, move.dataPipeSeq);
-  swap(center_, move.center_);
-  swap(isServer_, move.isServer_);
-  swap(serverAddr_, move.serverAddr_);
-  swap(commandPipe_, move.commandPipe_);
-  swap(messenger_, move.messenger_);
-  swap(dispatcher_, move.dispatcher_);
-  attachHandlers();
-  return *this;
 }
 
 void SessionHandler::start() {
@@ -154,12 +127,25 @@ json SessionHandler::createDataPipe() {
     paddingMinSize = common::Configerator::getInt("padding_to");
   }
 
-  DataPipe* dataPipe = new DataPipe(std::move(udpPipe), aesKey, paddingMinSize);
+  size_t ttl = 0;
+  if (common::Configerator::hasKey("data_pipe_rotate_interval")) {
+    ttl = 1000 * common::Configerator::getInt("data_pipe_rotate_interval") +
+          kSessionHandlerRotationGracePeriod;
+  }
+
+  DataPipe* dataPipe =
+      new DataPipe(std::move(udpPipe), aesKey, paddingMinSize, ttl);
   dataPipe->start();
   dispatcher_->addDataPipe(dataPipe);
 
   return json{
       {"port", port}, {"aes_key", aesKey}, {"padding_to_size", paddingMinSize}};
+}
+
+void SessionHandler::doRotateDataPipe() {
+  LOG() << "Rotating" << std::endl;
+  messenger_->send(Message("new_data_pipe", createDataPipe()));
+  dataPipeRotationTimer_->extend(dataPipeRotateInterval_);
 }
 
 Message SessionHandler::handleMessageFromClient(Message const& message) {
@@ -177,10 +163,20 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
                                     myTunnelAddr, peerTunnelAddr)));
     dispatcher_->start();
 
+    // Set up data pipe rotation if it is configured in the server config.
+    if (common::Configerator::hasKey("data_pipe_rotate_interval")) {
+      dataPipeRotateInterval_ =
+          1000 * common::Configerator::getInt("data_pipe_rotate_interval");
+      dataPipeRotationTimer_.reset(new event::Timer(dataPipeRotateInterval_));
+      dataPipeRotator_.reset(new event::Action(
+          {dataPipeRotationTimer_->didFire(), messenger_->canSend()}));
+      dataPipeRotator_->callback
+          .setMethod<SessionHandler, &SessionHandler::doRotateDataPipe>(this);
+    }
+
     return Message("config", json{{"server_tunnel_ip", myTunnelAddr},
                                   {"client_tunnel_ip", peerTunnelAddr}});
   } else if (type == "config_done") {
-    messenger_->send(Message("new_data_pipe", createDataPipe()));
     return Message("new_data_pipe", createDataPipe());
   } else {
     unreachable("Unrecognized client message type: " + type);
@@ -208,7 +204,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     udpPipe.connect(serverAddr_, body["port"]);
 
     DataPipe* dataPipe = new DataPipe(std::move(udpPipe), body["aes_key"],
-                                      body["padding_to_size"]);
+                                      body["padding_to_size"], 0);
     dataPipe->setPrePrimed();
     dataPipe->start();
     dispatcher_->addDataPipe(dataPipe);
