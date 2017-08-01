@@ -140,6 +140,8 @@ void TimerManager::updateTimer(Time now) {
   currentTarget_ = now + timeout;
 }
 
+Timer::Timer() : didFire_(new BaseCondition()) {}
+
 Timer::Timer(Duration timeout) : didFire_(new BaseCondition()) {
   reset(timeout);
 }

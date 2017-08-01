@@ -82,12 +82,12 @@ void Dispatcher::doReceive() {
 }
 
 void Dispatcher::addDataPipe(std::unique_ptr<DataPipe> dataPipe) {
+  DataPipe* pipe = dataPipe.get();
   dataPipes_.emplace_back(std::move(dataPipe));
 
   // Trigger to remove the DataPipe upon it closing
-  DataPipe* pipe = dataPipe.get();
   event::Trigger::arm(
-      {dataPipe->didClose()},
+      {pipe->didClose()},
       [this, pipe]() {
         auto it =
             std::find_if(dataPipes_.begin(), dataPipes_.end(),

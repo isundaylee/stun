@@ -84,7 +84,8 @@ void EventLoop::run() {
             continue;
           }
 
-          if (condition->type == ConditionType::Internal && !condition->eval()) {
+          if (condition->type == ConditionType::Internal &&
+              !condition->eval()) {
             eligible = false;
             break;
           }

@@ -23,14 +23,22 @@ class SessionHandler;
 
 class CommandCenter {
 public:
-  CommandCenter() {}
+  CommandCenter();
+
+  std::unique_ptr<IPAddressPool> addrPool;
 
   void serve(int port);
   void connect(std::string const& host, int port);
 
-  std::unique_ptr<IPAddressPool> addrPool;
+  event::Condition* didDisconnect() const;
 
 private:
+  CommandCenter(CommandCenter const& copy) = delete;
+  CommandCenter& operator=(CommandCenter const& copy) = delete;
+
+  CommandCenter(CommandCenter&& move) = delete;
+  CommandCenter& operator=(CommandCenter&& move) = delete;
+
   static int numClients;
 
   void handleAccept(TCPPipe&& client);
@@ -38,5 +46,6 @@ private:
   std::unique_ptr<TCPPipe> commandServer_;
   std::vector<std::unique_ptr<SessionHandler>> servers_;
   std::unique_ptr<SessionHandler> client_;
+  std::unique_ptr<event::BaseCondition> didDisconnect_;
 };
 }

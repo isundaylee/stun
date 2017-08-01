@@ -19,7 +19,8 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
     : clientIndex(clientIndex), dataPipeSeq(0), center_(center),
       isServer_(isServer), serverAddr_(serverAddr),
       commandPipe_(new TCPPipe(std::move(client))),
-      messenger_(new Messenger(*commandPipe_)) {
+      messenger_(new Messenger(*commandPipe_)),
+      didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
     messenger_->addEncryptor(new crypto::AESEncryptor(
         crypto::AESKey(common::Configerator::getString("secret"))));
@@ -39,7 +40,11 @@ void SessionHandler::start() {
   }
 }
 
+event::Condition* SessionHandler::didEnd() const { return didEnd_.get(); }
+
 void SessionHandler::attachHandlers() {
+  // Disconnect the peer upon receiving an invalid message (e.g. wrong secret)
+  // TODO: this can leak
   event::Trigger::arm(
       {messenger_->didReceiveInvalidMessage()},
       [this]() {
@@ -54,6 +59,8 @@ void SessionHandler::attachHandlers() {
         commandPipe_->close();
       });
 
+  // Disconnect the peer upon missing heartbeats
+  // TODO: this can leak
   event::Trigger::arm({messenger_->didMissHeartbeat()},
                       [this]() {
                         LOG_T("Session")
@@ -61,6 +68,10 @@ void SessionHandler::attachHandlers() {
                             << std::endl;
                         commandPipe_->close();
                       });
+
+  // Fire our didEnd() when our command pipe is closed
+  event::Trigger::arm({commandPipe_->didClose()},
+                      [this]() { didEnd_->fire(); });
 
   messenger_->handler = [this](Message const& message) {
     return (isServer_ ? handleMessageFromClient(message)
@@ -80,32 +91,35 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
   config.newLink(tunnel.getDeviceName(), kTunnelEthernetMTU);
   config.setLinkAddress(tunnel.getDeviceName(), myTunnelAddr, peerTunnelAddr);
 
-  // Configure iptables to route traffic into the new tunnel
-  std::vector<networking::SubnetAddress> excluded_subnets = {
-      SubnetAddress(commandPipe_->peerAddr, 32)};
+  if (!isServer_) {
+    // Configure iptables to route traffic into (or not into) the new tunnel
+    std::vector<networking::SubnetAddress> excluded_subnets = {
+        SubnetAddress(commandPipe_->peerAddr, 32)};
 
-  // Create routing rules for subnets NOT to forward
-  if (common::Configerator::hasKey("excluded_subnets")) {
-    std::vector<std::string> configExcludedSubnets =
-        common::Configerator::getStringArray("excluded_subnets");
-    for (std::string const& exclusion : configExcludedSubnets) {
-      excluded_subnets.push_back(SubnetAddress(exclusion));
+    // Create routing rules for subnets NOT to forward
+    if (common::Configerator::hasKey("excluded_subnets")) {
+      std::vector<std::string> configExcludedSubnets =
+          common::Configerator::getStringArray("excluded_subnets");
+      for (std::string const& exclusion : configExcludedSubnets) {
+        excluded_subnets.push_back(SubnetAddress(exclusion));
+      }
     }
-  }
 
-  networking::RouteDestination originalRouteDest =
-      config.getRoute(commandPipe_->peerAddr);
-  for (networking::SubnetAddress const& exclusion : excluded_subnets) {
-    config.newRoute(exclusion, originalRouteDest);
-  }
+    networking::RouteDestination originalRouteDest =
+        config.getRoute(commandPipe_->peerAddr);
+    for (networking::SubnetAddress const& exclusion : excluded_subnets) {
+      config.newRoute(exclusion, originalRouteDest);
+    }
 
-  // Create routing rules for subnets to forward
-  if (common::Configerator::hasKey("forward_subnets")) {
-    std::string serverIP = peerTunnelAddr;
-    for (auto const& subnet :
-         common::Configerator::getStringArray("forward_subnets")) {
-      networking::RouteDestination routeDest(serverIP);
-      config.newRoute(SubnetAddress(subnet), routeDest);
+    // Create routing rules for subnets to forward
+    if (common::Configerator::hasKey("forward_subnets")) {
+      LOG() << "SERVER IP " << peerTunnelAddr << std::endl;
+      std::string serverIP = peerTunnelAddr;
+      for (auto const& subnet :
+           common::Configerator::getStringArray("forward_subnets")) {
+        networking::RouteDestination routeDest(serverIP);
+        config.newRoute(SubnetAddress(subnet), routeDest);
+      }
     }
   }
 

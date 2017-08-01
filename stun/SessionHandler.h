@@ -28,6 +28,7 @@ public:
                  size_t clientIndex, TCPPipe&& client);
 
   void start();
+  event::Condition* didEnd() const;
 
 protected:
 private:
@@ -47,6 +48,8 @@ private:
   event::Duration dataPipeRotateInterval_;
   std::unique_ptr<event::Timer> dataPipeRotationTimer_;
   std::unique_ptr<event::Action> dataPipeRotator_;
+
+  std::unique_ptr<event::BaseCondition> didEnd_;
 
   void attachHandlers();
   Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,

@@ -15,6 +15,12 @@ using namespace networking;
 
 int CommandCenter::numClients = 0;
 
+CommandCenter::CommandCenter() : didDisconnect_(new event::BaseCondition()) {}
+
+event::Condition* CommandCenter::didDisconnect() const {
+  return didDisconnect_.get();
+}
+
 void CommandCenter::serve(int port) {
   SubnetAddress addrPoolAddr(common::Configerator::getString("address_pool"));
   addrPool.reset(new IPAddressPool(addrPoolAddr));
@@ -33,8 +39,13 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
   size_t clientIndex = numClients;
   numClients++;
 
+  client.setName("Command " + std::to_string(clientIndex));
+  std::unique_ptr<SessionHandler> handler{
+      new SessionHandler(this, true, "", clientIndex, std::move(client))};
+
+  // Trigger to remove finished clients
   event::Trigger::arm(
-      {client.didClose()},
+      {handler->didEnd()},
       [this, clientIndex]() {
         auto it = std::find_if(
             servers_.begin(), servers_.end(),
@@ -48,9 +59,7 @@ void CommandCenter::handleAccept(TCPPipe&& client) {
         servers_.erase(it);
       });
 
-  client.setName("Command " + std::to_string(clientIndex));
-  servers_.emplace_back(
-      new SessionHandler(this, true, "", clientIndex, std::move(client)));
+  servers_.push_back(std::move(handler));
   servers_.back()->start();
 }
 
@@ -60,13 +69,18 @@ void CommandCenter::connect(std::string const& host, int port) {
   toServer.open();
   toServer.connect(host, port);
 
-  event::Trigger::arm({toServer.didClose()},
+  didDisconnect_->arm();
+  std::unique_ptr<SessionHandler> handler{
+      new SessionHandler(this, false, host, 0, std::move(toServer))};
+
+  event::Trigger::arm({handler->didEnd()},
                       [this]() {
                         LOG_T("Command") << "We are disconnected." << std::endl;
+                        didDisconnect_->fire();
                         client_.reset();
                       });
 
-  client_.reset(new SessionHandler(this, false, host, 0, std::move(toServer)));
+  client_ = std::move(handler);
   client_->start();
 }
 }
