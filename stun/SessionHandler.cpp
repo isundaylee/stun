@@ -136,7 +136,7 @@ json SessionHandler::createDataPipe() {
   DataPipe* dataPipe =
       new DataPipe(std::move(udpPipe), aesKey, paddingMinSize, ttl);
   dataPipe->start();
-  dispatcher_->addDataPipe(dataPipe);
+  dispatcher_->addDataPipe(std::unique_ptr<DataPipe>{dataPipe});
 
   return json{
       {"port", port}, {"aes_key", aesKey}, {"padding_to_size", paddingMinSize}};
@@ -207,7 +207,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
                                       body["padding_to_size"], 0);
     dataPipe->setPrePrimed();
     dataPipe->start();
-    dispatcher_->addDataPipe(dataPipe);
+    dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
 
     return Message::null();
   } else {

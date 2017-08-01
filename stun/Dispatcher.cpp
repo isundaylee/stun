@@ -81,21 +81,23 @@ void Dispatcher::doReceive() {
   }
 }
 
-void Dispatcher::addDataPipe(DataPipe* dataPipe) {
-  dataPipes_.emplace_back(dataPipe);
+void Dispatcher::addDataPipe(std::unique_ptr<DataPipe> dataPipe) {
+  dataPipes_.emplace_back(std::move(dataPipe));
 
   // Trigger to remove the DataPipe upon it closing
-  event::Trigger::arm({dataPipe->didClose()},
-                      [this, dataPipe]() {
-                        auto it = std::find_if(
-                            dataPipes_.begin(), dataPipes_.end(),
-                            [dataPipe](std::unique_ptr<DataPipe> const& pipe) {
-                              return pipe.get() == dataPipe;
-                            });
+  DataPipe* pipe = dataPipe.get();
+  event::Trigger::arm(
+      {dataPipe->didClose()},
+      [this, pipe]() {
+        auto it =
+            std::find_if(dataPipes_.begin(), dataPipes_.end(),
+                         [pipe](std::unique_ptr<DataPipe> const& currentPipe) {
+                           return currentPipe.get() == pipe;
+                         });
 
-                        assertTrue(it != dataPipes_.end(),
-                                   "Cannot find the DataPipe to remove.");
-                        dataPipes_.erase(it);
-                      });
+        assertTrue(it != dataPipes_.end(),
+                   "Cannot find the DataPipe to remove.");
+        dataPipes_.erase(it);
+      });
 }
 }

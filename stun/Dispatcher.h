@@ -15,7 +15,7 @@ public:
   Dispatcher(networking::Tunnel&& tunnel);
 
   void start();
-  void addDataPipe(DataPipe* dataPipe);
+  void addDataPipe(std::unique_ptr<DataPipe> dataPipe);
 
 private:
   Dispatcher(Dispatcher const& copy) = delete;
