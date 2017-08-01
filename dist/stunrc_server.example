@@ -1,8 +1,7 @@
-]1;(SSH) jiahaoli@adp.mit.edu]6;1;bg;red;brightness;27]6;1;bg;green;brightness;113]6;1;bg;blue;brightness;250{
+{
   "role": "server",
   "secret": "lovely",
   "address_pool": "10.100.0.0/24",
   "padding_to": 1000,
   "data_pipe_rotate_interval": 60
 }
-]6;1;bg;*;default
