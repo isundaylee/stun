@@ -1,0 +1,11 @@
+{
+  "role": "client",
+  "server": "SERVER_IP_HERE",
+  "secret": "lovely",
+  "forward_subnets": [
+    "0.0.0.0/1",
+    "128.0.0.0/1"
+  ],
+  "excluded_subnets": [
+  ]
+}

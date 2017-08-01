@@ -5,3 +5,6 @@
 /core
 perf.data
 perf.data.old
+
+dist/stun.zip
+dist/stun
