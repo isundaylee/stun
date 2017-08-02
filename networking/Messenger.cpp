@@ -60,6 +60,7 @@ void Messenger::doReceive() {
     LOG_T("Messenger") << "Disconnected while receiving. Reason: " << ex.what()
                        << std::endl;
     disconnect();
+    return;
   }
 
   // Deliver complete messages
