@@ -62,14 +62,10 @@ void DataPipe::start() {
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
 
-void DataPipe::stop() {
+void DataPipe::doKill() {
   sender_.reset();
   receiver_.reset();
   prober_.reset();
-}
-
-void DataPipe::doKill() {
-  stop();
   socket_.reset();
   didClose_->fire();
 }
@@ -89,13 +85,27 @@ void DataPipe::doSend() {
   }
   out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
 
-  socket_->write(std::move(out));
+  try {
+    socket_->write(std::move(out));
+  } catch (networking::SocketClosedException const& ex) {
+    LOG_T("DataPipe") << "Disconnected while sending. Reason: " << ex.what()
+                      << std::endl;
+    doKill();
+  }
 }
 
 void DataPipe::doReceive() {
   UDPPacket in;
-  assertTrue(socket_->read(in), "Am I being lied to by socket_->canRead()?");
   DataPacket data;
+
+  try {
+    bool read = socket_->read(in);
+    assertTrue(read, "Am I being lied to by socket_->canRead()?");
+  } catch (networking::SocketClosedException const& ex) {
+    LOG_T("DataPipe") << "Disconnected while receiving. Reason: " << ex.what()
+                      << std::endl;
+    doKill();
+  }
 
   data.fill(std::move(in));
   data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);

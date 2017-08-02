@@ -57,7 +57,7 @@ void Messenger::doReceive() {
                                 kMessengerReceiveBufferSize - bufferUsed_);
     bufferUsed_ += read;
   } catch (SocketClosedException const& ex) {
-    LOG_T("Messenger") << "Encountered while receiving: " << ex.what()
+    LOG_T("Messenger") << "Disconnected while receiving. Reason: " << ex.what()
                        << std::endl;
     disconnect();
   }
@@ -88,6 +88,7 @@ void Messenger::doReceive() {
     }
 
     if (!message.isValid()) {
+      LOG_T("Messenger") << "Disconnected due to invalid message." << std::endl;
       disconnect();
       return;
     }
@@ -131,7 +132,7 @@ void Messenger::doSend() {
     written = socket_->write(message.data, payloadSize);
     assertTrue(written == payloadSize, "Message content fragmented");
   } catch (SocketClosedException const& ex) {
-    LOG_T("Messenger") << "Encountered while sending: " << ex.what()
+    LOG_T("Messenger") << "Disconnected while sending. Reason: " << ex.what()
                        << std::endl;
     disconnect();
   }

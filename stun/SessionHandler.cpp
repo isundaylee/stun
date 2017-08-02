@@ -88,7 +88,6 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
 
     // Create routing rules for subnets to forward
     if (common::Configerator::hasKey("forward_subnets")) {
-      LOG() << "SERVER IP " << peerTunnelAddr << std::endl;
       std::string serverIP = peerTunnelAddr;
       for (auto const& subnet :
            common::Configerator::getStringArray("forward_subnets")) {

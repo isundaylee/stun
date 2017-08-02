@@ -33,7 +33,6 @@ public:
   DataPipe(DataPipe&& move);
 
   void start();
-  void stop();
 
   std::unique_ptr<event::FIFO<DataPacket>> inboundQ;
   std::unique_ptr<event::FIFO<DataPacket>> outboundQ;
