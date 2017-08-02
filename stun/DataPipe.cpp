@@ -91,6 +91,7 @@ void DataPipe::doSend() {
     LOG_T("DataPipe") << "Disconnected while sending. Reason: " << ex.what()
                       << std::endl;
     doKill();
+    return;
   }
 }
 
@@ -105,6 +106,7 @@ void DataPipe::doReceive() {
     LOG_T("DataPipe") << "Disconnected while receiving. Reason: " << ex.what()
                       << std::endl;
     doKill();
+    return;
   }
 
   data.fill(std::move(in));

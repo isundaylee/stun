@@ -136,6 +136,7 @@ void Messenger::doSend() {
     LOG_T("Messenger") << "Disconnected while sending. Reason: " << ex.what()
                        << std::endl;
     disconnect();
+    return;
   }
 }
 
