@@ -6,7 +6,7 @@
 #include <networking/Packet.h>
 #include <networking/PacketTranslator.h>
 #include <networking/Tunnel.h>
-#include <networking/UDPPipe.h>
+#include <networking/UDPSocket.h>
 
 using crypto::AESEncryptor;
 using crypto::Padder;
@@ -14,6 +14,7 @@ using networking::Packet;
 using networking::PacketTranslator;
 using networking::TunnelPacket;
 using networking::UDPPacket;
+using networking::UDPSocket;
 
 namespace stun {
 
@@ -26,12 +27,13 @@ public:
 
 class DataPipe {
 public:
-  DataPipe(networking::UDPPipe&& pipe, std::string const& aesKey,
+  DataPipe(std::unique_ptr<UDPSocket> socket, std::string const& aesKey,
            size_t minPaddingTo, event::Duration ttl);
 
   DataPipe(DataPipe&& move);
 
   void start();
+  void stop();
 
   std::unique_ptr<event::FIFO<DataPacket>> inboundQ;
   std::unique_ptr<event::FIFO<DataPacket>> outboundQ;
@@ -44,21 +46,31 @@ private:
   DataPipe(DataPipe const& copy) = delete;
   DataPipe& operator=(DataPipe const& copy) = delete;
 
-  std::unique_ptr<networking::UDPPipe> pipe_;
+  // Settings & states
+  std::unique_ptr<networking::UDPSocket> socket_;
   std::string aesKey_;
   size_t minPaddingTo_;
-  std::unique_ptr<event::Timer> ttlTimer_;
 
+  std::unique_ptr<event::BaseCondition> didClose_;
+  std::unique_ptr<event::BaseCondition> isPrimed_;
+
+  // TTL
+  std::unique_ptr<event::Timer> ttlTimer_;
+  std::unique_ptr<event::Action> ttlKiller_;
+
+  // Probe
   std::unique_ptr<event::Timer> probeTimer_;
   std::unique_ptr<event::Action> prober_;
 
+  // Data channel
   std::unique_ptr<AESEncryptor> aesEncryptor_;
   std::unique_ptr<Padder> padder_;
-  std::unique_ptr<PacketTranslator<DataPacket, UDPPacket>> sender_;
-  std::unique_ptr<PacketTranslator<UDPPacket, DataPacket>> receiver_;
+  std::unique_ptr<event::Action> sender_;
+  std::unique_ptr<event::Action> receiver_;
 
-  std::unique_ptr<event::BaseCondition> isPrimed_;
-
+  void doKill();
   void doProbe();
+  void doSend();
+  void doReceive();
 };
 }

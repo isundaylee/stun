@@ -2,8 +2,9 @@
 
 #include <json/json.hpp>
 
+#include <networking/Packet.h>
 #include <networking/PacketTranslator.h>
-#include <networking/TCPPipe.h>
+#include <networking/TCPSocket.h>
 
 #include <common/Util.h>
 #include <crypto/Encryptor.h>
@@ -56,18 +57,14 @@ const size_t kMessengerReceiveBufferSize = 8192;
 
 class Messenger {
 public:
-  Messenger(TCPPipe& client);
+  Messenger(std::unique_ptr<TCPSocket> socket);
+
+  std::unique_ptr<event::FIFO<Message>> outboundQ;
+  std::function<Message(Message const&)> handler;
 
   void start();
-
-  event::Condition* canSend();
-  void send(Message const& message);
   void addEncryptor(crypto::Encryptor* encryptor);
-
-  event::Condition* didReceiveInvalidMessage() const;
-  event::Condition* didMissHeartbeat() const;
-
-  std::function<Message(Message const&)> handler;
+  event::Condition* didDisconnect() const;
 
 private:
   Messenger(Messenger const& copy) = delete;
@@ -76,23 +73,22 @@ private:
   Messenger(Messenger&& move) = delete;
   Messenger& operator=(Messenger&& move) = delete;
 
-  TCPPipe& client_;
-
-  event::FIFO<TCPPacket>* inboundQ_;
-  event::FIFO<TCPPacket>* outboundQ_;
-
+  std::unique_ptr<TCPSocket> socket_;
   std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
 
   int bufferUsed_;
   Byte buffer_[kMessengerReceiveBufferSize];
+  std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
   std::unique_ptr<event::Timer> heartbeatTimer_;
   std::unique_ptr<event::Timer> heartbeatMissedTimer_;
   std::unique_ptr<event::Action> heartbeatSender_;
 
-  std::unique_ptr<event::BaseCondition> didReceiveInvalidMessage_;
-  std::unique_ptr<event::BaseCondition> didMissHeartbeat_;
+  std::unique_ptr<event::BaseCondition> didDisconnect_;
 
+  void disconnect();
+
+  void doSend();
   void doReceive();
 };
 }

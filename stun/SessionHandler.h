@@ -6,9 +6,10 @@
 #include <stun/Dispatcher.h>
 
 #include <networking/Messenger.h>
-#include <networking/TCPPipe.h>
+#include <networking/TCPServer.h>
+#include <networking/TCPSocket.h>
 #include <networking/Tunnel.h>
-#include <networking/UDPPipe.h>
+#include <networking/UDPSocket.h>
 
 namespace stun {
 
@@ -25,7 +26,7 @@ public:
   size_t dataPipeSeq;
 
   SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
-                 size_t clientIndex, TCPPipe&& client);
+                 size_t clientIndex, std::unique_ptr<TCPSocket> commandPipe);
 
   void start();
   event::Condition* didEnd() const;
@@ -39,7 +40,6 @@ private:
   std::string serverAddr_;
 
   // Command connection
-  std::unique_ptr<TCPPipe> commandPipe_;
   std::unique_ptr<Messenger> messenger_;
 
   // Data connection

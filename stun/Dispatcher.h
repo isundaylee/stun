@@ -3,7 +3,6 @@
 #include <stun/DataPipe.h>
 
 #include <networking/Tunnel.h>
-#include <networking/UDPPipe.h>
 
 namespace stun {
 

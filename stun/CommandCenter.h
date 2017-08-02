@@ -7,9 +7,9 @@
 #include <networking/IPAddressPool.h>
 #include <networking/InterfaceConfig.h>
 #include <networking/Messenger.h>
-#include <networking/TCPPipe.h>
+#include <networking/TCPServer.h>
+#include <networking/TCPSocket.h>
 #include <networking/Tunnel.h>
-#include <networking/UDPPipe.h>
 
 #include <memory>
 #include <string>
@@ -41,11 +41,12 @@ private:
 
   static int numClients;
 
-  void handleAccept(TCPPipe&& client);
+  void doAccept();
 
-  std::unique_ptr<TCPPipe> commandServer_;
-  std::vector<std::unique_ptr<SessionHandler>> servers_;
-  std::unique_ptr<SessionHandler> client_;
+  std::unique_ptr<TCPServer> server_;
+  std::unique_ptr<event::Action> listener_;
+  std::vector<std::unique_ptr<SessionHandler>> serverHandlers_;
+  std::unique_ptr<SessionHandler> clientHandler_;
   std::unique_ptr<event::BaseCondition> didDisconnect_;
 };
 }

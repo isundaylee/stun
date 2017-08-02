@@ -15,11 +15,10 @@ using namespace networking;
 
 SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
                                std::string serverAddr, size_t clientIndex,
-                               TCPPipe&& client)
+                               std::unique_ptr<TCPSocket> commandPipe)
     : clientIndex(clientIndex), dataPipeSeq(0), center_(center),
       isServer_(isServer), serverAddr_(serverAddr),
-      commandPipe_(new TCPPipe(std::move(client))),
-      messenger_(new Messenger(*commandPipe_)),
+      messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
     messenger_->addEncryptor(new crypto::AESEncryptor(
@@ -34,43 +33,17 @@ void SessionHandler::start() {
 
   if (!isServer_) {
     assertTrue(
-        messenger_->canSend()->eval(),
+        messenger_->outboundQ->canPush()->eval(),
         "How can I not be able to send at the very start of a connection?");
-    messenger_->send(Message("hello", ""));
+    messenger_->outboundQ->push(Message("hello", ""));
   }
 }
 
 event::Condition* SessionHandler::didEnd() const { return didEnd_.get(); }
 
 void SessionHandler::attachHandlers() {
-  // Disconnect the peer upon receiving an invalid message (e.g. wrong secret)
-  // TODO: this can leak
-  event::Trigger::arm(
-      {messenger_->didReceiveInvalidMessage()},
-      [this]() {
-        if (isServer_) {
-          LOG_T("Session") << "Disconnected client " << clientIndex
-                           << " due to invalid command message." << std::endl;
-        } else {
-          LOG_T("Session")
-              << "Disconnected from server due to invalid command message."
-              << std::endl;
-        }
-        commandPipe_->close();
-      });
-
-  // Disconnect the peer upon missing heartbeats
-  // TODO: this can leak
-  event::Trigger::arm({messenger_->didMissHeartbeat()},
-                      [this]() {
-                        LOG_T("Session")
-                            << "Disconnected due to missed heartbeats."
-                            << std::endl;
-                        commandPipe_->close();
-                      });
-
   // Fire our didEnd() when our command pipe is closed
-  event::Trigger::arm({commandPipe_->didClose()},
+  event::Trigger::arm({messenger_->didDisconnect()},
                       [this]() { didEnd_->fire(); });
 
   messenger_->handler = [this](Message const& message) {
@@ -92,9 +65,11 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
   config.setLinkAddress(tunnel.getDeviceName(), myTunnelAddr, peerTunnelAddr);
 
   if (!isServer_) {
+    std::string serverIPAddr = SocketAddress(serverAddr_).getHost();
+
     // Configure iptables to route traffic into (or not into) the new tunnel
     std::vector<networking::SubnetAddress> excluded_subnets = {
-        SubnetAddress(commandPipe_->peerAddr, 32)};
+        SubnetAddress(serverIPAddr, 32)};
 
     // Create routing rules for subnets NOT to forward
     if (common::Configerator::hasKey("excluded_subnets")) {
@@ -106,7 +81,7 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
     }
 
     networking::RouteDestination originalRouteDest =
-        config.getRoute(commandPipe_->peerAddr);
+        config.getRoute(serverIPAddr);
     for (networking::SubnetAddress const& exclusion : excluded_subnets) {
       config.newRoute(exclusion, originalRouteDest);
     }
@@ -128,10 +103,7 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
 
 json SessionHandler::createDataPipe() {
   dataPipeSeq++;
-  UDPPipe udpPipe;
-  udpPipe.setName("Data " + std::to_string(clientIndex) + "#" +
-                  std::to_string(dataPipeSeq));
-  udpPipe.open();
+  UDPSocket udpPipe;
   int port = udpPipe.bind(0);
 
   // Prepare encryption config
@@ -148,7 +120,8 @@ json SessionHandler::createDataPipe() {
   }
 
   DataPipe* dataPipe =
-      new DataPipe(std::move(udpPipe), aesKey, paddingMinSize, ttl);
+      new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)), aesKey,
+                   paddingMinSize, ttl);
   dataPipe->start();
   dispatcher_->addDataPipe(std::unique_ptr<DataPipe>{dataPipe});
 
@@ -157,8 +130,7 @@ json SessionHandler::createDataPipe() {
 }
 
 void SessionHandler::doRotateDataPipe() {
-  LOG() << "Rotating" << std::endl;
-  messenger_->send(Message("new_data_pipe", createDataPipe()));
+  messenger_->outboundQ->push(Message("new_data_pipe", createDataPipe()));
   dataPipeRotationTimer_->extend(dataPipeRotateInterval_);
 }
 
@@ -182,8 +154,9 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
       dataPipeRotateInterval_ =
           1000 * common::Configerator::getInt("data_pipe_rotate_interval");
       dataPipeRotationTimer_.reset(new event::Timer(dataPipeRotateInterval_));
-      dataPipeRotator_.reset(new event::Action(
-          {dataPipeRotationTimer_->didFire(), messenger_->canSend()}));
+      dataPipeRotator_.reset(
+          new event::Action({dataPipeRotationTimer_->didFire(),
+                             messenger_->outboundQ->canPush()}));
       dataPipeRotator_->callback
           .setMethod<SessionHandler, &SessionHandler::doRotateDataPipe>(this);
     }
@@ -209,16 +182,14 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
 
     return Message("config_done", "");
   } else if (type == "new_data_pipe") {
-    UDPPipe udpPipe;
+    UDPSocket udpPipe;
 
     dataPipeSeq++;
-    udpPipe.setName("Data #" + std::to_string(dataPipeSeq));
-    udpPipe.open();
-    udpPipe.bind(0);
-    udpPipe.connect(serverAddr_, body["port"]);
+    udpPipe.connect(SocketAddress(serverAddr_, body["port"]));
 
-    DataPipe* dataPipe = new DataPipe(std::move(udpPipe), body["aes_key"],
-                                      body["padding_to_size"], 0);
+    DataPipe* dataPipe =
+        new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
+                     body["aes_key"], body["padding_to_size"], 0);
     dataPipe->setPrePrimed();
     dataPipe->start();
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));

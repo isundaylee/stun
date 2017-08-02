@@ -25,62 +25,58 @@ void CommandCenter::serve(int port) {
   SubnetAddress addrPoolAddr(common::Configerator::getString("address_pool"));
   addrPool.reset(new IPAddressPool(addrPoolAddr));
 
-  commandServer_.reset(new TCPPipe());
-  commandServer_->onAccept = [this](TCPPipe&& client) {
-    handleAccept(std::move(client));
-  };
-
-  commandServer_->setName("Center");
-  commandServer_->open();
-  commandServer_->bind(port);
+  server_.reset(new TCPServer());
+  listener_.reset(new event::Action({server_->canAccept()}));
+  listener_->callback.setMethod<CommandCenter, &CommandCenter::doAccept>(this);
+  server_->bind(port);
 }
 
-void CommandCenter::handleAccept(TCPPipe&& client) {
+void CommandCenter::doAccept() {
+  TCPSocket client = server_->accept();
   size_t clientIndex = numClients;
   numClients++;
 
-  client.setName("Command " + std::to_string(clientIndex));
   std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, true, "", clientIndex, std::move(client))};
+      new SessionHandler(this, true, "", clientIndex,
+                         std::make_unique<TCPSocket>(std::move(client)))};
 
   // Trigger to remove finished clients
   event::Trigger::arm(
       {handler->didEnd()},
       [this, clientIndex]() {
         auto it = std::find_if(
-            servers_.begin(), servers_.end(),
+            serverHandlers_.begin(), serverHandlers_.end(),
             [clientIndex](std::unique_ptr<SessionHandler> const& server) {
               return server->clientIndex == clientIndex;
             });
 
-        assertTrue(it != servers_.end(), "Cannot find the client to remove.");
+        assertTrue(it != serverHandlers_.end(),
+                   "Cannot find the client to remove.");
         addrPool->release((*it)->myTunnelAddr);
         addrPool->release((*it)->peerTunnelAddr);
-        servers_.erase(it);
+        serverHandlers_.erase(it);
       });
 
-  servers_.push_back(std::move(handler));
-  servers_.back()->start();
+  serverHandlers_.push_back(std::move(handler));
+  serverHandlers_.back()->start();
 }
 
 void CommandCenter::connect(std::string const& host, int port) {
-  TCPPipe toServer;
-  toServer.setName("Command");
-  toServer.open();
-  toServer.connect(host, port);
+  TCPSocket client;
+  client.connect(SocketAddress(host, port));
 
   didDisconnect_->arm();
-  std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, false, host, 0, std::move(toServer))};
+  std::unique_ptr<SessionHandler> handler{new SessionHandler(
+      this, false, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()},
                       [this]() {
                         LOG_T("Command") << "We are disconnected." << std::endl;
                         didDisconnect_->fire();
-                        client_.reset();
+                        clientHandler_.reset();
                       });
 
-  client_ = std::move(handler);
-  client_->start();
+  clientHandler_ = std::move(handler);
+  clientHandler_->start();
 }
 }

@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
     shouldMonitorDisconnect.fire();
 
     disconnectMonitor.callback = [&shouldMonitorDisconnect, &reconnectTimer]() {
-      LOG() << "Will reconnect in " << kReconnectDelayInterval << " ms."
-            << std::endl;
+      LOG_T("Main") << "Will reconnect in " << kReconnectDelayInterval << " ms."
+                    << std::endl;
       shouldMonitorDisconnect.arm();
       reconnectTimer.reset(kReconnectDelayInterval);
     };

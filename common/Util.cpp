@@ -42,7 +42,7 @@ bool checkUnixError(int ret, std::string const& action, int allowed /* = 0 */) {
 bool checkRetryableError(int ret, std::string const& action,
                          int allowed /* = 0 */) {
   if (ret < 0) {
-    if (errno != EAGAIN && errno != allowed) {
+    if (errno != EAGAIN && errno != EINTR && errno != allowed) {
       throwUnixError(action);
     }
     return false;
