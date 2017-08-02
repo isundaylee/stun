@@ -17,12 +17,12 @@ using json = nlohmann::json;
 
 const size_t kMessageSize = 2048;
 
-struct Message : Packet<kMessageSize> {
-  Message() : Packet() {}
+struct Message : public Packet {
+  Message() : Packet(kMessageSize) {}
 
   static Message null() { return Message(); }
 
-  Message(std::string const& type, json const& body) : Packet() {
+  Message(std::string const& type, json const& body) : Packet(kMessageSize) {
     json payload = {
         {"type", type}, {"body", body},
     };

@@ -12,7 +12,10 @@ namespace networking {
 
 const size_t kUDPPacketSize = 2048;
 
-struct UDPPacket : Packet<kUDPPacketSize> {};
+struct UDPPacket : Packet {
+public:
+  UDPPacket() : Packet(kUDPPacketSize) {}
+};
 
 class UDPPipe : public SocketPipe<UDPPacket> {
 public:

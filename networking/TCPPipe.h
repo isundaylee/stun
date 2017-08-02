@@ -12,7 +12,10 @@ namespace networking {
 
 const size_t kTCPPacketSize = 2048;
 
-struct TCPPacket : Packet<kTCPPacketSize> {};
+struct TCPPacket : public Packet {
+public:
+  TCPPacket() : Packet(kTCPPacketSize) {}
+};
 
 class TCPPipe : public SocketPipe<TCPPacket> {
 public:

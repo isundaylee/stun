@@ -19,7 +19,10 @@ namespace stun {
 
 static const size_t kDataPacketSize = 1 << 20;
 
-class DataPacket : public Packet<kDataPacketSize> {};
+class DataPacket : public Packet {
+public:
+  DataPacket() : Packet(kDataPacketSize) {}
+};
 
 class DataPipe {
 public:

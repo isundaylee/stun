@@ -9,13 +9,14 @@
 
 namespace networking {
 
-template <int L> struct Packet {
-  static const size_t capacity = L;
-
+struct Packet {
+  size_t capacity;
   size_t size;
   Byte* data;
 
-  Packet() : size(0) { data = new Byte[L]; }
+  Packet(size_t capacity) : capacity(capacity), size(0) {
+    data = new Byte[capacity];
+  }
 
   ~Packet() {
     if (data != nullptr) {
@@ -33,9 +34,9 @@ template <int L> struct Packet {
     memcpy(data, buffer, size);
   }
 
-  template <typename P> void fill(P&& move) {
-    std::swap(this->size, move.size);
-    std::swap(this->data, move.data);
+  void fill(Packet packet) {
+    std::swap(this->size, packet.size);
+    std::swap(this->data, packet.data);
   }
 
   template <typename T> void pack(T const& obj) {

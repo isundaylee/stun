@@ -19,7 +19,10 @@ enum TunnelType {
 
 const size_t kTunnelPacketSize = 2048;
 
-struct TunnelPacket : Packet<kTunnelPacketSize> {};
+struct TunnelPacket : public Packet {
+public:
+  TunnelPacket() : Packet(kTunnelPacketSize) {}
+};
 
 class Tunnel : public Pipe<TunnelPacket> {
 public:
