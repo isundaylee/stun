@@ -8,15 +8,15 @@ bool TCPPipe::read(TCPPacket& packet) {
     return SocketPipe<TCPPacket>::read(packet);
   }
 
-  struct sockaddr_storage clientAddr;
-  socklen_t clientAddrLen = sizeof(clientAddr);
-  int client = accept(fd_, (struct sockaddr*)&clientAddr, &clientAddrLen);
+  SocketAddress clientAddr;
+  socklen_t clientAddrLen = clientAddr.getStorageLength();
+  int client = accept(fd_, clientAddr.asSocketAddress(), &clientAddrLen);
   if (!checkRetryableError(client, "accepting a TCP client")) {
     return false;
   }
 
-  std::string peerAddr = getAddr((struct sockaddr*)&clientAddr);
-  int peerPort = getPort((struct sockaddr*)&clientAddr);
+  std::string peerAddr = clientAddr.getHost();
+  int peerPort = clientAddr.getPort();
 
   LOG_T(name_) << "Accepted incoming client from " << peerAddr << ":"
                << peerPort << std::endl;

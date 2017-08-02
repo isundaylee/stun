@@ -1,12 +1,12 @@
 #pragma once
 
 #include <networking/Pipe.h>
+#include <networking/SocketAddress.h>
 
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <unistd.h>
 #include <unistd.h>
 
@@ -38,18 +38,17 @@ public:
     assertTrue(!connected_, "Calling bind() on a connected SocketPipe");
 
     // Binding
-    struct addrinfo* myAddr = getAddr("0.0.0.0", port);
-    int ret = ::bind(this->fd_, myAddr->ai_addr, myAddr->ai_addrlen);
+    SocketAddress myAddr("0.0.0.0", port);
+    int ret = ::bind(this->fd_, myAddr.asSocketAddress(), myAddr.getLength());
     checkUnixError(ret, "binding to SocketPipe's socket");
-    freeaddrinfo(myAddr);
 
     // Getting the port that is actually used (in case that the given port is 0)
-    struct sockaddr_storage myActualAddr;
-    socklen_t myActualAddrLen = sizeof(myActualAddr);
-    ret = getsockname(this->fd_, (struct sockaddr*)&myActualAddr,
+    SocketAddress myActualAddr;
+    socklen_t myActualAddrLen = myActualAddr.getStorageLength();
+    ret = getsockname(this->fd_, myActualAddr.asSocketAddress(),
                       &myActualAddrLen);
     checkUnixError(ret, "calling getsockname()");
-    int actualPort = ntohs(((struct sockaddr_in*)&myActualAddr)->sin_port);
+    int actualPort = myActualAddr.getPort();
 
     // Listening
     if (type_ == TCP) {
@@ -73,15 +72,13 @@ public:
 
     LOG_T(this->name_) << "Connecting to " << host << ":" << port << std::endl;
 
-    struct addrinfo* peerAddr = getAddr(host, port);
-
-    int ret = ::connect(this->fd_, peerAddr->ai_addr, peerAddr->ai_addrlen);
+    SocketAddress peerAddr(host, port);
+    int ret =
+        ::connect(this->fd_, peerAddr.asSocketAddress(), peerAddr.getLength());
     checkUnixError(ret, "connecting in SocketPipe", EINPROGRESS);
     connected_ = true;
-    this->peerAddr = getAddr(peerAddr->ai_addr);
+    this->peerAddr = peerAddr.getHost();
     this->peerPort = port;
-
-    freeaddrinfo(peerAddr);
 
     LOG_T(this->name_) << "Connected to " << host << ":" << port << std::endl;
 
@@ -120,11 +117,10 @@ protected:
       return false;
     }
 
-    struct sockaddr_storage peerAddr;
-    socklen_t peerAddrSize = sizeof(peerAddr);
-
+    SocketAddress peerAddr;
+    socklen_t peerAddrSize = peerAddr.getStorageLength();
     int ret = recvfrom(this->fd_, packet.data, packet.capacity, 0,
-                       (sockaddr*)&peerAddr, &peerAddrSize);
+                       peerAddr.asSocketAddress(), &peerAddrSize);
     if (ret < 0 && errno == ECONNRESET) {
       // the socket is closed
       LOG_T(this->name_) << "Said goodbye (less peafully)" << std::endl;
@@ -148,11 +144,12 @@ protected:
     }
 
     if (!connected_) {
-      int ret = ::connect(this->fd_, (sockaddr*)&peerAddr, peerAddrSize);
+      int ret = ::connect(this->fd_, peerAddr.asSocketAddress(),
+                          peerAddr.getLength());
       checkUnixError(ret, "connecting in SocketPipe");
       connected_ = true;
-      this->peerAddr = getAddr((sockaddr*)&peerAddr);
-      this->peerPort = getPort((sockaddr*)&peerAddr);
+      this->peerAddr = peerAddr.getHost();
+      this->peerPort = peerAddr.getPort();
       LOG_T(this->name_) << "Received first UDP packet from " << this->peerAddr
                          << ":" << this->peerPort << std::endl;
     }
@@ -179,37 +176,8 @@ protected:
     return true;
   }
 
-  std::string getAddr(struct sockaddr* addrInfo) {
-    assertTrue(addrInfo->sa_family == AF_INET,
-               "Unsupported sa_family: " + std::to_string(addrInfo->sa_family));
-    return std::string(inet_ntoa(((sockaddr_in*)addrInfo)->sin_addr));
-  }
-
-  int getPort(struct sockaddr* addrInfo) {
-    assertTrue(addrInfo->sa_family == AF_INET,
-               "Unsupported sa_family: " + std::to_string(addrInfo->sa_family));
-    return ((sockaddr_in*)addrInfo)->sin_port;
-  }
-
 private:
   SocketPipe(SocketPipe const& copy) = delete;
   SocketPipe& operator=(SocketPipe const& copy) = delete;
-
-  struct addrinfo* getAddr(std::string const& host, int port) {
-    struct addrinfo hints;
-    struct addrinfo* addr;
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = type_ == TCP ? SOCK_STREAM : SOCK_DGRAM;
-
-    int err;
-    if ((err = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints,
-                           &addr)) != 0) {
-      throwGetAddrInfoError(err);
-    }
-
-    return addr;
-  }
 };
 }
