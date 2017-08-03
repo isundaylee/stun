@@ -2,6 +2,8 @@
 
 #include <common/Util.h>
 
+#if LINUX
+
 // Ugly hack to make clang-format happy, as this has to precede <linux/if.h>
 // below -- oh well, linux header files ):
 #include <sys/socket.h>
@@ -70,3 +72,5 @@ bool Tunnel::write(TunnelPacket const& packet) {
   return true;
 }
 }
+
+#endif

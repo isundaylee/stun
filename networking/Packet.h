@@ -24,7 +24,7 @@ struct Packet {
     }
   }
 
-  Packet(Packet&& move) : size(move.size) {
+  Packet(Packet&& move) : capacity(move.capacity), size(move.size) {
     data = move.data;
     move.data = nullptr;
   }
@@ -36,6 +36,7 @@ struct Packet {
 
   void fill(Packet packet) {
     std::swap(this->size, packet.size);
+    std::swap(this->capacity, packet.capacity);
     std::swap(this->data, packet.data);
   }
 

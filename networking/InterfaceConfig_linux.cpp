@@ -2,6 +2,8 @@
 
 #include <common/Util.h>
 
+#if LINUX
+
 #include <arpa/inet.h>
 #include <asm/types.h>
 #include <linux/netlink.h>
@@ -321,3 +323,5 @@ RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
   return RouteDestination(interface, gateway);
 }
 }
+
+#endif

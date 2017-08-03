@@ -52,20 +52,11 @@ public:
 
 private:
   static std::string runCommand(std::string command) {
-    char buffer[kIPTablesOutputBufferSize];
-    std::stringstream result;
-    std::shared_ptr<FILE> pipe(
-        popen(("/sbin/iptables " + command).c_str(), "r"), pclose);
+#if OSX
+    throw std::runtime_error("IPTables does not support OSX.");
+#endif
 
-    assertTrue(!!pipe, "Cannot popen() to run iptables command.");
-
-    while (!feof(pipe.get())) {
-      if (fgets(buffer, kIPTablesOutputBufferSize, pipe.get()) != nullptr) {
-        result << buffer;
-      }
-    }
-
-    return result.str();
+    return ::runCommand("/sbin/iptables " + command);
   }
 };
 }
