@@ -11,7 +11,12 @@
 
 namespace event {
 
+#if LINUX
 const int kReadPollMask = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
+#else
+const int kReadPollMask = POLLIN | POLLPRI | POLLHUP;
+#endif
+
 const int kWritePollMask = POLLOUT;
 
 IOConditionManager::IOConditionManager() : conditions_() {

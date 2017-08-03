@@ -5,8 +5,7 @@ cxx_library(
     ],
     exported_headers = glob(['*.h']),
     srcs = glob(['*.cpp']),
-    exported_linker_flags = [
-        '-lz',
-        '-lrt',
+    deps = [
+        '//common:common'
     ],
 )

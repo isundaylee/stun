@@ -1,5 +1,9 @@
 #include "event/Timer.h"
 
+#include <common/Util.h>
+
+#include <sys/time.h>
+
 #include <algorithm>
 #include <iostream>
 #include <set>
@@ -21,7 +25,11 @@ private:
   static TimerManager* instance_;
   std::vector<TimeoutTrigger> targets_;
   Time currentTarget_ = 0;
+
+#if LINUX
   timer_t timer_;
+#elif OSX
+#endif
 
   static void handleSignal(int sig, siginfo_t* si, void* uc);
 
@@ -30,8 +38,12 @@ private:
   void fireUntilTarget();
 };
 
+#if LINUX
 const int kTimerManagerSignal = SIGRTMIN;
+#endif
+
 const Duration kMillisecondsInASecond = 1000;
+const Duration kMicrosecondsInAMillisecond = 1000;
 const Duration kNanosecondsInAMillisecond = 1000000;
 
 TimerManager* TimerManager::instance_ = new TimerManager();
@@ -43,17 +55,8 @@ TimerManager::TimerManager() {
   sigemptyset(&sa.sa_mask);
 
   // Bind the timer singal handler
-  if (sigaction(kTimerManagerSignal, &sa, NULL) < 0) {
+  if (sigaction(SIGALRM, &sa, NULL) < 0) {
     throw std::runtime_error("Cannot bind timer signal handler.");
-  }
-
-  // Create the timer
-  struct sigevent sev;
-  sev.sigev_notify = SIGEV_SIGNAL;
-  sev.sigev_signo = kTimerManagerSignal;
-  sev.sigev_value.sival_ptr = &timer_;
-  if (timer_create(CLOCK_MONOTONIC, &sev, &timer_) < 0) {
-    throw std::runtime_error("Cannot create timer.");
   }
 }
 
@@ -112,30 +115,32 @@ void TimerManager::fireUntilTarget() {
     fired.second->fire();
   }
   currentTarget_ = 0;
-  if (targets_.empty()) {
-    return;
-  }
   updateTimer(now);
 }
 
 void TimerManager::updateTimer(Time now) {
+  if (targets_.empty()) {
+    return;
+  }
+
   if (currentTarget_ != 0 && targets_.back().first >= currentTarget_) {
+    // The current timer will still fire before our earliest event.
+    // We don't have to change a thing.
     return;
   }
 
   Duration timeout =
-      std::max(1L, (int64_t)targets_.back().first - (int64_t)now);
+      std::max((int64_t)1, (int64_t)targets_.back().first - (int64_t)now);
 
-  struct itimerspec its;
+  struct itimerval its;
   its.it_value.tv_sec = timeout / kMillisecondsInASecond;
-  its.it_value.tv_nsec =
-      (timeout % kMillisecondsInASecond) * kNanosecondsInAMillisecond;
+  its.it_value.tv_usec =
+      (timeout % kMillisecondsInASecond) * kMicrosecondsInAMillisecond;
   its.it_interval.tv_sec = 0;
-  its.it_interval.tv_nsec = 0;
+  its.it_interval.tv_usec = 0;
 
-  if (timer_settime(instance_->timer_, 0, &its, NULL) < 0) {
-    throw std::runtime_error("Cannot set timer time.");
-  }
+  int ret = setitimer(ITIMER_REAL, &its, NULL);
+  assertTrue(ret == 0, "Cannot set timer.");
 
   currentTarget_ = now + timeout;
 }

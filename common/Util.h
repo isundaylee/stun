@@ -5,6 +5,12 @@
 #include <iostream>
 #include <string>
 
+#if defined (__linux__)
+  #define LINUX 1
+#elif defined (__APPLE__) && defined(__MACH__)
+  #define OSX 1
+#endif
+
 typedef unsigned char Byte;
 
 void throwUnixError(std::string const& action);

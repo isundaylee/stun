@@ -1,5 +1,5 @@
+#include <event/Timer.h>
 #include <event/Trigger.h>
-#include <networking/UDPSocket.h>
 
 #include <unistd.h>
 
@@ -7,13 +7,12 @@
 
 int main(int argc, char* argv[]) {
   event::EventLoop loop;
-  networking::UDPSocket socket;
-  socket.bind(7000);
-  while (true) {
-    networking::UDPPacket p;
-    if (socket.read(p))
-      socket.write(std::move(p));
-  }
+  event::Timer timer(1000);
+  event::Action shouter({timer.didFire()});
+  shouter.callback = [&timer]() {
+    std::cout << "HELLO!!!!!!!!!!!!!!! " << std::endl;
+    timer.extend(1000);
+  };
   loop.run();
   return 0;
 }
