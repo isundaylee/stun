@@ -97,10 +97,6 @@ bool Tunnel::write(TunnelPacket const& packet) {
     return false;
   }
   assertTrue(ret == packet.size, "Packet fragmented");
-  for (int i = 0; i < packet.size; i++) {
-    printf("%02x ", packet.data[i]);
-  }
-  printf("\n");
   return true;
 }
 }
