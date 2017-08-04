@@ -3,11 +3,11 @@
 #include <json/json.hpp>
 
 #include <networking/Packet.h>
-#include <networking/PacketTranslator.h>
 #include <networking/TCPSocket.h>
 
 #include <common/Util.h>
 #include <crypto/Encryptor.h>
+#include <event/FIFO.h>
 #include <event/Timer.h>
 
 #include <vector>

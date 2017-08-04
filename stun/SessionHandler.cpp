@@ -55,14 +55,12 @@ void SessionHandler::attachHandlers() {
 Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
                                     std::string const& myTunnelAddr,
                                     std::string const& peerTunnelAddr) {
-  Tunnel tunnel(TunnelType::TUN);
-  tunnel.setName(tunnelName);
-  tunnel.open();
+  Tunnel tunnel;
 
   // Configure the new interface
   InterfaceConfig config;
-  config.newLink(tunnel.getDeviceName(), kTunnelEthernetMTU);
-  config.setLinkAddress(tunnel.getDeviceName(), myTunnelAddr, peerTunnelAddr);
+  config.newLink(tunnel.deviceName, kTunnelEthernetMTU);
+  config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
   if (!isServer_) {
     std::string serverIPAddr = SocketAddress(serverAddr_).getHost();

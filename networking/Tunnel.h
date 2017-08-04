@@ -1,7 +1,9 @@
 #pragma once
 
 #include <networking/Packet.h>
-#include <networking/Pipe.h>
+
+#include <common/FileDescriptor.h>
+#include <event/Condition.h>
 
 #include <stdio.h>
 
@@ -9,13 +11,14 @@
 
 namespace networking {
 
+class TunnelClosedException : public std::runtime_error {
+public:
+  TunnelClosedException(std::string const& reason)
+      : std::runtime_error(reason) {}
+};
+
 static const unsigned int kTunnelEthernetMTU = 1444;
 static const int kTunnelBufferSize = 2000;
-
-enum TunnelType {
-  TUN,
-  TAP,
-};
 
 const size_t kTunnelPacketSize = 2048;
 
@@ -24,25 +27,23 @@ public:
   TunnelPacket() : Packet(kTunnelPacketSize) {}
 };
 
-class Tunnel : public Pipe<TunnelPacket> {
+class Tunnel {
 public:
-  Tunnel(TunnelType type);
-  Tunnel(Tunnel&& move)
-      : Pipe(std::move(move)), type_(move.type_), devName_(move.devName_) {}
+  Tunnel();
+  Tunnel(Tunnel&& move) = default;
 
-  std::string const& getDeviceName() { return devName_; }
+  std::string deviceName;
 
-  void open() override;
+  bool read(TunnelPacket& packet);
+  bool write(TunnelPacket packet);
 
-protected:
-  bool read(TunnelPacket& packet) override;
-  bool write(TunnelPacket const& packet) override;
+  event::Condition* canRead() const;
+  event::Condition* canWrite() const;
 
 private:
   Tunnel(const Tunnel&) = delete;
   Tunnel& operator=(const Tunnel&) = delete;
 
-  TunnelType type_;
-  std::string devName_;
+  common::FileDescriptor fd_;
 };
 };

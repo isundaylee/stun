@@ -2,16 +2,15 @@
 
 #include <crypto/AESEncryptor.h>
 #include <crypto/Padder.h>
+#include <event/FIFO.h>
 #include <event/Timer.h>
 #include <networking/Packet.h>
-#include <networking/PacketTranslator.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPSocket.h>
 
 using crypto::AESEncryptor;
 using crypto::Padder;
 using networking::Packet;
-using networking::PacketTranslator;
 using networking::TunnelPacket;
 using networking::UDPPacket;
 using networking::UDPSocket;

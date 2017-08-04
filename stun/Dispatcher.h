@@ -6,7 +6,6 @@
 
 namespace stun {
 
-using networking::PacketTranslator;
 using networking::TunnelPacket;
 
 class Dispatcher {
