@@ -33,6 +33,12 @@ public:
 
 protected:
 private:
+  SessionHandler(SessionHandler const& copy) = delete;
+  SessionHandler& operator=(SessionHandler const& copy) = delete;
+
+  SessionHandler(SessionHandler&& move) = delete;
+  SessionHandler& operator=(SessionHandler&& move) = delete;
+
   CommandCenter* center_;
 
   // Session settings
