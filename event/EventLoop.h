@@ -8,6 +8,7 @@ namespace event {
 enum ConditionType {
   Internal,
   IO,
+  Signal,
 };
 
 class Action;

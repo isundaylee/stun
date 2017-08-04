@@ -12,24 +12,23 @@
 
 namespace event {
 
-class TimerManager {
+class TimerManager : ConditionManager {
 public:
+  static TimerManager& getInstance();
   static void setTimeout(Time target, BaseCondition* condition);
   static void removeTimeout(BaseCondition* condition);
+
+  virtual void prepareConditions(std::vector<Condition*> const& conditions,
+                                 std::vector<Condition*> const& interesting);
 
 private:
   TimerManager();
 
   typedef std::pair<Time, BaseCondition*> TimeoutTrigger;
 
-  static TimerManager* instance_;
   std::vector<TimeoutTrigger> targets_;
   Time currentTarget_ = 0;
-
-#if LINUX
-  timer_t timer_;
-#elif OSX
-#endif
+  bool currentTargetFired_ = false;
 
   static void handleSignal(int sig, siginfo_t* si, void* uc);
 
@@ -46,18 +45,42 @@ const Duration kMillisecondsInASecond = 1000;
 const Duration kMicrosecondsInAMillisecond = 1000;
 const Duration kNanosecondsInAMillisecond = 1000000;
 
-TimerManager* TimerManager::instance_ = new TimerManager();
-
 TimerManager::TimerManager() {
   struct sigaction sa;
   sa.sa_flags = SA_SIGINFO;
   sa.sa_sigaction = &TimerManager::handleSignal;
   sigemptyset(&sa.sa_mask);
 
+  EventLoop::getCurrentLoop()->addConditionManager(this, Signal);
+
   // Bind the timer singal handler
   if (sigaction(SIGALRM, &sa, NULL) < 0) {
     throw std::runtime_error("Cannot bind timer signal handler.");
   }
+}
+
+TimerManager& TimerManager::getInstance() {
+  static TimerManager instance;
+  return instance;
+}
+
+/* virtual */ void
+TimerManager::prepareConditions(std::vector<Condition*> const& conditions,
+                                std::vector<Condition*> const& interesting) {
+  if (!currentTargetFired_) {
+    return;
+  }
+
+  Time now = Timer::getTimeInMilliseconds();
+  Time target = std::max(now, currentTarget_);
+  while (!targets_.empty() && targets_.back().first <= target) {
+    TimeoutTrigger fired = targets_.back();
+    targets_.pop_back();
+    fired.second->fire();
+  }
+  currentTarget_ = 0;
+  currentTargetFired_ = false;
+  updateTimer(now);
 }
 
 void TimerManager::sortTargets() {
@@ -67,31 +90,31 @@ void TimerManager::sortTargets() {
 /* static */ void TimerManager::setTimeout(Time target,
                                            BaseCondition* condition) {
   auto existing =
-      std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
+      std::find_if(getInstance().targets_.begin(), getInstance().targets_.end(),
                    [condition](TimeoutTrigger const& trigger) {
                      return trigger.second == condition;
                    });
 
-  if (existing == instance_->targets_.end()) {
-    instance_->targets_.emplace_back(target, condition);
+  if (existing == getInstance().targets_.end()) {
+    getInstance().targets_.emplace_back(target, condition);
   } else {
     existing->first = target;
   }
 
   Time now = Timer::getTimeInMilliseconds();
-  instance_->sortTargets();
-  instance_->updateTimer(now);
+  getInstance().sortTargets();
+  getInstance().updateTimer(now);
 }
 
 /* static */ void TimerManager::removeTimeout(BaseCondition* condition) {
   auto existing =
-      std::find_if(instance_->targets_.begin(), instance_->targets_.end(),
+      std::find_if(getInstance().targets_.begin(), getInstance().targets_.end(),
                    [condition](TimeoutTrigger const& trigger) {
                      return trigger.second == condition;
                    });
 
-  if (existing != instance_->targets_.end()) {
-    instance_->targets_.erase(existing);
+  if (existing != getInstance().targets_.end()) {
+    getInstance().targets_.erase(existing);
   }
 }
 
@@ -103,19 +126,7 @@ Time Timer::Timer::getTimeInMilliseconds() {
 }
 
 void TimerManager::handleSignal(int sig, siginfo_t* si, void* uc) {
-  instance_->fireUntilTarget();
-}
-
-void TimerManager::fireUntilTarget() {
-  Time now = Timer::getTimeInMilliseconds();
-  Time target = std::max(now, currentTarget_);
-  while (!targets_.empty() && targets_.back().first <= target) {
-    TimeoutTrigger fired = targets_.back();
-    targets_.pop_back();
-    fired.second->fire();
-  }
-  currentTarget_ = 0;
-  updateTimer(now);
+  getInstance().currentTargetFired_ = true;
 }
 
 void TimerManager::updateTimer(Time now) {
@@ -147,7 +158,8 @@ void TimerManager::updateTimer(Time now) {
 
 Timer::Timer() : didFire_(new BaseCondition()) {}
 
-Timer::Timer(Duration timeout) : didFire_(new BaseCondition()) {
+Timer::Timer(Duration timeout)
+    : didFire_(new BaseCondition(ConditionType::Signal)) {
   reset(timeout);
 }
 
