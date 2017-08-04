@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="0.3"
+version="0.3.1"
 
 if [ $(uname) == "Linux" ]; then
   cd $HOME
@@ -13,7 +13,7 @@ if [ $(uname) == "Linux" ]; then
   echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
 else
   cd $HOME
-  curl "https://github.com/isundaylee/stun/releases/download/v$version/stun-osx.zip" -o stun.zip
+  curl "https://github.com/isundaylee/stun/releases/download/v$version/stun-osx.zip" -L -o stun.zip
   unzip stun.zip
   mv stunrc_client.example .stunrc
   rm stunrc_server.example
