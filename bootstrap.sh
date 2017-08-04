@@ -13,7 +13,7 @@ if [ $(uname) == "Linux" ]; then
   echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
 else
   cd $HOME
-  wget "https://github.com/isundaylee/stun/releases/download/v$version/stun-osx.zip" -O stun.zip
+  curl "https://github.com/isundaylee/stun/releases/download/v$version/stun-osx.zip" -o stun.zip
   unzip stun.zip
   mv stunrc_client.example .stunrc
   rm stunrc_server.example
