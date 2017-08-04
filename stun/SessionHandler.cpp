@@ -25,6 +25,8 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
         crypto::AESKey(common::Configerator::getString("secret"))));
   }
 
+  serverIPAddr_ = SocketAddress(serverAddr_).getHost();
+
   attachHandlers();
 }
 
@@ -63,11 +65,9 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
   config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
   if (!isServer_) {
-    std::string serverIPAddr = SocketAddress(serverAddr_).getHost();
-
     // Configure iptables to route traffic into (or not into) the new tunnel
     std::vector<networking::SubnetAddress> excluded_subnets = {
-        SubnetAddress(serverIPAddr, 32)};
+        SubnetAddress(serverIPAddr_, 32)};
 
     // Create routing rules for subnets NOT to forward
     if (common::Configerator::hasKey("excluded_subnets")) {
@@ -79,7 +79,7 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
     }
 
     networking::RouteDestination originalRouteDest =
-        config.getRoute(serverIPAddr);
+        config.getRoute(serverIPAddr_);
     for (networking::SubnetAddress const& exclusion : excluded_subnets) {
       config.newRoute(exclusion, originalRouteDest);
     }
@@ -182,7 +182,7 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     UDPSocket udpPipe;
 
     dataPipeSeq++;
-    udpPipe.connect(SocketAddress(serverAddr_, body["port"]));
+    udpPipe.connect(SocketAddress(serverIPAddr_, body["port"]));
 
     DataPipe* dataPipe =
         new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),

@@ -38,6 +38,7 @@ private:
   // Session settings
   bool isServer_;
   std::string serverAddr_;
+  std::string serverIPAddr_;
 
   // Command connection
   std::unique_ptr<Messenger> messenger_;
