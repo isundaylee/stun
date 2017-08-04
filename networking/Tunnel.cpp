@@ -3,20 +3,26 @@
 #include <common/Util.h>
 #include <event/IOCondition.h>
 
-#if OSX
-
 #include <fcntl.h>
-#include <net/if_utun.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/kern_control.h>
-#include <sys/kern_event.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#if OSX
+#include <net/if_utun.h>
+#include <sys/kern_control.h>
+#include <sys/kern_event.h>
+#elif LINUX
+#include <linux/if.h>
+#include <linux/if_tun.h>
+#include <stdio.h>
+#endif
 
 namespace networking {
 
 Tunnel::Tunnel() {
+#if OSX
   int fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
   checkUnixError(fd, "opening utun");
 
@@ -39,12 +45,24 @@ Tunnel::Tunnel() {
   socklen_t devNameLen = sizeof(devName);
   ret = getsockopt(fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, devName, &devNameLen);
   checkUnixError(ret, "executing getsockopt(..., UTUN_OPT_IFNAME, ...)");
+  deviceName = devName;
+#elif LINUX
+  int fd = ::open("/dev/net/tun", O_RDWR);
+  checkUnixError(fd, "opening /dev/net/tun");
 
-  ret = fcntl(fd, F_SETFL, O_NONBLOCK);
-  checkUnixError(ret, "executing fnctl(..., O_NONBLOCK, ...)");
+  struct ifreq ifr;
+  memset(&ifr, 0, sizeof(ifr));
+  ifr.ifr_flags = IFF_TUN;
+  int ret = ioctl(fd, TUNSETIFF, (void*)&ifr);
+  checkUnixError(ret, "doing TUNSETIFF");
+
+  deviceName = ifr.ifr_ifrn.ifrn_name;
+#endif
+
+  ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK, 0);
+  checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   fd_ = common::FileDescriptor{fd};
-  deviceName = devName;
   LOG_T("Tunnel") << "Opened successfully as " << deviceName << std::endl;
 }
 
@@ -70,6 +88,7 @@ bool Tunnel::read(TunnelPacket& packet) {
   assertTrue(ret < packet.capacity, "Tunnel packet read buffer is too small.");
   packet.size = ret;
 
+#if OSX
   // OSX tunnel has header 0x00 0x00 0x00 0x02, whereas Linux tunnel has header
   // 0x00 0x00 0x08 0x00. Here we do the translation.
   assertTrue(packet.data[0] == 0x00, "header[0] != 0x00");
@@ -78,11 +97,13 @@ bool Tunnel::read(TunnelPacket& packet) {
   assertTrue(packet.data[3] == 0x02, "header[3] != 0x02");
   packet.data[2] = 0x08;
   packet.data[3] = 0x00;
+#endif
 
   return true;
 }
 
 bool Tunnel::write(TunnelPacket packet) {
+#if OSX
   // OSX tunnel has header 0x00 0x00 0x00 0x02, whereas Linux tunnel has header
   // 0x00 0x00 0x08 0x00. Here we do the translation.
   assertTrue(packet.data[0] == 0x00, "header[0] != 0x00");
@@ -91,6 +112,7 @@ bool Tunnel::write(TunnelPacket packet) {
   assertTrue(packet.data[3] == 0x00, "header[3] != 0x00");
   packet.data[2] = 0x00;
   packet.data[3] = 0x02;
+#endif
 
   int ret = ::write(fd_.fd, packet.data, packet.size);
 
@@ -106,5 +128,3 @@ bool Tunnel::write(TunnelPacket packet) {
   return true;
 }
 }
-
-#endif
