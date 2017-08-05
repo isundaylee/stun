@@ -18,7 +18,6 @@
 
 using namespace stun;
 
-const int kStatsDumpingInterval = 1000 /* ms */;
 const int kReconnectDelayInterval = 5000 /* ms */;
 const int kServerPort = 2859;
 
@@ -97,19 +96,6 @@ int main(int argc, char* argv[]) {
 
   common::Configerator config(configPath);
   event::EventLoop loop;
-
-  // Set up periodic stats dumping
-  event::Timer statsTimer(kStatsDumpingInterval);
-  event::Action statsDumper({statsTimer.didFire()});
-  statsDumper.callback = [&statsTimer]() {
-    stats::StatsManager::dump(
-        LOG_T("Stats"), [](std::string const& name, std::string const& metric) {
-          return (name.find("Tunnel") == std::string::npos) &&
-                 (name.find("Command") == std::string::npos) &&
-                 (name.find("Center") == std::string::npos);
-        });
-    statsTimer.extend(kStatsDumpingInterval);
-  };
 
   std::string role = common::Configerator::getString("role");
 
