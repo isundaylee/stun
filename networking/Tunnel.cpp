@@ -75,18 +75,12 @@ event::Condition* Tunnel::canWrite() const {
 }
 
 bool Tunnel::read(TunnelPacket& packet) {
-  int ret = ::read(fd_.fd, packet.data, packet.capacity);
-
-  if (ret == 0) {
-    throw TunnelClosedException("Tunnel is closed while reading.");
-  }
-
-  if (!checkRetryableError(ret, "reading a Tunnel packet.")) {
+  size_t read = fd_.atomicRead(packet.data, packet.capacity);
+  if (read == 0) {
     return false;
+  } else {
+    packet.size = read;
   }
-
-  assertTrue(ret < packet.capacity, "Tunnel packet read buffer is too small.");
-  packet.size = ret;
 
 #if OSX
   // OSX tunnel has header 0x00 0x00 0x00 0x02, whereas Linux tunnel has header
@@ -114,17 +108,6 @@ bool Tunnel::write(TunnelPacket packet) {
   packet.data[3] = 0x02;
 #endif
 
-  int ret = ::write(fd_.fd, packet.data, packet.size);
-
-  if (ret == 0) {
-    throw TunnelClosedException("Tunnel is closed while sending.");
-  }
-
-  if (!checkRetryableError(ret, "writing a Tunnel packet.")) {
-    return false;
-  }
-
-  assertTrue(ret == packet.size, "Tunnel packet not fully sent.");
-  return true;
+  return fd_.atomicWrite(packet.data, packet.size);
 }
 }

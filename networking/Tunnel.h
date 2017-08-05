@@ -11,11 +11,7 @@
 
 namespace networking {
 
-class TunnelClosedException : public std::runtime_error {
-public:
-  TunnelClosedException(std::string const& reason)
-      : std::runtime_error(reason) {}
-};
+using TunnelClosedException = common::FileDescriptor::ClosedException;
 
 static const unsigned int kTunnelEthernetMTU = 1444;
 static const int kTunnelBufferSize = 2000;
