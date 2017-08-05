@@ -25,7 +25,9 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
         crypto::AESKey(common::Configerator::getString("secret"))));
   }
 
-  serverIPAddr_ = SocketAddress(serverAddr_).getHost();
+  if (isServer) {
+    serverIPAddr_ = SocketAddress(serverAddr_).getHost();
+  }
 
   attachHandlers();
 }
