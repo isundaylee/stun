@@ -1,3 +1,5 @@
+#include <cxxopts/cxxopts.hpp>
+
 #include <common/Configerator.h>
 #include <common/Util.h>
 #include <event/EventLoop.h>
@@ -45,17 +47,24 @@ static const std::string clientConfigTemplate = R"(
 }
 )";
 
+cxxopts::Options options("stun", "A simple layer-3 network packet tunnel.");
+
 std::string getConfigPath() {
+  if (options.count("config")) {
+    return options["config"].as<std::string>();
+  }
+
   const char* homeDir = getenv("HOME");
-  assertTrue(homeDir != NULL, "Cannot get $HOME.");
+  assertTrue(homeDir != NULL, "Cannot get $HOME. You must specify an explicit "
+                              "config path with the -c option.");
 
   return std::string(homeDir) + "/.stunrc";
 }
 
-void generateConfig() {
+void generateConfig(std::string path) {
   std::string role, serverAddr, secret;
 
-  std::cout << "I will help you create a stun config file at ~/.stunrc"
+  std::cout << "I will help you create a stun config file at " << path << "."
             << std::endl;
 
   // Prompt the user for role
@@ -83,15 +92,36 @@ void generateConfig() {
   content = std::regex_replace(content, std::regex("SERVER_IP"), serverAddr);
   content = std::regex_replace(content, std::regex("SECRET"), secret);
 
-  std::ofstream config(getConfigPath());
+  std::ofstream config(path);
   config.write(content.c_str(), content.length());
 }
 
-int main(int argc, char* argv[]) {
-  std::string configPath = getConfigPath();
+void setupAndParseOptions(int argc, char* argv[]) {
+  options.add_option("", "c", "config",
+                     "Path to the config file. Default is ~/.stunrc.",
+                     cxxopts::value<std::string>(), "");
+  options.add_option("", "h", "help", "Print help and usage info.",
+                     cxxopts::value<bool>(), "");
 
+  try {
+    options.parse(argc, argv);
+  } catch (cxxopts::OptionException const& ex) {
+    std::cout << "Cannot parse options: " << ex.what() << std::endl;
+    std::cout << std::endl << options.help() << std::endl;
+    exit(1);
+  }
+
+  if (options.count("help")) {
+    std::cout << options.help() << std::endl;
+    exit(1);
+  }
+}
+
+int main(int argc, char* argv[]) {
+  setupAndParseOptions(argc, argv);
+  std::string configPath = getConfigPath();
   if (access(configPath.c_str(), F_OK) == -1) {
-    generateConfig();
+    generateConfig(configPath);
   }
 
   common::Configerator config(configPath);

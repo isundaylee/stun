@@ -1,0 +1,5 @@
+cxx_library(
+    name = 'cxxopts',
+    exported_headers = ['cxxopts.hpp'],
+    visibility = ['PUBLIC'],
+)
