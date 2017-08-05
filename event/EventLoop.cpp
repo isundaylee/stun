@@ -47,8 +47,21 @@ void EventLoop::addConditionManager(ConditionManager* manager,
   conditionManagers_.emplace_back(type, manager);
 }
 
+void EventLoop::addPreparer(EventLoopPreparer* preparer) {
+  preparers_.push_back(preparer);
+}
+
 void EventLoop::run() {
   while (true) {
+    // First we run all the preparers
+    //
+    // They must be run before the subsequent dead action purging, as some types
+    // of events (e.g. Trigger) are allowed to be dead, and the Trigger manager
+    // itself is supposed to purge those.
+    for (auto preparer : preparers_) {
+      preparer->prepare();
+    }
+
     // First we purge the dead actions (i.e. actions that refer to at least one
     // condition that doesn't exist anymore)
     size_t purged = 0;

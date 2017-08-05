@@ -41,21 +41,19 @@ void CommandCenter::doAccept() {
                          std::make_unique<TCPSocket>(std::move(client)))};
 
   // Trigger to remove finished clients
-  event::Trigger::arm(
-      {handler->didEnd()},
-      [this, clientIndex]() {
-        auto it = std::find_if(
-            serverHandlers_.begin(), serverHandlers_.end(),
-            [clientIndex](std::unique_ptr<SessionHandler> const& server) {
-              return server->clientIndex == clientIndex;
-            });
+  event::Trigger::arm({handler->didEnd()}, [this, clientIndex]() {
+    auto it = std::find_if(
+        serverHandlers_.begin(), serverHandlers_.end(),
+        [clientIndex](std::unique_ptr<SessionHandler> const& server) {
+          return server->clientIndex == clientIndex;
+        });
 
-        assertTrue(it != serverHandlers_.end(),
-                   "Cannot find the client to remove.");
-        addrPool->release((*it)->myTunnelAddr);
-        addrPool->release((*it)->peerTunnelAddr);
-        serverHandlers_.erase(it);
-      });
+    assertTrue(it != serverHandlers_.end(),
+               "Cannot find the client to remove.");
+    addrPool->release((*it)->myTunnelAddr);
+    addrPool->release((*it)->peerTunnelAddr);
+    serverHandlers_.erase(it);
+  });
 
   serverHandlers_.push_back(std::move(handler));
   serverHandlers_.back()->start();
@@ -69,12 +67,11 @@ void CommandCenter::connect(std::string const& host, int port) {
   std::unique_ptr<SessionHandler> handler{new SessionHandler(
       this, false, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
 
-  event::Trigger::arm({handler->didEnd()},
-                      [this]() {
-                        LOG_T("Command") << "We are disconnected." << std::endl;
-                        didDisconnect_->fire();
-                        clientHandler_.reset();
-                      });
+  event::Trigger::arm({handler->didEnd()}, [this]() {
+    LOG_T("Command") << "We are disconnected." << std::endl;
+    didDisconnect_->fire();
+    clientHandler_.reset();
+  });
 
   clientHandler_ = std::move(handler);
   clientHandler_->start();

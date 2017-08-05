@@ -21,6 +21,11 @@ public:
                     std::vector<Condition*> const& interesting) = 0;
 };
 
+class EventLoopPreparer {
+public:
+  virtual void prepare() = 0;
+};
+
 class EventLoop {
 public:
   EventLoop();
@@ -32,6 +37,7 @@ public:
   bool hasCondition(Condition* condition);
   void removeCondition(Condition* condition);
   void addConditionManager(ConditionManager* manager, ConditionType type);
+  void addPreparer(EventLoopPreparer* preparer);
 
   static EventLoop* getCurrentLoop();
 
@@ -45,6 +51,7 @@ private:
   std::set<Action*> actions_;
   std::set<Condition*> conditions_;
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
+  std::vector<EventLoopPreparer*> preparers_;
 
   static EventLoop* instance;
 
