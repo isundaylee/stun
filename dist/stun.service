@@ -1,0 +1,14 @@
+[Unit]
+Description=stun layer 3 tunnel
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/local/bin/stun
+KillMode=process
+Restart=on-failure
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+Alias=stun.service
