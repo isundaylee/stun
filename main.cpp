@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <memory>
+#include <regex>
 #include <stdexcept>
 #include <vector>
 
@@ -21,6 +22,30 @@ const int kStatsDumpingInterval = 1000 /* ms */;
 const int kReconnectDelayInterval = 5000 /* ms */;
 const int kServerPort = 2859;
 
+static const std::string serverConfigTemplate = R"(
+{
+  "role": "server",
+  "secret": "SECRET",
+  "address_pool": "10.100.0.0/24",
+  "padding_to": 1000,
+  "data_pipe_rotate_interval": 60
+}
+)";
+
+static const std::string clientConfigTemplate = R"(
+{
+  "role": "client",
+  "server": "SERVER_IP",
+  "secret": "SECRET",
+  "forward_subnets": [
+    "0.0.0.0/1",
+    "128.0.0.0/1"
+  ],
+  "excluded_subnets": [
+  ]
+}
+)";
+
 std::string getConfigPath() {
   const char* homeDir = getenv("HOME");
   assertTrue(homeDir != NULL, "Cannot get $HOME.");
@@ -28,8 +53,49 @@ std::string getConfigPath() {
   return std::string(homeDir) + "/.stunrc";
 }
 
+void generateConfig() {
+  std::string role, serverAddr, secret;
+
+  std::cout << "I will help you create a stun config file at ~/.stunrc"
+            << std::endl;
+
+  // Prompt the user for role
+  while (role != "server" && role != "client") {
+    std::cout << "Is this a client or a server? ";
+    std::getline(std::cin, role);
+  }
+
+  // Prompt the user for server address if we're a client
+  if (role == "client") {
+    while (serverAddr.empty()) {
+      std::cout << "What is the server's address? ";
+      std::getline(std::cin, serverAddr);
+    }
+  }
+
+  // Prompt the user for the secret
+  while (secret.empty()) {
+    std::cout << "What is the secret (passcode) for the server? ";
+    std::getline(std::cin, secret);
+  }
+
+  std::string content =
+      (role == "server" ? serverConfigTemplate : clientConfigTemplate);
+  content = std::regex_replace(content, std::regex("SERVER_IP"), serverAddr);
+  content = std::regex_replace(content, std::regex("SECRET"), secret);
+
+  std::ofstream config(getConfigPath());
+  config.write(content.c_str(), content.length());
+}
+
 int main(int argc, char* argv[]) {
-  common::Configerator config(getConfigPath());
+  std::string configPath = getConfigPath();
+
+  if (access(configPath.c_str(), F_OK) == -1) {
+    generateConfig();
+  }
+
+  common::Configerator config(configPath);
   event::EventLoop loop;
 
   // Set up periodic stats dumping
