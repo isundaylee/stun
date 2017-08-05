@@ -17,7 +17,8 @@ public:
   friend class EventLoop;
 
   void invoke();
-  bool canInvoke();
+  bool canInvoke() const;
+  bool isDead() const;
 
   Callback<void> callback;
 

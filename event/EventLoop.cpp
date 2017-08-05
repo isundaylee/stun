@@ -1,6 +1,9 @@
 #include "event/EventLoop.h"
-#include "event/Action.h"
-#include "event/IOCondition.h"
+
+#include <event/Action.h>
+#include <event/IOCondition.h>
+
+#include <common/Util.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -46,6 +49,24 @@ void EventLoop::addConditionManager(ConditionManager* manager,
 
 void EventLoop::run() {
   while (true) {
+    // First we purge the dead actions (i.e. actions that refer to at least one
+    // condition that doesn't exist anymore)
+    size_t purged = 0;
+    for (auto it = actions_.begin(); it != actions_.end();) {
+      if ((*it)->isDead()) {
+        purged++;
+        it = actions_.erase(it);
+      } else {
+        it++;
+      }
+    }
+
+    if (purged > 0) {
+      LOG_T("Event") << "Purged " << std::to_string(purged)
+                     << " dead actions. This should ideally never happen."
+                     << std::endl;
+    }
+
     // Tell condition managers to prepare conditions they manage. For example,
     // the
     // IO condition manager might use select, poll, or epoll to resolve values

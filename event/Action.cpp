@@ -12,7 +12,7 @@ Action::~Action() { EventLoop::getCurrentLoop()->removeAction(this); }
 
 void Action::invoke() { callback.invoke(); }
 
-bool Action::canInvoke() {
+bool Action::canInvoke() const {
   for (auto condition : conditions_) {
     if (!EventLoop::getCurrentLoop()->hasCondition(condition) ||
         !condition->eval()) {
@@ -21,5 +21,15 @@ bool Action::canInvoke() {
   }
 
   return true;
+}
+
+bool Action::isDead() const {
+  for (auto condition : conditions_) {
+    if (!EventLoop::getCurrentLoop()->hasCondition(condition)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 }
