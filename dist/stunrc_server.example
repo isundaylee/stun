@@ -1,7 +1,0 @@
-{
-  "role": "server",
-  "secret": "lovely",
-  "address_pool": "10.100.0.0/24",
-  "padding_to": 1000,
-  "data_pipe_rotate_interval": 60
-}

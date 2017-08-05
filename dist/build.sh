@@ -11,5 +11,5 @@ cd ..
 buck build @.buckconfig.release :main
 cp buck-out/gen/main dist/stun
 cd dist
-zip stun-$platform.zip *.example stun
+zip stun-$platform.zip stun
 popd
