@@ -100,7 +100,12 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "c", "config",
                      "Path to the config file. Default is ~/.stunrc.",
                      cxxopts::value<std::string>(), "");
-  options.add_option("", "v", "verbose", "Logs more verbosely.",
+  options.add_option("", "s", "stats", "Enable connection stats logging. You "
+                                       "can also give a numeric frequency in "
+                                       "milliseconds.",
+                     cxxopts::value<event::Duration>()->implicit_value("1000"),
+                     "");
+  options.add_option("", "v", "verbose", "Log more verbosely.",
                      cxxopts::value<bool>(), "");
   options.add_option("", "h", "help", "Print help and usage info.",
                      cxxopts::value<bool>(), "");
@@ -135,6 +140,19 @@ int main(int argc, char* argv[]) {
 
   common::Configerator config(configPath);
   event::EventLoop loop;
+
+  std::unique_ptr<event::Timer> statsTimer;
+  std::unique_ptr<event::Action> statsDumper;
+
+  if (options.count("stats")) {
+    event::Duration statsDumpInerval = options["stats"].as<event::Duration>();
+    statsTimer.reset(new event::Timer{statsDumpInerval});
+    statsDumper.reset(new event::Action{{statsTimer->didFire()}});
+    statsDumper->callback = [&statsTimer, statsDumpInerval]() {
+      stats::StatsManager::dump(LOG_I("Stats"));
+      statsTimer->extend(statsDumpInerval);
+    };
+  }
 
   std::string role = common::Configerator::getString("role");
 

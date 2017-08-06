@@ -3,6 +3,7 @@
 #include <stun/DataPipe.h>
 
 #include <networking/Tunnel.h>
+#include <stats/RateStat.h>
 
 namespace stun {
 
@@ -31,6 +32,9 @@ private:
 
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
+
+  stats::RateStat<size_t> statTxBytes;
+  stats::RateStat<size_t> statRxBytes;
 
   void doSend();
   void doReceive();

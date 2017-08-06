@@ -22,11 +22,12 @@ class StatsManager;
 
 class StatBase {
 protected:
-  StatBase(std::string metric, Prefix prefix = Prefix::None);
+  StatBase(std::string entity, std::string metric,
+           Prefix prefix = Prefix::None);
   ~StatBase();
 
 protected:
-  std::string name_;
+  std::string entity_;
   std::string metric_;
 
 private:
@@ -35,7 +36,7 @@ private:
   size_t id_;
   Prefix prefix_;
 
-  virtual std::string stringValue() = 0;
+  virtual std::string collect() = 0;
 
   friend class StatsManager;
 };
@@ -55,13 +56,13 @@ public:
        std::function<bool(std::string const&, std::string const&)> filter) {
     std::map<std::string, std::vector<StatBase*>> statsByName;
     for (StatBase* stat : getInstance().stats_) {
-      statsByName[stat->name_].push_back(stat);
+      statsByName[stat->entity_].push_back(stat);
     }
 
     for (auto const& pair : statsByName) {
       std::vector<StatBase*> filteredStats;
       for (auto const& stat : pair.second) {
-        if (filter(stat->name_, stat->metric_)) {
+        if (filter(stat->entity_, stat->metric_)) {
           filteredStats.push_back(stat);
         }
       }
@@ -78,7 +79,7 @@ public:
         } else {
           output << ", ";
         }
-        output << stat->metric_ << " = " << stat->stringValue();
+        output << stat->metric_ << " = " << stat->collect();
       }
       output << std::endl;
     }
