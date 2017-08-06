@@ -1,4 +1,4 @@
 [cxx]
-  cxxpp = /usr/bin/clang++-4.0
-  cxx = /usr/bin/clang++-4.0
-  ld = /usr/bin/clang++-4.0
+  cxxpp = /usr/bin/clang++
+  cxx = /usr/bin/clang++
+  ld = /usr/bin/clang++
