@@ -3,6 +3,11 @@ language: generic
 
 
 before_install:
+  # Install gcc 5
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update
+  - sudo apt-get install g++-6
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
   # Install clang 4.0
   - echo "" | sudo tee -a /etc/apt/sources.list
   - echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list
