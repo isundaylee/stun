@@ -64,7 +64,6 @@ public:
   std::unique_ptr<event::FIFO<Message>> outboundQ;
   std::function<Message(Message const&)> handler;
 
-  void start();
   void addEncryptor(crypto::Encryptor* encryptor);
   event::Condition* didDisconnect() const;
 
@@ -76,24 +75,13 @@ private:
   Messenger& operator=(Messenger&& move) = delete;
 
   class Heartbeater;
+  class Transporter;
 
-  std::unique_ptr<TCPSocket> socket_;
-  std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
-
-  int bufferUsed_;
-  Byte buffer_[kMessengerReceiveBufferSize];
-  std::unique_ptr<event::Action> sender_;
-  std::unique_ptr<event::Action> receiver_;
-
+  std::unique_ptr<Transporter> transporter_;
   std::unique_ptr<Heartbeater> heartbeater_;
 
   std::unique_ptr<event::BaseCondition> didDisconnect_;
 
-  stats::AvgStat<event::Duration> statLatency_;
-
   void disconnect();
-
-  void doSend();
-  void doReceive();
 };
 }

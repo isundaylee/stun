@@ -59,7 +59,6 @@ void CommandCenter::doAccept() {
   });
 
   serverHandlers_.push_back(std::move(handler));
-  serverHandlers_.back()->start();
 }
 
 void CommandCenter::connect(std::string const& host, int port) {
@@ -77,6 +76,5 @@ void CommandCenter::connect(std::string const& host, int port) {
   });
 
   clientHandler_ = std::move(handler);
-  clientHandler_->start();
 }
 }

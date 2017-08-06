@@ -51,123 +51,138 @@ private:
   std::unique_ptr<event::Timer> missedTimer_;
 };
 
-Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
-    : outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
-      socket_(std::move(socket)), bufferUsed_(0),
-      didDisconnect_(new event::BaseCondition()),
-      statLatency_("Connection", "latency", 0) {}
-
-Messenger::~Messenger() {}
-
-void Messenger::start() {
-  sender_.reset(new event::Action({socket_->canWrite(), outboundQ->canPop()}));
-  sender_->callback.setMethod<Messenger, &Messenger::doSend>(this);
-  receiver_.reset(
-      new event::Action({socket_->canRead(), outboundQ->canPush()}));
-  receiver_->callback.setMethod<Messenger, &Messenger::doReceive>(this);
-
-  heartbeater_.reset(new Heartbeater(this));
-}
-
-void Messenger::disconnect() {
-  sender_.reset();
-  receiver_.reset();
-  heartbeater_.reset();
-  socket_.reset();
-  didDisconnect_->fire();
-}
-
-void Messenger::doReceive() {
-  try {
-    size_t read = socket_->read(buffer_ + bufferUsed_,
-                                kMessengerReceiveBufferSize - bufferUsed_);
-    bufferUsed_ += read;
-  } catch (SocketClosedException const& ex) {
-    LOG_I("Messenger") << "While receiving: " << ex.what() << std::endl;
-    disconnect();
-    return;
+class Messenger::Transporter {
+public:
+  Transporter(Messenger* messenger, std::unique_ptr<TCPSocket> socket)
+      : messenger_(messenger), socket_(std::move(socket)), bufferUsed_(0),
+        sender_(new event::Action(
+            {socket_->canWrite(), messenger->outboundQ->canPop()})),
+        receiver_(new event::Action(
+            {socket_->canRead(), messenger->outboundQ->canPush()})),
+        statLatency_("Connection", "latency", 0) {
+    sender_->callback.setMethod<Transporter, &Transporter::doSend>(this);
+    receiver_->callback.setMethod<Transporter, &Transporter::doReceive>(this);
   }
 
-  // Deliver complete messages
-  while (bufferUsed_ >= sizeof(MessengerLengthHeaderType)) {
-    int messageLen = *((MessengerLengthHeaderType*)buffer_);
-    int totalLen = sizeof(MessengerLengthHeaderType) + messageLen;
-    if (bufferUsed_ < totalLen) {
-      break;
-    }
+  std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
 
-    // We have a complete message
-    Message message;
-    message.fill(buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
-
-    MessengerLengthHeaderType payloadLen = messageLen;
-    for (auto decryptor = encryptors_.rbegin(); decryptor != encryptors_.rend();
-         decryptor++) {
-      payloadLen =
-          (*decryptor)->decrypt(message.data, payloadLen, kMessageSize);
-    }
-    message.size = payloadLen;
-
-    if (bufferUsed_ > totalLen) {
-      // Move the left-over to the front
-      memmove(buffer_, buffer_ + totalLen, bufferUsed_ - (totalLen));
-    }
-
-    if (!message.isValid()) {
-      LOG_I("Messenger") << "Disconnected due to invalid message." << std::endl;
-      disconnect();
+  void doReceive() {
+    try {
+      size_t read = socket_->read(buffer_ + bufferUsed_,
+                                  kMessengerReceiveBufferSize - bufferUsed_);
+      bufferUsed_ += read;
+    } catch (SocketClosedException const& ex) {
+      LOG_I("Messenger") << "While receiving: " << ex.what() << std::endl;
+      messenger_->disconnect();
       return;
     }
 
-    bufferUsed_ -= (totalLen);
+    // Deliver complete messages
+    while (bufferUsed_ >= sizeof(MessengerLengthHeaderType)) {
+      int messageLen = *((MessengerLengthHeaderType*)buffer_);
+      int totalLen = sizeof(MessengerLengthHeaderType) + messageLen;
+      if (bufferUsed_ < totalLen) {
+        break;
+      }
 
-    if (message.getType() == kMessengerHeartBeatMessageType) {
-      heartbeater_->didReceiveHeartbeat(message);
-    } else if (message.getType() == kMessengerHeartBeatReplyMessageType) {
-      event::Time start = message.getBody()["start"];
-      statLatency_.accumulate((event::Timer::getTimeInMilliseconds() - start) /
-                              2);
-    } else {
-      LOG_V("Messenger") << "Received: " << message.getType() << " - "
-                         << message.getBody() << std::endl;
+      // We have a complete message
+      Message message;
+      message.fill(buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
 
-      Message response = handler(message);
-      if (response.size > 0) {
-        outboundQ->push(std::move(response));
+      MessengerLengthHeaderType payloadLen = messageLen;
+      for (auto decryptor = encryptors_.rbegin();
+           decryptor != encryptors_.rend(); decryptor++) {
+        payloadLen =
+            (*decryptor)->decrypt(message.data, payloadLen, kMessageSize);
+      }
+      message.size = payloadLen;
+
+      if (bufferUsed_ > totalLen) {
+        // Move the left-over to the front
+        memmove(buffer_, buffer_ + totalLen, bufferUsed_ - (totalLen));
+      }
+
+      if (!message.isValid()) {
+        LOG_I("Messenger") << "Disconnected due to invalid message."
+                           << std::endl;
+        messenger_->disconnect();
+        return;
+      }
+
+      bufferUsed_ -= (totalLen);
+
+      if (message.getType() == kMessengerHeartBeatMessageType) {
+        messenger_->heartbeater_->didReceiveHeartbeat(message);
+      } else if (message.getType() == kMessengerHeartBeatReplyMessageType) {
+        event::Time start = message.getBody()["start"];
+        statLatency_.accumulate(
+            (event::Timer::getTimeInMilliseconds() - start) / 2);
+      } else {
+        LOG_V("Messenger") << "Received: " << message.getType() << " - "
+                           << message.getBody() << std::endl;
+
+        Message response = messenger_->handler(message);
+        if (response.size > 0) {
+          messenger_->outboundQ->push(std::move(response));
+        }
       }
     }
   }
-}
 
-void Messenger::doSend() {
-  Message message = outboundQ->pop();
+  void doSend() {
+    Message message = messenger_->outboundQ->pop();
 
-  if (message.getType() != kMessengerHeartBeatMessageType) {
-    LOG_V("Messenger") << "Sent: " << message.getType() << " = "
-                       << message.getBody() << std::endl;
+    if (message.getType() != kMessengerHeartBeatMessageType) {
+      LOG_V("Messenger") << "Sent: " << message.getType() << " = "
+                         << message.getBody() << std::endl;
+    }
+
+    MessengerLengthHeaderType payloadSize = message.size;
+    for (auto const& encryptor : encryptors_) {
+      payloadSize =
+          encryptor->encrypt(message.data, payloadSize, message.capacity);
+    }
+
+    try {
+      int written = socket_->write((Byte*)&payloadSize, sizeof(payloadSize));
+      assertTrue(written == sizeof(payloadSize),
+                 "Message length header fragmented");
+      written = socket_->write(message.data, payloadSize);
+      assertTrue(written == payloadSize, "Message content fragmented");
+    } catch (SocketClosedException const& ex) {
+      LOG_I("Messenger") << "While sending: " << ex.what() << std::endl;
+      messenger_->disconnect();
+      return;
+    }
   }
 
-  MessengerLengthHeaderType payloadSize = message.size;
-  for (auto const& encryptor : encryptors_) {
-    payloadSize =
-        encryptor->encrypt(message.data, payloadSize, message.capacity);
-  }
+private:
+  Messenger* messenger_;
 
-  try {
-    int written = socket_->write((Byte*)&payloadSize, sizeof(payloadSize));
-    assertTrue(written == sizeof(payloadSize),
-               "Message length header fragmented");
-    written = socket_->write(message.data, payloadSize);
-    assertTrue(written == payloadSize, "Message content fragmented");
-  } catch (SocketClosedException const& ex) {
-    LOG_I("Messenger") << "While sending: " << ex.what() << std::endl;
-    disconnect();
-    return;
-  }
+  std::unique_ptr<TCPSocket> socket_;
+  int bufferUsed_;
+  Byte buffer_[kMessengerReceiveBufferSize];
+  std::unique_ptr<event::Action> sender_;
+  std::unique_ptr<event::Action> receiver_;
+  stats::AvgStat<event::Duration> statLatency_;
+};
+
+Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
+    : outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
+      transporter_(new Transporter(this, std::move(socket))),
+      heartbeater_(new Heartbeater(this)),
+      didDisconnect_(new event::BaseCondition()) {}
+
+Messenger::~Messenger() {}
+
+void Messenger::disconnect() {
+  transporter_.reset();
+  heartbeater_.reset();
+  didDisconnect_->fire();
 }
 
 void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
-  encryptors_.emplace_back(encryptor);
+  transporter_->encryptors_.emplace_back(encryptor);
 }
 
 event::Condition* Messenger::didDisconnect() const {

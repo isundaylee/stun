@@ -28,7 +28,6 @@ public:
   SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
                  size_t clientIndex, std::unique_ptr<TCPSocket> commandPipe);
 
-  void start();
   event::Condition* didEnd() const;
 
 protected:

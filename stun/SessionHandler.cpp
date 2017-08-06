@@ -29,18 +29,14 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
     serverIPAddr_ = SocketAddress(serverAddr_).getHost();
   }
 
-  attachHandlers();
-}
-
-void SessionHandler::start() {
-  messenger_->start();
-
   if (!isServer_) {
     assertTrue(
         messenger_->outboundQ->canPush()->eval(),
         "How can I not be able to send at the very start of a connection?");
     messenger_->outboundQ->push(Message("hello", ""));
   }
+
+  attachHandlers();
 }
 
 event::Condition* SessionHandler::didEnd() const { return didEnd_.get(); }
