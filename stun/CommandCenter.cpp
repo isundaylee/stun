@@ -36,6 +36,9 @@ void CommandCenter::doAccept() {
   size_t clientIndex = numClients;
   numClients++;
 
+  LOG_I("Center") << "Accepted a client from "
+                  << client.getPeerAddress().getHost() << std::endl;
+
   std::unique_ptr<SessionHandler> handler{
       new SessionHandler(this, true, "", clientIndex,
                          std::make_unique<TCPSocket>(std::move(client)))};

@@ -100,10 +100,13 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
   return tunnel;
 }
 
+// Used by the *server* side to create new data pipes.
 json SessionHandler::createDataPipe() {
   dataPipeSeq++;
   UDPSocket udpPipe;
   int port = udpPipe.bind(0);
+
+  LOG_I("Session") << "Creating a new data pipe." << std::endl;
 
   // Prepare encryption config
   std::string aesKey = crypto::AESKey::randomStringKey();
