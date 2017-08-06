@@ -1,6 +1,7 @@
 # stun
 
 [![GitHub version](https://badge.fury.io/gh/isundaylee%2Fstun.svg)](https://badge.fury.io/gh/isundaylee%2Fstun)
+[![Build Status](https://travis-ci.org/isundaylee/stun.svg?branch=master)](https://travis-ci.org/isundaylee/stun)
 
 `stun` (Simple TUNnel), as its name stands, is a simple layer-3 network tunnel written in C++. It allows you to easily establish a network tunnel between two computers, and route packets through them.
 
