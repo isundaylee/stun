@@ -13,11 +13,51 @@ static const event::Duration kMessengerHeartBeatInterval = 1000 /* ms */;
 static const event::Duration kMessengerHeartBeatTimeout = 10000 /* ms */;
 static const size_t kMessengerOutboundQueueSize = 32;
 
+class Messenger::Heartbeater {
+public:
+  Heartbeater(Messenger* messenger)
+      : messenger_(messenger), beatTimer_(new event::Timer(0)),
+        missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)) {
+    beater_.reset(new event::Action(
+        {beatTimer_->didFire(), messenger_->outboundQ->canPush()}));
+
+    // Sets up periodic heart beat sending
+    beater_->callback = [this]() {
+      messenger_->outboundQ->push(
+          Message(kMessengerHeartBeatMessageType,
+                  {{"start", event::Timer::getTimeInMilliseconds()}}));
+      beatTimer_->extend(kMessengerHeartBeatInterval);
+    };
+
+    // Sets up missed heartbeat disconnection
+    event::Trigger::arm({missedTimer_->didFire()}, [this]() {
+      LOG_I("Messenger") << "Disconnected due to missed heartbeats."
+                         << std::endl;
+      messenger_->disconnect();
+    });
+  }
+
+  void didReceiveHeartbeat(Message const& message) {
+    messenger_->outboundQ->push(
+        Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
+    missedTimer_->reset(kMessengerHeartBeatTimeout);
+  }
+
+private:
+  Messenger* messenger_;
+
+  std::unique_ptr<event::Timer> beatTimer_;
+  std::unique_ptr<event::Action> beater_;
+  std::unique_ptr<event::Timer> missedTimer_;
+};
+
 Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
     : outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
       socket_(std::move(socket)), bufferUsed_(0),
       didDisconnect_(new event::BaseCondition()),
       statLatency_("Connection", "latency", 0) {}
+
+Messenger::~Messenger() {}
 
 void Messenger::start() {
   sender_.reset(new event::Action({socket_->canWrite(), outboundQ->canPop()}));
@@ -26,29 +66,13 @@ void Messenger::start() {
       new event::Action({socket_->canRead(), outboundQ->canPush()}));
   receiver_->callback.setMethod<Messenger, &Messenger::doReceive>(this);
 
-  heartbeatTimer_.reset(new event::Timer(0));
-  heartbeatSender_.reset(
-      new event::Action({heartbeatTimer_->didFire(), outboundQ->canPush()}));
-  heartbeatSender_->callback = [this]() {
-    outboundQ->push(
-        Message(kMessengerHeartBeatMessageType,
-                {{"start", event::Timer::getTimeInMilliseconds()}}));
-    heartbeatTimer_->extend(kMessengerHeartBeatInterval);
-  };
-
-  heartbeatMissedTimer_.reset(new event::Timer(kMessengerHeartBeatTimeout));
-  event::Trigger::arm({heartbeatMissedTimer_->didFire()}, [this]() {
-    LOG_I("Messenger") << "Disconnected due to missed heartbeats." << std::endl;
-    disconnect();
-  });
+  heartbeater_.reset(new Heartbeater(this));
 }
 
 void Messenger::disconnect() {
   sender_.reset();
   receiver_.reset();
-  heartbeatTimer_.reset();
-  heartbeatSender_.reset();
-  heartbeatMissedTimer_.reset();
+  heartbeater_.reset();
   socket_.reset();
   didDisconnect_->fire();
 }
@@ -98,9 +122,7 @@ void Messenger::doReceive() {
     bufferUsed_ -= (totalLen);
 
     if (message.getType() == kMessengerHeartBeatMessageType) {
-      outboundQ->push(
-          Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
-      heartbeatMissedTimer_->reset(kMessengerHeartBeatTimeout);
+      heartbeater_->didReceiveHeartbeat(message);
     } else if (message.getType() == kMessengerHeartBeatReplyMessageType) {
       event::Time start = message.getBody()["start"];
       statLatency_.accumulate((event::Timer::getTimeInMilliseconds() - start) /

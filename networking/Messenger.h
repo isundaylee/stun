@@ -59,6 +59,7 @@ const size_t kMessengerReceiveBufferSize = 8192;
 class Messenger {
 public:
   Messenger(std::unique_ptr<TCPSocket> socket);
+  ~Messenger();
 
   std::unique_ptr<event::FIFO<Message>> outboundQ;
   std::function<Message(Message const&)> handler;
@@ -74,6 +75,8 @@ private:
   Messenger(Messenger&& move) = delete;
   Messenger& operator=(Messenger&& move) = delete;
 
+  class Heartbeater;
+
   std::unique_ptr<TCPSocket> socket_;
   std::vector<std::unique_ptr<crypto::Encryptor>> encryptors_;
 
@@ -81,9 +84,8 @@ private:
   Byte buffer_[kMessengerReceiveBufferSize];
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
-  std::unique_ptr<event::Timer> heartbeatTimer_;
-  std::unique_ptr<event::Timer> heartbeatMissedTimer_;
-  std::unique_ptr<event::Action> heartbeatSender_;
+
+  std::unique_ptr<Heartbeater> heartbeater_;
 
   std::unique_ptr<event::BaseCondition> didDisconnect_;
 
