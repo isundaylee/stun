@@ -9,8 +9,8 @@ using networking::TunnelClosedException;
 Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
     : tunnel_(std::move(tunnel)), canSend_(new event::ComputedCondition()),
       canReceive_(new event::ComputedCondition()),
-      statTxBytes("Dispatcher", "tx_bytes", 0),
-      statRxBytes("Dispatcher", "rx_bytes", 0) {
+      statTxBytes_("Connection", "tx_bytes", 0),
+      statRxBytes_("Connection", "rx_bytes", 0) {
   canSend_->expression.setMethod<Dispatcher, &Dispatcher::calculateCanSend>(
       this);
   canReceive_->expression
@@ -58,7 +58,7 @@ void Dispatcher::doSend() {
   }
 
   DataPacket out;
-  statTxBytes.accumulate(in.size);
+  statTxBytes_.accumulate(in.size);
   out.fill(std::move(in));
 
   bool sent = false;
@@ -82,7 +82,7 @@ void Dispatcher::doReceive() {
     if (dataPipe_->inboundQ->canPop()->eval()) {
       TunnelPacket in;
       in.fill(dataPipe_->inboundQ->pop());
-      statRxBytes.accumulate(in.size);
+      statRxBytes_.accumulate(in.size);
 
       if (!tunnel_.write(std::move(in))) {
         LOG_I("Dispatcher") << "Dropped an incoming packet." << std::endl;

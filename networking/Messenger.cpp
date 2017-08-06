@@ -7,6 +7,8 @@ namespace networking {
 typedef uint32_t MessengerLengthHeaderType;
 
 static const std::string kMessengerHeartBeatMessageType = "heartbeat";
+static const std::string kMessengerHeartBeatReplyMessageType =
+    "heartbeat_reply";
 static const event::Duration kMessengerHeartBeatInterval = 1000 /* ms */;
 static const event::Duration kMessengerHeartBeatTimeout = 10000 /* ms */;
 static const size_t kMessengerOutboundQueueSize = 32;
@@ -14,7 +16,8 @@ static const size_t kMessengerOutboundQueueSize = 32;
 Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
     : outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
       socket_(std::move(socket)), bufferUsed_(0),
-      didDisconnect_(new event::BaseCondition()) {}
+      didDisconnect_(new event::BaseCondition()),
+      statLatency_("Connection", "latency", 0) {}
 
 void Messenger::start() {
   sender_.reset(new event::Action({socket_->canWrite(), outboundQ->canPop()}));
@@ -27,7 +30,9 @@ void Messenger::start() {
   heartbeatSender_.reset(
       new event::Action({heartbeatTimer_->didFire(), outboundQ->canPush()}));
   heartbeatSender_->callback = [this]() {
-    outboundQ->push(Message(kMessengerHeartBeatMessageType, ""));
+    outboundQ->push(
+        Message(kMessengerHeartBeatMessageType,
+                {{"start", event::Timer::getTimeInMilliseconds()}}));
     heartbeatTimer_->extend(kMessengerHeartBeatInterval);
   };
 
@@ -92,14 +97,18 @@ void Messenger::doReceive() {
 
     bufferUsed_ -= (totalLen);
 
-    if (message.getType() != kMessengerHeartBeatMessageType) {
+    if (message.getType() == kMessengerHeartBeatMessageType) {
+      outboundQ->push(
+          Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
+      heartbeatMissedTimer_->reset(kMessengerHeartBeatTimeout);
+    } else if (message.getType() == kMessengerHeartBeatReplyMessageType) {
+      event::Time start = message.getBody()["start"];
+      statLatency_.accumulate((event::Timer::getTimeInMilliseconds() - start) /
+                              2);
+    } else {
       LOG_V("Messenger") << "Received: " << message.getType() << " - "
                          << message.getBody() << std::endl;
-    }
 
-    if (message.getType() == kMessengerHeartBeatMessageType) {
-      heartbeatMissedTimer_->reset(kMessengerHeartBeatTimeout);
-    } else {
       Message response = handler(message);
       if (response.size > 0) {
         outboundQ->push(std::move(response));

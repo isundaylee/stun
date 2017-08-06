@@ -9,6 +9,7 @@
 #include <crypto/Encryptor.h>
 #include <event/FIFO.h>
 #include <event/Timer.h>
+#include <stats/AvgStat.h>
 
 #include <vector>
 
@@ -85,6 +86,8 @@ private:
   std::unique_ptr<event::Action> heartbeatSender_;
 
   std::unique_ptr<event::BaseCondition> didDisconnect_;
+
+  stats::AvgStat<event::Duration> statLatency_;
 
   void disconnect();
 
