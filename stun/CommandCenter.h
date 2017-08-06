@@ -39,8 +39,6 @@ private:
   CommandCenter(CommandCenter&& move) = delete;
   CommandCenter& operator=(CommandCenter&& move) = delete;
 
-  static int numClients;
-
   void doAccept();
 
   std::unique_ptr<TCPServer> server_;

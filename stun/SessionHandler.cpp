@@ -14,10 +14,9 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 using namespace networking;
 
 SessionHandler::SessionHandler(CommandCenter* center, SessionType type,
-                               std::string serverAddr, size_t clientIndex,
+                               std::string serverAddr,
                                std::unique_ptr<TCPSocket> commandPipe)
-    : clientIndex(clientIndex), dataPipeSeq(0), center_(center), type_(type),
-      serverAddr_(serverAddr),
+    : center_(center), type_(type), serverAddr_(serverAddr),
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
@@ -57,8 +56,7 @@ void SessionHandler::attachHandlers() {
   }
 }
 
-Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
-                                    std::string const& myTunnelAddr,
+Tunnel SessionHandler::createTunnel(std::string const& myTunnelAddr,
                                     std::string const& peerTunnelAddr) {
   Tunnel tunnel;
 
@@ -103,7 +101,6 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
 
 // Used by the *server* side to create new data pipes.
 json SessionHandler::createDataPipe() {
-  dataPipeSeq++;
   UDPSocket udpPipe;
   int port = udpPipe.bind(0);
 
@@ -145,8 +142,7 @@ void SessionHandler::attachServerMessageHandlers() {
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     dispatcher_.reset(
-        new Dispatcher(createTunnel("Tunnel " + std::to_string(clientIndex),
-                                    myTunnelAddr, peerTunnelAddr)));
+        new Dispatcher(createTunnel(myTunnelAddr, peerTunnelAddr)));
     dispatcher_->start();
 
     // Set up data pipe rotation if it is configured in the server config.
@@ -174,8 +170,8 @@ void SessionHandler::attachClientMessageHandlers() {
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
 
-    dispatcher_.reset(new Dispatcher(createTunnel(
-        "Tunnel", body["client_tunnel_ip"], body["server_tunnel_ip"])));
+    dispatcher_.reset(new Dispatcher(
+        createTunnel(body["client_tunnel_ip"], body["server_tunnel_ip"])));
     dispatcher_->start();
 
     LOG_I("Session") << "Received config from the server." << std::endl;
@@ -187,8 +183,6 @@ void SessionHandler::attachClientMessageHandlers() {
     auto body = message.getBody();
 
     UDPSocket udpPipe;
-
-    dataPipeSeq++;
     udpPipe.connect(SocketAddress(serverIPAddr_, body["port"]));
 
     DataPipe* dataPipe =
@@ -196,6 +190,7 @@ void SessionHandler::attachClientMessageHandlers() {
                      body["aes_key"], body["padding_to_size"], 0);
     dataPipe->setPrePrimed();
     dataPipe->start();
+
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
 
     LOG_I("Session") << "Rotated to a new data pipe." << std::endl;

@@ -22,13 +22,11 @@ class CommandCenter;
 class SessionHandler {
 public:
   // Session state
-  size_t clientIndex;
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
-  size_t dataPipeSeq;
 
   SessionHandler(CommandCenter* center, SessionType type,
-                 std::string serverAddr, size_t clientIndex,
+                 std::string serverAddr,
                  std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
@@ -61,8 +59,7 @@ private:
   std::unique_ptr<event::BaseCondition> didEnd_;
 
   void attachHandlers();
-  Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,
-                      std::string const& peerAddr);
+  Tunnel createTunnel(std::string const& myAddr, std::string const& peerAddr);
   json createDataPipe();
   void attachServerMessageHandlers();
   void attachClientMessageHandlers();

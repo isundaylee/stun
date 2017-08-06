@@ -13,8 +13,6 @@ namespace stun {
 
 using namespace networking;
 
-int CommandCenter::numClients = 0;
-
 CommandCenter::CommandCenter() : didDisconnect_(new event::BaseCondition()) {}
 
 event::Condition* CommandCenter::didDisconnect() const {
@@ -33,23 +31,20 @@ void CommandCenter::serve(int port) {
 
 void CommandCenter::doAccept() {
   TCPSocket client = server_->accept();
-  size_t clientIndex = numClients;
-  numClients++;
 
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, Server, "", clientIndex,
-                         std::make_unique<TCPSocket>(std::move(client)))};
+  std::unique_ptr<SessionHandler> handler{new SessionHandler(
+      this, Server, "", std::make_unique<TCPSocket>(std::move(client)))};
 
   // Trigger to remove finished clients
-  event::Trigger::arm({handler->didEnd()}, [this, clientIndex]() {
-    auto it = std::find_if(
-        serverHandlers_.begin(), serverHandlers_.end(),
-        [clientIndex](std::unique_ptr<SessionHandler> const& server) {
-          return server->clientIndex == clientIndex;
-        });
+  auto handlerPtr = handler.get();
+  event::Trigger::arm({handler->didEnd()}, [this, handlerPtr]() {
+    auto it = std::find_if(serverHandlers_.begin(), serverHandlers_.end(),
+                           [handlerPtr](auto const& handler) {
+                             return handler.get() == handlerPtr;
+                           });
 
     assertTrue(it != serverHandlers_.end(),
                "Cannot find the client to remove.");
@@ -67,7 +62,7 @@ void CommandCenter::connect(std::string const& host, int port) {
 
   didDisconnect_->arm();
   std::unique_ptr<SessionHandler> handler{new SessionHandler(
-      this, Client, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
+      this, Client, host, std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()}, [this]() {
     LOG_I("Command") << "We are disconnected." << std::endl;
