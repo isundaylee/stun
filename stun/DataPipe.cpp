@@ -88,8 +88,7 @@ void DataPipe::doSend() {
   try {
     socket_->write(std::move(out));
   } catch (networking::SocketClosedException const& ex) {
-    LOG_T("DataPipe") << "Disconnected while sending. Reason: " << ex.what()
-                      << std::endl;
+    LOG_V("DataPipe") << "While sending: " << ex.what() << std::endl;
     doKill();
     return;
   }
@@ -103,8 +102,7 @@ void DataPipe::doReceive() {
     bool read = socket_->read(in);
     assertTrue(read, "Am I being lied to by socket_->canRead()?");
   } catch (networking::SocketClosedException const& ex) {
-    LOG_T("DataPipe") << "Disconnected while receiving. Reason: " << ex.what()
-                      << std::endl;
+    LOG_V("DataPipe") << "While receiving: " << ex.what() << std::endl;
     doKill();
     return;
   }

@@ -63,7 +63,7 @@ Tunnel::Tunnel() {
   checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   fd_ = common::FileDescriptor{fd};
-  LOG_T("Tunnel") << "Opened successfully as " << deviceName << std::endl;
+  LOG_V("Tunnel") << "Opened successfully as " << deviceName << std::endl;
 }
 
 event::Condition* Tunnel::canRead() const {

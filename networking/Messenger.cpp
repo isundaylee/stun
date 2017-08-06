@@ -32,13 +32,10 @@ void Messenger::start() {
   };
 
   heartbeatMissedTimer_.reset(new event::Timer(kMessengerHeartBeatTimeout));
-  event::Trigger::arm({heartbeatMissedTimer_->didFire()},
-                      [this]() {
-                        LOG_T("Messenger")
-                            << "Disconnected due to missed heartbeats."
-                            << std::endl;
-                        disconnect();
-                      });
+  event::Trigger::arm({heartbeatMissedTimer_->didFire()}, [this]() {
+    LOG_I("Messenger") << "Disconnected due to missed heartbeats." << std::endl;
+    disconnect();
+  });
 }
 
 void Messenger::disconnect() {
@@ -57,8 +54,7 @@ void Messenger::doReceive() {
                                 kMessengerReceiveBufferSize - bufferUsed_);
     bufferUsed_ += read;
   } catch (SocketClosedException const& ex) {
-    LOG_T("Messenger") << "Disconnected while receiving. Reason: " << ex.what()
-                       << std::endl;
+    LOG_I("Messenger") << "While receiving: " << ex.what() << std::endl;
     disconnect();
     return;
   }
@@ -89,7 +85,7 @@ void Messenger::doReceive() {
     }
 
     if (!message.isValid()) {
-      LOG_T("Messenger") << "Disconnected due to invalid message." << std::endl;
+      LOG_I("Messenger") << "Disconnected due to invalid message." << std::endl;
       disconnect();
       return;
     }
@@ -97,7 +93,7 @@ void Messenger::doReceive() {
     bufferUsed_ -= (totalLen);
 
     if (message.getType() != kMessengerHeartBeatMessageType) {
-      LOG_T("Messenger") << "Received: " << message.getType() << " - "
+      LOG_V("Messenger") << "Received: " << message.getType() << " - "
                          << message.getBody() << std::endl;
     }
 
@@ -116,7 +112,7 @@ void Messenger::doSend() {
   Message message = outboundQ->pop();
 
   if (message.getType() != kMessengerHeartBeatMessageType) {
-    LOG_T("Messenger") << "Sent: " << message.getType() << " = "
+    LOG_V("Messenger") << "Sent: " << message.getType() << " = "
                        << message.getBody() << std::endl;
   }
 
@@ -133,8 +129,7 @@ void Messenger::doSend() {
     written = socket_->write(message.data, payloadSize);
     assertTrue(written == payloadSize, "Message content fragmented");
   } catch (SocketClosedException const& ex) {
-    LOG_T("Messenger") << "Disconnected while sending. Reason: " << ex.what()
-                       << std::endl;
+    LOG_I("Messenger") << "While sending: " << ex.what() << std::endl;
     disconnect();
     return;
   }

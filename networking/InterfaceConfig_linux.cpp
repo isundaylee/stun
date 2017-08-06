@@ -88,7 +88,7 @@ void InterfaceConfig::waitForReply(
             // it's ACK, not an actual error
             return;
           } else if (-err->error == EEXIST) {
-            LOG_T("Interface")
+            LOG_V("Interface")
                 << "Got EEXIST from netlink -- usually this is OK" << std::endl;
           } else {
             throw std::runtime_error("Got NLMSG_ERROR from netlink: " +
@@ -181,7 +181,7 @@ int InterfaceConfig::getInterfaceIndex(std::string const& deviceName) {
 typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
 void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
-  LOG_T("Interface") << "Turning up link " << deviceName << std::endl;
+  LOG_V("Interface") << "Turning up link " << deviceName << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
 
   NetlinkChangeLinkRequest req;
@@ -197,7 +197,7 @@ void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
   sendRequest(req);
   waitForReply([](struct nlmsghdr* msg) {});
 
-  LOG_T("Interface") << "Successfully turned link up" << std::endl;
+  LOG_V("Interface") << "Successfully turned link up" << std::endl;
 }
 
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
@@ -205,7 +205,7 @@ typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 void InterfaceConfig::setLinkAddress(std::string const& deviceName,
                                      std::string const& localAddress,
                                      std::string const& peerAddress) {
-  LOG_T("Interface") << "Setting link " << deviceName << "'s address to "
+  LOG_V("Interface") << "Setting link " << deviceName << "'s address to "
                      << localAddress << " -> " << peerAddress << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
 
@@ -225,14 +225,14 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
   sendRequest(req);
   waitForReply([](struct nlmsghdr* msg) {});
 
-  LOG_T("Interface") << "Successfully set link address" << std::endl;
+  LOG_V("Interface") << "Successfully set link address" << std::endl;
 }
 
 typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 
 void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
                                RouteDestination const& routeDest) {
-  LOG_T("Interface") << "Adding a route to " << destSubnet.toString() << " via "
+  LOG_V("Interface") << "Adding a route to " << destSubnet.toString() << " via "
                      << routeDest.gatewayAddr << " (dev "
                      << routeDest.interfaceIndex << ")" << std::endl;
 
@@ -263,7 +263,7 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
   sendRequest(req);
   waitForReply([](struct nlmsghdr* msg) {});
 
-  LOG_T("Interface") << "Successfully added a route" << std::endl;
+  LOG_V("Interface") << "Successfully added a route" << std::endl;
 }
 
 typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;

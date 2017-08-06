@@ -2,18 +2,29 @@
 
 #include <iostream>
 
-#define LOG() ::common::Logger::getDefault("Untagged")
-#define LOG_T(tag) ::common::Logger::getDefault(tag)
+// #define LOG() ::common::Logger::getDefault("Untagged")
+#define LOG_E(tag)                                                             \
+  ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::ERROR)
+#define LOG_I(tag)                                                             \
+  ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::INFO)
+#define LOG_V(tag)                                                             \
+  ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::VERBOSE)
 
 namespace common {
 
 static const size_t kLoggerTagPaddingTo = 9;
+
+enum LogLevel { VERBOSE, INFO, ERROR };
 
 class Logger {
 public:
   Logger(std::ostream& out = std::cout) : out_(out) {}
 
   template <typename T> Logger& operator<<(const T& v) {
+    if (level_ < threshold_) {
+      return *this;
+    }
+
     if (!linePrimed_) {
       out_ << logHeader() << "[" << tag_ << "] ";
       for (size_t i = tag_.length(); i < kLoggerTagPaddingTo; i++) {
@@ -26,6 +37,10 @@ public:
   }
 
   Logger& operator<<(std::ostream& (*os)(std::ostream&)) {
+    if (level_ < threshold_) {
+      return *this;
+    }
+
     out_ << os;
     linePrimed_ = false;
     return *this;
@@ -37,12 +52,21 @@ public:
     return defaultLogger;
   }
 
+  Logger& withLogLevel(LogLevel level) {
+    level_ = level;
+    return *this;
+  }
+
+  void setLoggingThreshold(LogLevel threshold) { threshold_ = threshold; }
+
 private:
   const size_t kTimestampBufferSize = 64;
 
   bool linePrimed_ = false;
   std::string tag_;
   std::ostream& out_;
+  LogLevel threshold_ = VERBOSE;
+  LogLevel level_ = VERBOSE;
 
   std::string logHeader() {
     char timestampBuffer[kTimestampBufferSize];

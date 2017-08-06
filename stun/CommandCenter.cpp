@@ -68,7 +68,7 @@ void CommandCenter::connect(std::string const& host, int port) {
       this, false, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()}, [this]() {
-    LOG_T("Command") << "We are disconnected." << std::endl;
+    LOG_I("Command") << "We are disconnected." << std::endl;
     didDisconnect_->fire();
     clientHandler_.reset();
   });

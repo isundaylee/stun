@@ -75,7 +75,7 @@ void EventLoop::run() {
     }
 
     if (purged > 0) {
-      LOG_T("Event") << "Purged " << std::to_string(purged)
+      LOG_E("Event") << "Purged " << std::to_string(purged)
                      << " dead actions. This should ideally never happen."
                      << std::endl;
     }

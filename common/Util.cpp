@@ -56,7 +56,7 @@ bool checkRetryableError(int ret, std::string const& action,
 std::string runCommand(std::string command) {
   char buffer[kUtilRunCommandOutputBufferSize];
   std::stringstream result;
-  FILE* pipe = popen(command.c_str(), "r");
+  FILE* pipe = popen((command + " 2>/dev/null").c_str(), "r");
 
   assertTrue(pipe != NULL, "Cannot popen() while executing: " + command);
 
@@ -67,8 +67,9 @@ std::string runCommand(std::string command) {
   }
 
   int ret = pclose(pipe);
-  assertTrue(ret == 0, "Error code " + std::to_string(ret) +
-                           " while executing: " + command);
+  assertTrue(ret == 0,
+             "Error code " + std::to_string(ret) +
+                 " while executing: " + command);
 
   return result.str();
 }

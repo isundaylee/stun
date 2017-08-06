@@ -61,7 +61,7 @@ int Socket::bind(int port) {
     checkUnixError(ret, "listening on a SocketPipe's socket");
   }
 
-  LOG_T("Socket") << "Bound to port " << actualPort << std::endl;
+  LOG_V("Socket") << "Bound to port " << actualPort << std::endl;
 
   bound_ = true;
 
@@ -73,7 +73,7 @@ void Socket::connect(SocketAddress peerAddr) {
   assertTrue((type_ == SocketType::UDP) || !bound_,
              "Connecting while already bound");
 
-  LOG_T("Socket") << "Connecting to " << peerAddr.getHost() << ":"
+  LOG_V("Socket") << "Connecting to " << peerAddr.getHost() << ":"
                   << peerAddr.getPort() << std::endl;
 
   int ret = ::connect(fd_.fd, peerAddr.asSocketAddress(), peerAddr.getLength());
@@ -81,7 +81,7 @@ void Socket::connect(SocketAddress peerAddr) {
   connected_ = true;
   peerAddr_.reset(new SocketAddress(peerAddr));
 
-  LOG_T("Socket") << "Connected to " << peerAddr.getHost() << ":"
+  LOG_V("Socket") << "Connected to " << peerAddr.getHost() << ":"
                   << peerAddr.getPort() << std::endl;
 }
 
@@ -120,9 +120,10 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
     throw SocketClosedException("Connection reset.");
   }
 
-  if (!checkRetryableError(ret, "receiving a " +
-                                    std::string(type_ == TCP ? "TCP" : "UDP") +
-                                    " packet")) {
+  if (!checkRetryableError(ret,
+                           "receiving a " +
+                               std::string(type_ == TCP ? "TCP" : "UDP") +
+                               " packet")) {
     return 0;
   }
 
@@ -140,9 +141,10 @@ size_t Socket::write(Byte* buffer, size_t size) {
                                                       : "Connection refused.");
   }
 
-  if (!checkRetryableError(ret, "sending a " +
-                                    std::string(type_ == TCP ? "TCP" : "UDP") +
-                                    " packet")) {
+  if (!checkRetryableError(ret,
+                           "sending a " +
+                               std::string(type_ == TCP ? "TCP" : "UDP") +
+                               " packet")) {
     return 0;
   }
 

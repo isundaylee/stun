@@ -51,7 +51,7 @@ void Dispatcher::doSend() {
       return;
     }
   } catch (TunnelClosedException const& ex) {
-    LOG_T("Dispatcher") << "Tunnel is closed: " << ex.what() << std::endl;
+    LOG_E("Dispatcher") << "Tunnel is closed: " << ex.what() << std::endl;
     assertTrue(false, "Tunnel should never close.");
   }
 
@@ -81,7 +81,7 @@ void Dispatcher::doReceive() {
       in.fill(dataPipe_->inboundQ->pop());
 
       if (!tunnel_.write(std::move(in))) {
-        LOG_T("Dispatcher") << "Dropped an incoming packet." << std::endl;
+        LOG_I("Dispatcher") << "Dropped an incoming packet." << std::endl;
       }
 
       received = true;

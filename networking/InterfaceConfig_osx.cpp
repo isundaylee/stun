@@ -41,7 +41,7 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
 
   runCommand(command);
 
-  LOG_T("Interface") << "Added a route to " << destSubnet.toString() << " via "
+  LOG_V("Interface") << "Added a route to " << destSubnet.toString() << " via "
                      << routeDest.gatewayAddr << "." << std::endl;
 }
 
@@ -77,7 +77,7 @@ RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
     }
   }
 
-  LOG_T("Interface") << "Route to " << destAddr << " is through "
+  LOG_V("Interface") << "Route to " << destAddr << " is through "
                      << interface + " via " << gateway << "." << std::endl;
 
   return RouteDestination(interface, gateway);

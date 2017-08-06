@@ -100,6 +100,8 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "c", "config",
                      "Path to the config file. Default is ~/.stunrc.",
                      cxxopts::value<std::string>(), "");
+  options.add_option("", "v", "verbose", "Logs more verbosely.",
+                     cxxopts::value<bool>(), "");
   options.add_option("", "h", "help", "Print help and usage info.",
                      cxxopts::value<bool>(), "");
 
@@ -115,6 +117,13 @@ void setupAndParseOptions(int argc, char* argv[]) {
     std::cout << options.help() << std::endl;
     exit(1);
   }
+
+  if (options.count("verbose")) {
+    common::Logger::getDefault("").setLoggingThreshold(
+        common::LogLevel::VERBOSE);
+  } else {
+    common::Logger::getDefault("").setLoggingThreshold(common::LogLevel::INFO);
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -129,7 +138,7 @@ int main(int argc, char* argv[]) {
 
   std::string role = common::Configerator::getString("role");
 
-  LOG_T("Main") << "Running as " << role << std::endl;
+  LOG_I("Main") << "Running as " << role << std::endl;
   CommandCenter center;
   event::BaseCondition shouldMonitorDisconnect;
   event::Action disconnectMonitor(
@@ -149,7 +158,7 @@ int main(int argc, char* argv[]) {
     shouldMonitorDisconnect.fire();
 
     disconnectMonitor.callback = [&shouldMonitorDisconnect, &reconnectTimer]() {
-      LOG_T("Main") << "Will reconnect in " << kReconnectDelayInterval << " ms."
+      LOG_I("Main") << "Will reconnect in " << kReconnectDelayInterval << " ms."
                     << std::endl;
       shouldMonitorDisconnect.arm();
       reconnectTimer.reset(kReconnectDelayInterval);
@@ -157,7 +166,7 @@ int main(int argc, char* argv[]) {
 
     reconnector.callback = [&shouldMonitorDisconnect, &reconnectTimer, &center,
                             server]() {
-      LOG() << "Reconnecting..." << std::endl;
+      LOG_I("Main") << "Reconnecting..." << std::endl;
       center.connect(server, kServerPort);
       shouldMonitorDisconnect.fire();
       reconnectTimer.reset();

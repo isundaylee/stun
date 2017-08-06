@@ -179,6 +179,8 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
         "Tunnel", body["client_tunnel_ip"], body["server_tunnel_ip"])));
     dispatcher_->start();
 
+    LOG_I("Session") << "Received config from the server." << std::endl;
+
     return Message("config_done", "");
   } else if (type == "new_data_pipe") {
     UDPSocket udpPipe;
@@ -192,6 +194,8 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     dataPipe->setPrePrimed();
     dataPipe->start();
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
+
+    LOG_I("Session") << "Rotated to a new data pipe." << std::endl;
 
     return Message::null();
   } else {
