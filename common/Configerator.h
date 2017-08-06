@@ -20,6 +20,14 @@ public:
   static int getInt(std::string const& key);
   static std::vector<std::string> getStringArray(std::string const& key);
 
+  template <typename T> static T get(std::string key, T defaultValue) {
+    if (!hasKey(key)) {
+      return defaultValue;
+    }
+
+    return instance_->config_[key].get<T>();
+  }
+
 private:
   static Configerator* instance_;
   json config_;

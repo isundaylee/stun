@@ -107,7 +107,14 @@ json SessionHandler::createDataPipe() {
   LOG_I("Session") << "Creating a new data pipe." << std::endl;
 
   // Prepare encryption config
-  std::string aesKey = crypto::AESKey::randomStringKey();
+  std::string aesKey;
+  if (common::Configerator::get<bool>("encryption", true)) {
+    aesKey = crypto::AESKey::randomStringKey();
+  } else {
+    LOG_I("Session") << "Data encryption is disabled per configuration."
+                     << std::endl;
+  }
+
   size_t paddingMinSize = 0;
   if (common::Configerator::hasKey("padding_to")) {
     paddingMinSize = common::Configerator::getInt("padding_to");

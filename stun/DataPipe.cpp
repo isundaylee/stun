@@ -46,7 +46,10 @@ void DataPipe::start() {
   if (minPaddingTo_ != 0) {
     padder_.reset(new crypto::Padder(minPaddingTo_));
   }
-  aesEncryptor_.reset(new crypto::AESEncryptor(crypto::AESKey(aesKey_)));
+
+  if (!aesKey_.empty()) {
+    aesEncryptor_.reset(new crypto::AESEncryptor(crypto::AESKey(aesKey_)));
+  }
 
   // Configure sender and receiver
   sender_.reset(new event::Action(
@@ -83,7 +86,9 @@ void DataPipe::doSend() {
   if (!!padder_) {
     out.size = padder_->encrypt(out.data, out.size, out.capacity);
   }
-  out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
+  if (!!aesEncryptor_) {
+    out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
+  }
 
   try {
     socket_->write(std::move(out));
@@ -108,7 +113,9 @@ void DataPipe::doReceive() {
   }
 
   data.fill(std::move(in));
-  data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
+  if (!!aesEncryptor_) {
+    data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
+  }
   if (!!padder_) {
     data.size = padder_->decrypt(data.data, data.size, data.capacity);
   }
