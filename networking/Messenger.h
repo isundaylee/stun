@@ -63,7 +63,7 @@ public:
 
   std::unique_ptr<event::FIFO<Message>> outboundQ;
 
-  void addEncryptor(crypto::Encryptor* encryptor);
+  void addEncryptor(std::unique_ptr<crypto::Encryptor> encryptor);
   void addHandler(std::string messageType,
                   std::function<Message(Message const&)> handler);
   event::Condition* didDisconnect() const;

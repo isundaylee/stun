@@ -20,7 +20,7 @@ SessionHandler::SessionHandler(CommandCenter* center, SessionType type,
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
-    messenger_->addEncryptor(new crypto::AESEncryptor(
+    messenger_->addEncryptor(std::make_unique<crypto::AESEncryptor>(
         crypto::AESKey(common::Configerator::getString("secret"))));
   }
 

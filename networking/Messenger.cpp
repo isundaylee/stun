@@ -190,8 +190,8 @@ void Messenger::disconnect() {
   didDisconnect_->fire();
 }
 
-void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
-  transporter_->encryptors_.emplace_back(encryptor);
+void Messenger::addEncryptor(std::unique_ptr<crypto::Encryptor> encryptor) {
+  transporter_->encryptors_.emplace_back(std::move(encryptor));
 }
 
 void Messenger::addHandler(std::string messageType,
