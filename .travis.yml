@@ -3,6 +3,10 @@ language: generic
 
 
 before_install:
+  # Install clang 4.0
+  - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+  - sudo apt-get update
+  - sudo apt-get install clang-4.0
   # Install Linuxbrew
   - git clone https://github.com/Linuxbrew/brew.git $HOME/.linuxbrew
   - PATH="$HOME/.linuxbrew/bin:$PATH"
@@ -16,4 +20,4 @@ before_install:
   - buck --version
 
 script:
-  - buck build :main
+  - mv .buckconfig.local.travis .buckconfig.local && buck build :main
