@@ -13,11 +13,11 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 
 using namespace networking;
 
-SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
+SessionHandler::SessionHandler(CommandCenter* center, SessionType type,
                                std::string serverAddr, size_t clientIndex,
                                std::unique_ptr<TCPSocket> commandPipe)
-    : clientIndex(clientIndex), dataPipeSeq(0), center_(center),
-      isServer_(isServer), serverAddr_(serverAddr),
+    : clientIndex(clientIndex), dataPipeSeq(0), center_(center), type_(type),
+      serverAddr_(serverAddr),
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
@@ -25,11 +25,15 @@ SessionHandler::SessionHandler(CommandCenter* center, bool isServer,
         crypto::AESKey(common::Configerator::getString("secret"))));
   }
 
-  if (!isServer) {
+  if (type == Client) {
+    // We save the resolved IP address here because we should never resolve
+    // server address again. In the case that all Internet traffic is routed
+    // through us, if we're blocked making a DNS request, who will actually
+    // deliever that request?
     serverIPAddr_ = SocketAddress(serverAddr_).getHost();
   }
 
-  if (!isServer_) {
+  if (type == Client) {
     assertTrue(
         messenger_->outboundQ->canPush()->eval(),
         "How can I not be able to send at the very start of a connection?");
@@ -47,8 +51,11 @@ void SessionHandler::attachHandlers() {
                       [this]() { didEnd_->fire(); });
 
   messenger_->handler = [this](Message const& message) {
-    return (isServer_ ? handleMessageFromClient(message)
-                      : handleMessageFromServer(message));
+    if (type_ == Server) {
+      return handleMessageFromClient(message);
+    } else {
+      return handleMessageFromServer(message);
+    }
   };
 }
 
@@ -62,7 +69,7 @@ Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
   config.newLink(tunnel.deviceName, kTunnelEthernetMTU);
   config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
-  if (!isServer_) {
+  if (type_ == Client) {
     // Configure iptables to route traffic into (or not into) the new tunnel
     std::vector<networking::SubnetAddress> excluded_subnets = {
         SubnetAddress(serverIPAddr_, 32)};

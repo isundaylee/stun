@@ -40,7 +40,7 @@ void CommandCenter::doAccept() {
                   << client.getPeerAddress().getHost() << std::endl;
 
   std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, true, "", clientIndex,
+      new SessionHandler(this, Server, "", clientIndex,
                          std::make_unique<TCPSocket>(std::move(client)))};
 
   // Trigger to remove finished clients
@@ -67,7 +67,7 @@ void CommandCenter::connect(std::string const& host, int port) {
 
   didDisconnect_->arm();
   std::unique_ptr<SessionHandler> handler{new SessionHandler(
-      this, false, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
+      this, Client, host, 0, std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()}, [this]() {
     LOG_I("Command") << "We are disconnected." << std::endl;

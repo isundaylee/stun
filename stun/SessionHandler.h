@@ -15,6 +15,8 @@ namespace stun {
 
 using namespace networking;
 
+enum SessionType { Client, Server };
+
 class CommandCenter;
 
 class SessionHandler {
@@ -25,8 +27,9 @@ public:
   std::string peerTunnelAddr;
   size_t dataPipeSeq;
 
-  SessionHandler(CommandCenter* center, bool isServer, std::string serverAddr,
-                 size_t clientIndex, std::unique_ptr<TCPSocket> commandPipe);
+  SessionHandler(CommandCenter* center, SessionType type,
+                 std::string serverAddr, size_t clientIndex,
+                 std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
 
@@ -41,7 +44,7 @@ private:
   CommandCenter* center_;
 
   // Session settings
-  bool isServer_;
+  SessionType type_;
   std::string serverAddr_;
   std::string serverIPAddr_;
 
