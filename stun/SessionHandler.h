@@ -64,8 +64,8 @@ private:
   Tunnel createTunnel(std::string const& tunnelName, std::string const& myAddr,
                       std::string const& peerAddr);
   json createDataPipe();
-  Message handleMessageFromClient(Message const& message);
-  Message handleMessageFromServer(Message const& message);
+  void attachServerMessageHandlers();
+  void attachClientMessageHandlers();
   void doRotateDataPipe();
 };
 

@@ -62,9 +62,10 @@ public:
   ~Messenger();
 
   std::unique_ptr<event::FIFO<Message>> outboundQ;
-  std::function<Message(Message const&)> handler;
 
   void addEncryptor(crypto::Encryptor* encryptor);
+  void addHandler(std::string messageType,
+                  std::function<Message(Message const&)> handler);
   event::Condition* didDisconnect() const;
 
 private:
@@ -77,6 +78,7 @@ private:
   class Heartbeater;
   class Transporter;
 
+  std::map<std::string, std::function<Message(Message const&)>> handlers_;
   std::unique_ptr<Transporter> transporter_;
   std::unique_ptr<Heartbeater> heartbeater_;
 

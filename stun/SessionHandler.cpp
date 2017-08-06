@@ -50,13 +50,11 @@ void SessionHandler::attachHandlers() {
   event::Trigger::arm({messenger_->didDisconnect()},
                       [this]() { didEnd_->fire(); });
 
-  messenger_->handler = [this](Message const& message) {
-    if (type_ == Server) {
-      return handleMessageFromClient(message);
-    } else {
-      return handleMessageFromServer(message);
-    }
-  };
+  if (type_ == Server) {
+    return attachServerMessageHandlers();
+  } else {
+    return attachClientMessageHandlers();
+  }
 }
 
 Tunnel SessionHandler::createTunnel(std::string const& tunnelName,
@@ -139,11 +137,8 @@ void SessionHandler::doRotateDataPipe() {
   dataPipeRotationTimer_->extend(dataPipeRotateInterval_);
 }
 
-Message SessionHandler::handleMessageFromClient(Message const& message) {
-  std::string type = message.getType();
-  json body = message.getBody();
-
-  if (type == "hello") {
+void SessionHandler::attachServerMessageHandlers() {
+  messenger_->addHandler("hello", [this](auto const& message) {
     // Acquire IP addresses
     myTunnelAddr = center_->addrPool->acquire();
     peerTunnelAddr = center_->addrPool->acquire();
@@ -168,19 +163,17 @@ Message SessionHandler::handleMessageFromClient(Message const& message) {
 
     return Message("config", json{{"server_tunnel_ip", myTunnelAddr},
                                   {"client_tunnel_ip", peerTunnelAddr}});
-  } else if (type == "config_done") {
+  });
+
+  messenger_->addHandler("config_done", [this](auto const& message) {
     return Message("new_data_pipe", createDataPipe());
-  } else {
-    unreachable("Unrecognized client message type: " + type);
-  }
+  });
 }
 
-Message SessionHandler::handleMessageFromServer(Message const& message) {
-  std::string type = message.getType();
-  json body = message.getBody();
-  std::vector<Message> replies;
+void SessionHandler::attachClientMessageHandlers() {
+  messenger_->addHandler("config", [this](auto const& message) {
+    auto body = message.getBody();
 
-  if (type == "config") {
     dispatcher_.reset(new Dispatcher(createTunnel(
         "Tunnel", body["client_tunnel_ip"], body["server_tunnel_ip"])));
     dispatcher_->start();
@@ -188,7 +181,11 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     LOG_I("Session") << "Received config from the server." << std::endl;
 
     return Message("config_done", "");
-  } else if (type == "new_data_pipe") {
+  });
+
+  messenger_->addHandler("new_data_pipe", [this](auto const& message) {
+    auto body = message.getBody();
+
     UDPSocket udpPipe;
 
     dataPipeSeq++;
@@ -204,8 +201,6 @@ Message SessionHandler::handleMessageFromServer(Message const& message) {
     LOG_I("Session") << "Rotated to a new data pipe." << std::endl;
 
     return Message::null();
-  } else {
-    unreachable("Unrecognized server message type: " + type);
-  }
+  });
 }
 }

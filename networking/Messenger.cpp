@@ -17,7 +17,8 @@ class Messenger::Heartbeater {
 public:
   Heartbeater(Messenger* messenger)
       : messenger_(messenger), beatTimer_(new event::Timer(0)),
-        missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)) {
+        missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
+        statLatency_("Connection", "latency", 0) {
     beater_.reset(new event::Action(
         {beatTimer_->didFire(), messenger_->outboundQ->canPush()}));
 
@@ -35,12 +36,24 @@ public:
                          << std::endl;
       messenger_->disconnect();
     });
-  }
 
-  void didReceiveHeartbeat(Message const& message) {
-    messenger_->outboundQ->push(
-        Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
-    missedTimer_->reset(kMessengerHeartBeatTimeout);
+    // Sets up heartbeat message handler
+    messenger_->addHandler(
+        kMessengerHeartBeatMessageType, [this](auto const& message) {
+          messenger_->outboundQ->push(
+              Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
+          missedTimer_->reset(kMessengerHeartBeatTimeout);
+          return Message::null();
+        });
+
+    // Sets up heartbeat reply message handler
+    messenger_->addHandler(
+        kMessengerHeartBeatReplyMessageType, [this](auto const& message) {
+          event::Time start = message.getBody()["start"];
+          statLatency_.accumulate(
+              (event::Timer::getTimeInMilliseconds() - start) / 2);
+          return Message::null();
+        });
   }
 
 private:
@@ -49,6 +62,8 @@ private:
   std::unique_ptr<event::Timer> beatTimer_;
   std::unique_ptr<event::Action> beater_;
   std::unique_ptr<event::Timer> missedTimer_;
+
+  stats::AvgStat<event::Duration> statLatency_;
 };
 
 class Messenger::Transporter {
@@ -58,8 +73,7 @@ public:
         sender_(new event::Action(
             {socket_->canWrite(), messenger->outboundQ->canPop()})),
         receiver_(new event::Action(
-            {socket_->canRead(), messenger->outboundQ->canPush()})),
-        statLatency_("Connection", "latency", 0) {
+            {socket_->canRead(), messenger->outboundQ->canPush()})) {
     sender_->callback.setMethod<Transporter, &Transporter::doSend>(this);
     receiver_->callback.setMethod<Transporter, &Transporter::doReceive>(this);
   }
@@ -111,20 +125,16 @@ public:
 
       bufferUsed_ -= (totalLen);
 
-      if (message.getType() == kMessengerHeartBeatMessageType) {
-        messenger_->heartbeater_->didReceiveHeartbeat(message);
-      } else if (message.getType() == kMessengerHeartBeatReplyMessageType) {
-        event::Time start = message.getBody()["start"];
-        statLatency_.accumulate(
-            (event::Timer::getTimeInMilliseconds() - start) / 2);
-      } else {
-        LOG_V("Messenger") << "Received: " << message.getType() << " - "
-                           << message.getBody() << std::endl;
+      LOG_V("Messenger") << "Received: " << message.getType() << " - "
+                         << message.getBody() << std::endl;
 
-        Message response = messenger_->handler(message);
-        if (response.size > 0) {
-          messenger_->outboundQ->push(std::move(response));
-        }
+      //  Dispatch the incoming message to the correct handler
+      auto it = messenger_->handlers_.find(message.getType());
+      assertTrue(it != messenger_->handlers_.end(),
+                 "Unknown message type " + message.getType());
+      auto reply = it->second(message);
+      if (reply.size > 0) {
+        messenger_->outboundQ->push(std::move(reply));
       }
     }
   }
@@ -164,7 +174,6 @@ private:
   Byte buffer_[kMessengerReceiveBufferSize];
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
-  stats::AvgStat<event::Duration> statLatency_;
 };
 
 Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
@@ -183,6 +192,13 @@ void Messenger::disconnect() {
 
 void Messenger::addEncryptor(crypto::Encryptor* encryptor) {
   transporter_->encryptors_.emplace_back(encryptor);
+}
+
+void Messenger::addHandler(std::string messageType,
+                           std::function<Message(Message const&)> handler) {
+  assertTrue(handlers_.find(messageType) == handlers_.end(),
+             "Duplicate handler registered for message type " + messageType);
+  handlers_[messageType] = handler;
 }
 
 event::Condition* Messenger::didDisconnect() const {
