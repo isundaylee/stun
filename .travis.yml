@@ -1,8 +1,13 @@
-dist: zesty
+dist: trusty
 language: generic
+
 
 before_install:
   # Install clang 4.0
+  - echo "" | sudo tee -a /etc/apt/sources.list
+  - echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list
+  - echo "deb-src http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list
+  - wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
   - sudo apt-get update
   - sudo apt-get install clang-4.0
   # Install Linuxbrew
