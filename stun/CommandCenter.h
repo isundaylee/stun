@@ -20,6 +20,19 @@ namespace stun {
 
 using namespace networking;
 
+struct ClientConfig {
+public:
+  SocketAddress serverAddr;
+
+  bool encryption;
+  std::string secret;
+  size_t paddingTo;
+  event::Duration dataPipeRotationInterval;
+
+  std::vector<SubnetAddress> subnetsToForward;
+  std::vector<SubnetAddress> subnetsToExclude;
+};
+
 class SessionHandler;
 
 class CommandCenter {
@@ -27,7 +40,7 @@ public:
   CommandCenter();
 
   void serve(ServerConfig config);
-  void connect(std::string const& host, int port);
+  void connect(ClientConfig config);
 
   event::Condition* didDisconnect() const;
 

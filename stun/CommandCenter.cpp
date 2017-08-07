@@ -24,13 +24,16 @@ void CommandCenter::serve(ServerConfig config) {
   server_ = std::make_unique<class Server>(config);
 }
 
-void CommandCenter::connect(std::string const& host, int port) {
+void CommandCenter::connect(ClientConfig config) {
   TCPSocket client;
-  client.connect(SocketAddress(host, port));
+  client.connect(config.serverAddr);
+
+  auto sessionConfig = SessionConfig{config.serverAddr, config.secret,
+                                     config.encryption, config.paddingTo, 0};
 
   didDisconnect_->arm();
   std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(nullptr, ClientSession, host,
+      new SessionHandler(nullptr, ClientSession, sessionConfig,
                          std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()}, [this]() {

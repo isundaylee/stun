@@ -17,6 +17,7 @@ public:
   bool encryption;
   std::string secret;
   size_t paddingTo;
+  event::Duration dataPipeRotationInterval;
 };
 
 class Server {

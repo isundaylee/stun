@@ -13,14 +13,16 @@
 
 namespace stun {
 
+using namespace networking;
+
 struct SessionConfig {
 public:
+  SocketAddress peerAddr;
   std::string secret;
   bool encryption;
   size_t paddingTo;
+  event::Duration dataPipeRotationInterval;
 };
-
-using namespace networking;
 
 enum SessionType { ClientSession, ServerSession };
 
@@ -32,7 +34,7 @@ public:
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
 
-  SessionHandler(Server* server, SessionType type, std::string serverAddr,
+  SessionHandler(Server* server, SessionType type, SessionConfig config,
                  std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
@@ -49,8 +51,7 @@ private:
 
   // Session settings
   SessionType type_;
-  std::string serverAddr_;
-  std::string serverIPAddr_;
+  SessionConfig config_;
 
   // Command connection
   std::unique_ptr<Messenger> messenger_;
@@ -58,7 +59,6 @@ private:
   // Data connection
   std::unique_ptr<Dispatcher> dispatcher_;
 
-  event::Duration dataPipeRotateInterval_;
   std::unique_ptr<event::Timer> dataPipeRotationTimer_;
   std::unique_ptr<event::Action> dataPipeRotator_;
 

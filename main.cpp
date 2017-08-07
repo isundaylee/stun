@@ -131,6 +131,17 @@ void setupAndParseOptions(int argc, char* argv[]) {
   }
 }
 
+auto parseSubnets(std::string const& key) {
+  auto subnets = common::Configerator::getStringArray(key);
+  auto results = std::vector<SubnetAddress>{};
+
+  for (auto const& subnet : subnets) {
+    results.push_back(SubnetAddress(subnet));
+  }
+
+  return results;
+}
+
 int main(int argc, char* argv[]) {
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
@@ -170,14 +181,25 @@ int main(int argc, char* argv[]) {
         networking::SubnetAddress{
             common::Configerator::get<std::string>("address_pool")},
         common::Configerator::get<bool>("encryption", true),
-        common::Configerator::get<std::string>("secret"),
+        common::Configerator::get<std::string>("secret", ""),
         common::Configerator::get<size_t>("padding_to", 0),
+        1000 *
+            common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
     };
 
     center.serve(config);
   } else {
-    std::string server = common::Configerator::getString("server");
-    center.connect(server, kServerPort);
+    auto config = ClientConfig{
+        SocketAddress(common::Configerator::getString("server"), kServerPort),
+        common::Configerator::get<bool>("encryption", true),
+        common::Configerator::get<std::string>("secret", ""),
+        common::Configerator::get<size_t>("padding_to", 0),
+        1000 *
+            common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
+        parseSubnets("forward_subnets"),
+        parseSubnets("excluded_subnets")};
+
+    center.connect(config);
     shouldMonitorDisconnect.fire();
 
     disconnectMonitor.callback = [&shouldMonitorDisconnect, &reconnectTimer]() {
@@ -188,9 +210,9 @@ int main(int argc, char* argv[]) {
     };
 
     reconnector.callback = [&shouldMonitorDisconnect, &reconnectTimer, &center,
-                            server]() {
+                            config]() {
       LOG_I("Main") << "Reconnecting..." << std::endl;
-      center.connect(server, kServerPort);
+      center.connect(config);
       shouldMonitorDisconnect.fire();
       reconnectTimer.reset();
     };

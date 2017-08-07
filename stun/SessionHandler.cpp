@@ -14,22 +14,14 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 using namespace networking;
 
 SessionHandler::SessionHandler(Server* server, SessionType type,
-                               std::string serverAddr,
+                               SessionConfig config,
                                std::unique_ptr<TCPSocket> commandPipe)
-    : server_(server), type_(type), serverAddr_(serverAddr),
+    : server_(server), type_(type), config_(config),
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
-  if (common::Configerator::hasKey("secret")) {
-    messenger_->addEncryptor(std::make_unique<crypto::AESEncryptor>(
-        crypto::AESKey(common::Configerator::getString("secret"))));
-  }
-
-  if (type == ClientSession) {
-    // We save the resolved IP address here because we should never resolve
-    // server address again. In the case that all Internet traffic is routed
-    // through us, if we're blocked making a DNS request, who will actually
-    // deliever that request?
-    serverIPAddr_ = SocketAddress(serverAddr_).getHost();
+  if (!config_.secret.empty()) {
+    messenger_->addEncryptor(
+        std::make_unique<crypto::AESEncryptor>(crypto::AESKey(config_.secret)));
   }
 
   if (type == ClientSession) {
@@ -68,7 +60,7 @@ Tunnel SessionHandler::createTunnel(std::string const& myTunnelAddr,
   if (type_ == ClientSession) {
     // Configure iptables to route traffic into (or not into) the new tunnel
     std::vector<networking::SubnetAddress> excluded_subnets = {
-        SubnetAddress(serverIPAddr_, 32)};
+        SubnetAddress(config_.peerAddr.getHost(), 32)};
 
     // Create routing rules for subnets NOT to forward
     if (common::Configerator::hasKey("excluded_subnets")) {
@@ -80,7 +72,7 @@ Tunnel SessionHandler::createTunnel(std::string const& myTunnelAddr,
     }
 
     networking::RouteDestination originalRouteDest =
-        config.getRoute(serverIPAddr_);
+        config.getRoute(config_.peerAddr.getHost());
     for (networking::SubnetAddress const& exclusion : excluded_subnets) {
       config.newRoute(exclusion, originalRouteDest);
     }
@@ -108,37 +100,31 @@ json SessionHandler::createDataPipe() {
 
   // Prepare encryption config
   std::string aesKey;
-  if (common::Configerator::get<bool>("encryption", true)) {
+  if (config_.encryption) {
     aesKey = crypto::AESKey::randomStringKey();
   } else {
     LOG_I("Session") << "Data encryption is disabled per configuration."
                      << std::endl;
   }
 
-  size_t paddingMinSize = 0;
-  if (common::Configerator::hasKey("padding_to")) {
-    paddingMinSize = common::Configerator::getInt("padding_to");
-  }
-
-  size_t ttl = 0;
-  if (common::Configerator::hasKey("data_pipe_rotate_interval")) {
-    ttl = 1000 * common::Configerator::getInt("data_pipe_rotate_interval") +
-          kSessionHandlerRotationGracePeriod;
-  }
-
+  auto ttl = (config_.dataPipeRotationInterval == 0
+                  ? 0
+                  : config_.dataPipeRotationInterval +
+                        kSessionHandlerRotationGracePeriod);
   DataPipe* dataPipe =
       new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)), aesKey,
-                   paddingMinSize, ttl);
+                   config_.paddingTo, ttl);
   dataPipe->start();
   dispatcher_->addDataPipe(std::unique_ptr<DataPipe>{dataPipe});
 
-  return json{
-      {"port", port}, {"aes_key", aesKey}, {"padding_to_size", paddingMinSize}};
+  return json{{"port", port},
+              {"aes_key", aesKey},
+              {"padding_to_size", config_.paddingTo}};
 }
 
 void SessionHandler::doRotateDataPipe() {
   messenger_->outboundQ->push(Message("new_data_pipe", createDataPipe()));
-  dataPipeRotationTimer_->extend(dataPipeRotateInterval_);
+  dataPipeRotationTimer_->extend(config_.dataPipeRotationInterval);
 }
 
 void SessionHandler::attachServerMessageHandlers() {
@@ -153,10 +139,9 @@ void SessionHandler::attachServerMessageHandlers() {
     dispatcher_->start();
 
     // Set up data pipe rotation if it is configured in the server config.
-    if (common::Configerator::hasKey("data_pipe_rotate_interval")) {
-      dataPipeRotateInterval_ =
-          1000 * common::Configerator::getInt("data_pipe_rotate_interval");
-      dataPipeRotationTimer_.reset(new event::Timer(dataPipeRotateInterval_));
+    if (config_.dataPipeRotationInterval != 0) {
+      dataPipeRotationTimer_.reset(
+          new event::Timer(config_.dataPipeRotationInterval));
       dataPipeRotator_.reset(
           new event::Action({dataPipeRotationTimer_->didFire(),
                              messenger_->outboundQ->canPush()}));
@@ -190,7 +175,7 @@ void SessionHandler::attachClientMessageHandlers() {
     auto body = message.getBody();
 
     UDPSocket udpPipe;
-    udpPipe.connect(SocketAddress(serverIPAddr_, body["port"]));
+    udpPipe.connect(SocketAddress(config_.peerAddr.getHost(), body["port"]));
 
     DataPipe* dataPipe =
         new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
