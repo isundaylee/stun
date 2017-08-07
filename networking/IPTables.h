@@ -26,7 +26,7 @@ public:
   }
 
   static void clear() {
-    std::string rules = runCommand("-t nat -L POSTROUTING --line-numbers");
+    std::string rules = runCommand("-t nat -L POSTROUTING --line-numbers -n");
     std::stringstream ss(rules);
     std::string line;
 

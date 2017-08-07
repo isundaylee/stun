@@ -8,6 +8,7 @@ namespace stun {
 using networking::IPTables;
 
 Server::Server(ServerConfig config) : config_(config) {
+  IPTables::clear();
   IPTables::masquerade(config.addressPool);
   addrPool.reset(new IPAddressPool(config.addressPool));
 
