@@ -15,9 +15,7 @@ Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
       this);
   canReceive_->expression
       .setMethod<Dispatcher, &Dispatcher::calculateCanReceive>(this);
-}
 
-void Dispatcher::start() {
   sender_.reset(new event::Action({tunnel_.canRead(), canSend_.get()}));
   sender_->callback.setMethod<Dispatcher, &Dispatcher::doSend>(this);
 

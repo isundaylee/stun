@@ -1,7 +1,5 @@
 #include "stun/CommandCenter.h"
 
-#include <stun/SessionHandler.h>
-
 #include <common/Configerator.h>
 #include <common/Util.h>
 #include <event/Trigger.h>
@@ -28,13 +26,10 @@ void CommandCenter::connect(ClientConfig config) {
   TCPSocket client;
   client.connect(config.serverAddr);
 
-  auto sessionConfig = SessionConfig{config.serverAddr, config.secret,
-                                     config.encryption, config.paddingTo, 0};
-
   didDisconnect_->arm();
-  std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(nullptr, ClientSession, sessionConfig,
-                         std::make_unique<TCPSocket>(std::move(client)))};
+
+  auto handler = std::make_unique<ClientSessionHandler>(
+      config, std::make_unique<TCPSocket>(std::move(client)));
 
   event::Trigger::arm({handler->didEnd()}, [this]() {
     LOG_I("Command") << "We are disconnected." << std::endl;

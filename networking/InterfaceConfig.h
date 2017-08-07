@@ -47,6 +47,9 @@ public:
   InterfaceConfig();
   ~InterfaceConfig();
 
+  InterfaceConfig(InterfaceConfig&& move) = default;
+  InterfaceConfig& operator=(InterfaceConfig&& move) = default;
+
   void newLink(std::string const& deviceName, unsigned int mtu);
   void setLinkAddress(std::string const& deviceName,
                       std::string const& localAddress,

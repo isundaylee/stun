@@ -1,7 +1,8 @@
 #pragma once
 
-#include <stun/SessionHandler.h>
+#include <stun/ServerSessionHandler.h>
 
+#include <event/Timer.h>
 #include <networking/IPAddressPool.h>
 #include <networking/TCPServer.h>
 
@@ -9,16 +10,7 @@ namespace stun {
 
 using networking::SubnetAddress;
 using networking::TCPServer;
-
-struct ServerConfig {
-public:
-  int port;
-  SubnetAddress addressPool;
-  bool encryption;
-  std::string secret;
-  size_t paddingTo;
-  event::Duration dataPipeRotationInterval;
-};
+using networking::IPAddressPool;
 
 class Server {
 public:
@@ -31,7 +23,7 @@ private:
 
   std::unique_ptr<TCPServer> server_;
   std::unique_ptr<event::Action> listener_;
-  std::vector<std::unique_ptr<SessionHandler>> serverHandlers_;
+  std::vector<std::unique_ptr<ServerSessionHandler>> sessionHandlers_;
 
   void doAccept();
 };

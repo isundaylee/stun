@@ -23,28 +23,22 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  auto sessionConfig = SessionConfig{client.getPeerAddress(), config_.secret,
-                                     config_.encryption, config_.paddingTo};
-
-  std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, ServerSession, sessionConfig,
-                         std::make_unique<TCPSocket>(std::move(client)))};
+  auto handler = std::make_unique<ServerSessionHandler>(
+      this, config_, std::make_unique<TCPSocket>(std::move(client)));
 
   // Trigger to remove finished clients
   auto handlerPtr = handler.get();
   event::Trigger::arm({handler->didEnd()}, [this, handlerPtr]() {
-    auto it = std::find_if(serverHandlers_.begin(), serverHandlers_.end(),
+    auto it = std::find_if(sessionHandlers_.begin(), sessionHandlers_.end(),
                            [handlerPtr](auto const& handler) {
                              return handler.get() == handlerPtr;
                            });
 
-    assertTrue(it != serverHandlers_.end(),
+    assertTrue(it != sessionHandlers_.end(),
                "Cannot find the client to remove.");
-    addrPool->release((*it)->myTunnelAddr);
-    addrPool->release((*it)->peerTunnelAddr);
-    serverHandlers_.erase(it);
+    sessionHandlers_.erase(it);
   });
 
-  serverHandlers_.push_back(std::move(handler));
+  sessionHandlers_.push_back(std::move(handler));
 }
 }
