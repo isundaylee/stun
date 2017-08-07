@@ -3,7 +3,11 @@
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
 
+#include <chrono>
+
 namespace stun {
+
+using namespace std::chrono_literals;
 
 ClientSessionHandler::ClientSessionHandler(
     ClientConfig config, std::unique_ptr<TCPSocket> commandPipe)
@@ -49,7 +53,7 @@ void ClientSessionHandler::attachHandlers() {
 
     DataPipe* dataPipe =
         new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
-                     body["aes_key"], body["padding_to_size"], 0);
+                     body["aes_key"], body["padding_to_size"], 0s);
     dataPipe->setPrePrimed();
 
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));

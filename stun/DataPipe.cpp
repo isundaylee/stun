@@ -2,9 +2,13 @@
 
 #include <event/Trigger.h>
 
+#include <chrono>
+
 namespace stun {
 
-static const event::Duration kDataPipeProbeInterval = 1000 /* ms */;
+using namespace std::chrono_literals;
+
+static const event::Duration kDataPipeProbeInterval = 1s;
 static const size_t kDataPipeFIFOSize = 256;
 
 DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
@@ -16,7 +20,7 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
       didClose_(new event::BaseCondition()),
       isPrimed_(new event::BaseCondition()) {
   // Sets up TTL killer
-  if (ttl != 0) {
+  if (ttl != 0s) {
     ttlTimer_.reset(new event::Timer(ttl));
     ttlKiller_.reset(new event::Action({ttlTimer_->didFire()}));
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
@@ -39,7 +43,7 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
-  probeTimer_.reset(new event::Timer(0));
+  probeTimer_.reset(new event::Timer(0s));
   prober_.reset(new event::Action(
       {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()}));
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);

@@ -6,13 +6,14 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <chrono>
 #include <memory>
 #include <queue>
 
 namespace event {
 
-typedef uint64_t Time;
-typedef uint64_t Duration;
+using Time = std::chrono::steady_clock::time_point;
+using Duration = std::chrono::milliseconds;
 
 class Timer {
 public:
@@ -26,7 +27,8 @@ public:
   void reset(Duration timeout);
   void extend(Duration timeout);
 
-  static Time getTimeInMilliseconds();
+  static Time getTime();
+  static Duration getEpochTimeInMilliseconds();
 
 private:
   Time target_;

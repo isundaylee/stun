@@ -2,21 +2,25 @@
 
 #include <event/Trigger.h>
 
+#include <chrono>
+
 namespace networking {
+
+using namespace std::chrono_literals;
 
 typedef uint32_t MessengerLengthHeaderType;
 
 static const std::string kMessengerHeartBeatMessageType = "heartbeat";
 static const std::string kMessengerHeartBeatReplyMessageType =
     "heartbeat_reply";
-static const event::Duration kMessengerHeartBeatInterval = 1000 /* ms */;
-static const event::Duration kMessengerHeartBeatTimeout = 10000 /* ms */;
+static const event::Duration kMessengerHeartBeatInterval = 1s /* ms */;
+static const event::Duration kMessengerHeartBeatTimeout = 10s /* ms */;
 static const size_t kMessengerOutboundQueueSize = 32;
 
 class Messenger::Heartbeater {
 public:
   Heartbeater(Messenger* messenger)
-      : messenger_(messenger), beatTimer_(new event::Timer(0)),
+      : messenger_(messenger), beatTimer_(new event::Timer(0s)),
         missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
         statRtt_("Connection", "rtt", 0) {
     beater_.reset(new event::Action(
@@ -24,9 +28,9 @@ public:
 
     // Sets up periodic heart beat sending
     beater_->callback = [this]() {
-      messenger_->outboundQ->push(
-          Message(kMessengerHeartBeatMessageType,
-                  {{"start", event::Timer::getTimeInMilliseconds()}}));
+      messenger_->outboundQ->push(Message(
+          kMessengerHeartBeatMessageType,
+          {{"start", event::Timer::getEpochTimeInMilliseconds().count()}}));
       beatTimer_->extend(kMessengerHeartBeatInterval);
     };
 
@@ -49,8 +53,9 @@ public:
     // Sets up heartbeat reply message handler
     messenger_->addHandler(
         kMessengerHeartBeatReplyMessageType, [this](auto const& message) {
-          event::Time start = message.getBody()["start"];
-          statRtt_.accumulate(event::Timer::getTimeInMilliseconds() - start);
+          auto start = message.getBody()["start"].template get<int>();
+          statRtt_.accumulate(
+              event::Timer::getEpochTimeInMilliseconds().count() - start);
           return Message::null();
         });
   }
@@ -62,7 +67,7 @@ private:
   std::unique_ptr<event::Action> beater_;
   std::unique_ptr<event::Timer> missedTimer_;
 
-  stats::AvgStat<event::Duration> statRtt_;
+  stats::AvgStat<int> statRtt_;
 };
 
 class Messenger::Transporter {

@@ -6,14 +6,18 @@
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
 
+#include <chrono>
+
 namespace stun {
+
+using namespace std::chrono_literals;
 
 using networking::Message;
 using networking::Tunnel;
 using networking::kTunnelEthernetMTU;
 using networking::InterfaceConfig;
 
-static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
+static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
 
 ServerSessionHandler::ServerSessionHandler(
     Server* server, ServerConfig config, std::unique_ptr<TCPSocket> commandPipe)
@@ -48,7 +52,7 @@ void ServerSessionHandler::attachHandlers() {
     dispatcher_.reset(new Dispatcher(std::move(tunnel)));
 
     // Set up data pipe rotation if it is configured in the server config.
-    if (config_.dataPipeRotationInterval != 0) {
+    if (config_.dataPipeRotationInterval != 0s) {
       dataPipeRotationTimer_.reset(
           new event::Timer(config_.dataPipeRotationInterval));
       dataPipeRotator_.reset(
@@ -87,8 +91,8 @@ json ServerSessionHandler::createDataPipe() {
                      << std::endl;
   }
 
-  auto ttl = (config_.dataPipeRotationInterval == 0
-                  ? 0
+  auto ttl = (config_.dataPipeRotationInterval == 0s
+                  ? 0s
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
   DataPipe* dataPipe =

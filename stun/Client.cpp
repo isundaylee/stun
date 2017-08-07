@@ -5,7 +5,9 @@
 
 namespace stun {
 
-const int kReconnectDelayInterval = 5000 /* ms */;
+using namespace std::chrono_literals;
+
+const event::Duration kReconnectDelayInterval = 5s;
 
 Client::Client(ClientConfig config) : config_(config) { connect(); }
 
@@ -23,8 +25,11 @@ void Client::doReconnect() {
   handler_.reset();
   reconnector_.reset();
 
-  LOG_I("Client") << "Will reconnect in " << kReconnectDelayInterval << " ms."
-                  << std::endl;
+  LOG_I("Client") << "Will reconnect in "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         kReconnectDelayInterval)
+                         .count()
+                  << " ms." << std::endl;
 
   event::Trigger::performIn(kReconnectDelayInterval, [this]() {
     LOG_I("Client") << "Reconnecting..." << std::endl;

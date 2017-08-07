@@ -103,8 +103,7 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "s", "stats", "Enable connection stats logging. You "
                                        "can also give a numeric frequency in "
                                        "milliseconds.",
-                     cxxopts::value<event::Duration>()->implicit_value("1000"),
-                     "");
+                     cxxopts::value<int>()->implicit_value("1000"), "");
   options.add_option("", "v", "verbose", "Log more verbosely.",
                      cxxopts::value<bool>(), "");
   options.add_option("", "h", "help", "Print help and usage info.",
@@ -152,7 +151,8 @@ void setupServer() {
       common::Configerator::get<bool>("encryption", true),
       common::Configerator::get<std::string>("secret", ""),
       common::Configerator::get<size_t>("padding_to", 0),
-      1000 * common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
+      std::chrono::seconds(
+          common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
   };
 
   server = std::make_unique<stun::Server>(config);
@@ -166,7 +166,8 @@ void setupClient() {
       common::Configerator::get<bool>("encryption", true),
       common::Configerator::get<std::string>("secret", ""),
       common::Configerator::get<size_t>("padding_to", 0),
-      1000 * common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
+      std::chrono::seconds(
+          common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 
@@ -187,7 +188,8 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<event::Action> statsDumper;
 
   if (options.count("stats")) {
-    event::Duration statsDumpInerval = options["stats"].as<event::Duration>();
+    event::Duration statsDumpInerval =
+        std::chrono::milliseconds(options["stats"].as<int>());
     statsTimer.reset(new event::Timer{statsDumpInerval});
     statsDumper.reset(new event::Action{{statsTimer->didFire()}});
     statsDumper->callback = [&statsTimer, statsDumpInerval]() {
