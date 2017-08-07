@@ -94,7 +94,6 @@ json ServerSessionHandler::createDataPipe() {
   DataPipe* dataPipe =
       new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)), aesKey,
                    config_.paddingTo, ttl);
-  dataPipe->start();
   dispatcher_->addDataPipe(std::unique_ptr<DataPipe>{dataPipe});
 
   return json{{"port", port},

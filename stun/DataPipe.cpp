@@ -15,33 +15,13 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
       socket_(std::move(socket)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
       didClose_(new event::BaseCondition()),
       isPrimed_(new event::BaseCondition()) {
+  // Sets up TTL killer
   if (ttl != 0) {
     ttlTimer_.reset(new event::Timer(ttl));
     ttlKiller_.reset(new event::Action({ttlTimer_->didFire()}));
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
-}
 
-DataPipe::DataPipe(DataPipe&& move)
-    : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
-      socket_(std::move(move.socket_)), aesKey_(std::move(move.aesKey_)),
-      minPaddingTo_(move.minPaddingTo_), didClose_(std::move(move.didClose_)),
-      isPrimed_(std::move(move.isPrimed_)),
-      ttlTimer_(std::move(move.ttlTimer_)),
-      probeTimer_(std::move(move.probeTimer_)),
-      prober_(std::move(move.prober_)),
-      aesEncryptor_(std::move(move.aesEncryptor_)),
-      padder_(std::move(move.padder_)), sender_(std::move(move.sender_)),
-      receiver_(std::move(move.receiver_)) {
-  prober_->callback.target = this;
-}
-
-void DataPipe::setPrePrimed() { isPrimed_->fire(); }
-
-event::Condition* DataPipe::didClose() { return didClose_.get(); }
-event::Condition* DataPipe::isPrimed() { return isPrimed_.get(); }
-
-void DataPipe::start() {
   // Prepare Encryptor-s
   if (minPaddingTo_ != 0) {
     padder_.reset(new crypto::Padder(minPaddingTo_));
@@ -64,6 +44,28 @@ void DataPipe::start() {
       {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()}));
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
+
+DataPipe::DataPipe(DataPipe&& move)
+    : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
+      socket_(std::move(move.socket_)), aesKey_(std::move(move.aesKey_)),
+      minPaddingTo_(move.minPaddingTo_), didClose_(std::move(move.didClose_)),
+      isPrimed_(std::move(move.isPrimed_)),
+      ttlTimer_(std::move(move.ttlTimer_)),
+      probeTimer_(std::move(move.probeTimer_)),
+      prober_(std::move(move.prober_)),
+      aesEncryptor_(std::move(move.aesEncryptor_)),
+      padder_(std::move(move.padder_)), sender_(std::move(move.sender_)),
+      receiver_(std::move(move.receiver_)) {
+  ttlKiller_->callback.target = this;
+  prober_->callback.target = this;
+  sender_->callback.target = this;
+  receiver_->callback.target = this;
+}
+
+void DataPipe::setPrePrimed() { isPrimed_->fire(); }
+
+event::Condition* DataPipe::didClose() { return didClose_.get(); }
+event::Condition* DataPipe::isPrimed() { return isPrimed_.get(); }
 
 void DataPipe::doKill() {
   sender_.reset();

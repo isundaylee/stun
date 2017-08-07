@@ -51,7 +51,6 @@ void ClientSessionHandler::attachHandlers() {
         new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
                      body["aes_key"], body["padding_to_size"], 0);
     dataPipe->setPrePrimed();
-    dataPipe->start();
 
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
 
