@@ -13,11 +13,18 @@
 
 namespace stun {
 
+struct SessionConfig {
+public:
+  std::string secret;
+  bool encryption;
+  size_t paddingTo;
+};
+
 using namespace networking;
 
 enum SessionType { Client, Server };
 
-class CommandCenter;
+class Server;
 
 class SessionHandler {
 public:
@@ -25,8 +32,7 @@ public:
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
 
-  SessionHandler(CommandCenter* center, SessionType type,
-                 std::string serverAddr,
+  SessionHandler(class Server* server, SessionType type, std::string serverAddr,
                  std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
@@ -39,7 +45,7 @@ private:
   SessionHandler(SessionHandler&& move) = delete;
   SessionHandler& operator=(SessionHandler&& move) = delete;
 
-  CommandCenter* center_;
+  class Server* server_;
 
   // Session settings
   SessionType type_;

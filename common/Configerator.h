@@ -2,6 +2,8 @@
 
 #include <json/json.hpp>
 
+#include <common/Util.h>
+
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -19,6 +21,11 @@ public:
   static std::string getString(std::string const& key);
   static int getInt(std::string const& key);
   static std::vector<std::string> getStringArray(std::string const& key);
+
+  template <typename T> static T get(std::string key) {
+    assertTrue(hasKey(key), "Cannot find config entry '" + key + "'.");
+    return instance_->config_[key].get<T>();
+  }
 
   template <typename T> static T get(std::string key, T defaultValue) {
     if (!hasKey(key)) {

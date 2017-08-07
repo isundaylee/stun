@@ -2,6 +2,7 @@
 
 #include <common/Configerator.h>
 
+#include <stun/Server.h>
 #include <stun/SessionHandler.h>
 
 #include <networking/IPAddressPool.h>
@@ -25,12 +26,16 @@ class CommandCenter {
 public:
   CommandCenter();
 
-  std::unique_ptr<IPAddressPool> addrPool;
-
-  void serve(int port);
+  void serve(ServerConfig config);
   void connect(std::string const& host, int port);
 
   event::Condition* didDisconnect() const;
+
+private:
+  std::unique_ptr<class Server> server_;
+
+  std::unique_ptr<SessionHandler> clientHandler_;
+  std::unique_ptr<event::BaseCondition> didDisconnect_;
 
 private:
   CommandCenter(CommandCenter const& copy) = delete;
@@ -38,13 +43,5 @@ private:
 
   CommandCenter(CommandCenter&& move) = delete;
   CommandCenter& operator=(CommandCenter&& move) = delete;
-
-  void doAccept();
-
-  std::unique_ptr<TCPServer> server_;
-  std::unique_ptr<event::Action> listener_;
-  std::vector<std::unique_ptr<SessionHandler>> serverHandlers_;
-  std::unique_ptr<SessionHandler> clientHandler_;
-  std::unique_ptr<event::BaseCondition> didDisconnect_;
 };
 }

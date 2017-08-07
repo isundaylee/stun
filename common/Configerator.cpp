@@ -1,7 +1,5 @@
 #include "common/Configerator.h"
 
-#include <common/Util.h>
-
 namespace common {
 
 Configerator* Configerator::instance_ = nullptr;

@@ -165,11 +165,16 @@ int main(int argc, char* argv[]) {
   event::Action reconnector({reconnectTimer.didFire()});
 
   if (role == "server") {
-    std::string addressPool = common::Configerator::getString("address_pool");
-    networking::SubnetAddress subnet(addressPool);
-    networking::IPTables::masquerade(subnet);
+    auto config = ServerConfig{
+        kServerPort,
+        networking::SubnetAddress{
+            common::Configerator::get<std::string>("address_pool")},
+        common::Configerator::get<bool>("encryption", true),
+        common::Configerator::get<std::string>("secret"),
+        common::Configerator::get<size_t>("padding_to", 0),
+    };
 
-    center.serve(kServerPort);
+    center.serve(config);
   } else {
     std::string server = common::Configerator::getString("server");
     center.connect(server, kServerPort);

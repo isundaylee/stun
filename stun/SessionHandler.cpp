@@ -13,10 +13,10 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 
 using namespace networking;
 
-SessionHandler::SessionHandler(CommandCenter* center, SessionType type,
+SessionHandler::SessionHandler(class Server* server, SessionType type,
                                std::string serverAddr,
                                std::unique_ptr<TCPSocket> commandPipe)
-    : center_(center), type_(type), serverAddr_(serverAddr),
+    : server_(server), type_(type), serverAddr_(serverAddr),
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (common::Configerator::hasKey("secret")) {
@@ -144,8 +144,8 @@ void SessionHandler::doRotateDataPipe() {
 void SessionHandler::attachServerMessageHandlers() {
   messenger_->addHandler("hello", [this](auto const& message) {
     // Acquire IP addresses
-    myTunnelAddr = center_->addrPool->acquire();
-    peerTunnelAddr = center_->addrPool->acquire();
+    myTunnelAddr = server_->addrPool->acquire();
+    peerTunnelAddr = server_->addrPool->acquire();
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     dispatcher_.reset(
