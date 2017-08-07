@@ -13,7 +13,7 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5000 /* ms */;
 
 using namespace networking;
 
-SessionHandler::SessionHandler(class Server* server, SessionType type,
+SessionHandler::SessionHandler(Server* server, SessionType type,
                                std::string serverAddr,
                                std::unique_ptr<TCPSocket> commandPipe)
     : server_(server), type_(type), serverAddr_(serverAddr),
@@ -24,7 +24,7 @@ SessionHandler::SessionHandler(class Server* server, SessionType type,
         crypto::AESKey(common::Configerator::getString("secret"))));
   }
 
-  if (type == Client) {
+  if (type == ClientSession) {
     // We save the resolved IP address here because we should never resolve
     // server address again. In the case that all Internet traffic is routed
     // through us, if we're blocked making a DNS request, who will actually
@@ -32,7 +32,7 @@ SessionHandler::SessionHandler(class Server* server, SessionType type,
     serverIPAddr_ = SocketAddress(serverAddr_).getHost();
   }
 
-  if (type == Client) {
+  if (type == ClientSession) {
     assertTrue(
         messenger_->outboundQ->canPush()->eval(),
         "How can I not be able to send at the very start of a connection?");
@@ -49,7 +49,7 @@ void SessionHandler::attachHandlers() {
   event::Trigger::arm({messenger_->didDisconnect()},
                       [this]() { didEnd_->fire(); });
 
-  if (type_ == Server) {
+  if (type_ == ServerSession) {
     return attachServerMessageHandlers();
   } else {
     return attachClientMessageHandlers();
@@ -65,7 +65,7 @@ Tunnel SessionHandler::createTunnel(std::string const& myTunnelAddr,
   config.newLink(tunnel.deviceName, kTunnelEthernetMTU);
   config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
-  if (type_ == Client) {
+  if (type_ == ClientSession) {
     // Configure iptables to route traffic into (or not into) the new tunnel
     std::vector<networking::SubnetAddress> excluded_subnets = {
         SubnetAddress(serverIPAddr_, 32)};

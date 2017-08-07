@@ -29,8 +29,9 @@ void CommandCenter::connect(std::string const& host, int port) {
   client.connect(SocketAddress(host, port));
 
   didDisconnect_->arm();
-  std::unique_ptr<SessionHandler> handler{new SessionHandler(
-      nullptr, Client, host, std::make_unique<TCPSocket>(std::move(client)))};
+  std::unique_ptr<SessionHandler> handler{
+      new SessionHandler(nullptr, ClientSession, host,
+                         std::make_unique<TCPSocket>(std::move(client)))};
 
   event::Trigger::arm({handler->didEnd()}, [this]() {
     LOG_I("Command") << "We are disconnected." << std::endl;

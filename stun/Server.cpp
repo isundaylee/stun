@@ -23,9 +23,8 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  std::unique_ptr<SessionHandler> handler{
-      new SessionHandler(this, SessionType::Server, "",
-                         std::make_unique<TCPSocket>(std::move(client)))};
+  std::unique_ptr<SessionHandler> handler{new SessionHandler(
+      this, ServerSession, "", std::make_unique<TCPSocket>(std::move(client)))};
 
   // Trigger to remove finished clients
   auto handlerPtr = handler.get();

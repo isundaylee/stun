@@ -22,7 +22,7 @@ public:
 
 using namespace networking;
 
-enum SessionType { Client, Server };
+enum SessionType { ClientSession, ServerSession };
 
 class Server;
 
@@ -32,7 +32,7 @@ public:
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
 
-  SessionHandler(class Server* server, SessionType type, std::string serverAddr,
+  SessionHandler(Server* server, SessionType type, std::string serverAddr,
                  std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
@@ -45,7 +45,7 @@ private:
   SessionHandler(SessionHandler&& move) = delete;
   SessionHandler& operator=(SessionHandler&& move) = delete;
 
-  class Server* server_;
+  Server* server_;
 
   // Session settings
   SessionType type_;
