@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-// #define LOG() ::common::Logger::getDefault("Untagged")
+#define L()                                                                    \
+  ::common::Logger::getDefault("=======").withLogLevel(common::LogLevel::INFO)
 #define LOG_E(tag)                                                             \
   ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::ERROR)
 #define LOG_I(tag)                                                             \

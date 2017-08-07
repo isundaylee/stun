@@ -8,7 +8,7 @@ template <typename T> class AvgStat : StatBase {
 public:
   AvgStat(std::string entity, std::string metric, T initialValue,
           Prefix prefix = Prefix::None)
-      : StatBase(entity, metric, prefix), sum_(initialValue) {}
+      : StatBase(entity, metric, prefix), sum_(initialValue), count_(0) {}
 
   void accumulate(T const& increment) {
     sum_ += increment;

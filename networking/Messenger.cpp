@@ -18,7 +18,7 @@ public:
   Heartbeater(Messenger* messenger)
       : messenger_(messenger), beatTimer_(new event::Timer(0)),
         missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
-        statLatency_("Connection", "latency", 0) {
+        statRtt_("Connection", "rtt", 0) {
     beater_.reset(new event::Action(
         {beatTimer_->didFire(), messenger_->outboundQ->canPush()}));
 
@@ -50,8 +50,7 @@ public:
     messenger_->addHandler(
         kMessengerHeartBeatReplyMessageType, [this](auto const& message) {
           event::Time start = message.getBody()["start"];
-          statLatency_.accumulate(
-              (event::Timer::getTimeInMilliseconds() - start) / 2);
+          statRtt_.accumulate(event::Timer::getTimeInMilliseconds() - start);
           return Message::null();
         });
   }
@@ -63,7 +62,7 @@ private:
   std::unique_ptr<event::Action> beater_;
   std::unique_ptr<event::Timer> missedTimer_;
 
-  stats::AvgStat<event::Duration> statLatency_;
+  stats::AvgStat<event::Duration> statRtt_;
 };
 
 class Messenger::Transporter {
@@ -142,10 +141,8 @@ public:
   void doSend() {
     Message message = messenger_->outboundQ->pop();
 
-    if (message.getType() != kMessengerHeartBeatMessageType) {
-      LOG_V("Messenger") << "Sent: " << message.getType() << " = "
-                         << message.getBody() << std::endl;
-    }
+    LOG_V("Messenger") << "Sent: " << message.getType() << " = "
+                       << message.getBody() << std::endl;
 
     MessengerLengthHeaderType payloadSize = message.size;
     for (auto const& encryptor : encryptors_) {
