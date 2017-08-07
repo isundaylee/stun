@@ -2,6 +2,7 @@
 
 #include <event/Action.h>
 #include <event/Condition.h>
+#include <event/Timer.h>
 
 #include <functional>
 #include <memory>
@@ -17,6 +18,9 @@ public:
   // loop.
   static void arm(std::vector<event::Condition*> conditions,
                   std::function<void(void)> callback);
+
+  static void performIn(event::Duration delay,
+                        std::function<void(void)> callback);
 
   virtual void prepare() override;
 

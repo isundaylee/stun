@@ -8,7 +8,8 @@
 #include <networking/IPTables.h>
 #include <networking/InterfaceConfig.h>
 #include <stats/StatsManager.h>
-#include <stun/CommandCenter.h>
+#include <stun/Client.h>
+#include <stun/Server.h>
 
 #include <unistd.h>
 
@@ -20,7 +21,6 @@
 
 using namespace stun;
 
-const int kReconnectDelayInterval = 5000 /* ms */;
 const int kServerPort = 2859;
 
 static const std::string serverConfigTemplate = R"(
@@ -142,6 +142,37 @@ auto parseSubnets(std::string const& key) {
   return results;
 }
 
+std::unique_ptr<stun::Server> server;
+
+void setupServer() {
+  auto config = ServerConfig{
+      kServerPort,
+      networking::SubnetAddress{
+          common::Configerator::get<std::string>("address_pool")},
+      common::Configerator::get<bool>("encryption", true),
+      common::Configerator::get<std::string>("secret", ""),
+      common::Configerator::get<size_t>("padding_to", 0),
+      1000 * common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
+  };
+
+  server = std::make_unique<stun::Server>(config);
+}
+
+std::unique_ptr<stun::Client> client;
+
+void setupClient() {
+  auto config = ClientConfig{
+      SocketAddress(common::Configerator::getString("server"), kServerPort),
+      common::Configerator::get<bool>("encryption", true),
+      common::Configerator::get<std::string>("secret", ""),
+      common::Configerator::get<size_t>("padding_to", 0),
+      1000 * common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
+      parseSubnets("forward_subnets"),
+      parseSubnets("excluded_subnets")};
+
+  client.reset(new stun::Client(config));
+}
+
 int main(int argc, char* argv[]) {
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
@@ -168,54 +199,11 @@ int main(int argc, char* argv[]) {
   std::string role = common::Configerator::getString("role");
 
   LOG_I("Main") << "Running as " << role << std::endl;
-  CommandCenter center;
-  event::BaseCondition shouldMonitorDisconnect;
-  event::Action disconnectMonitor(
-      {&shouldMonitorDisconnect, center.didDisconnect()});
-  event::Timer reconnectTimer{};
-  event::Action reconnector({reconnectTimer.didFire()});
 
   if (role == "server") {
-    auto config = ServerConfig{
-        kServerPort,
-        networking::SubnetAddress{
-            common::Configerator::get<std::string>("address_pool")},
-        common::Configerator::get<bool>("encryption", true),
-        common::Configerator::get<std::string>("secret", ""),
-        common::Configerator::get<size_t>("padding_to", 0),
-        1000 *
-            common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
-    };
-
-    center.serve(config);
+    setupServer();
   } else {
-    auto config = ClientConfig{
-        SocketAddress(common::Configerator::getString("server"), kServerPort),
-        common::Configerator::get<bool>("encryption", true),
-        common::Configerator::get<std::string>("secret", ""),
-        common::Configerator::get<size_t>("padding_to", 0),
-        1000 *
-            common::Configerator::get<size_t>("data_pipe_rotate_interval", 0),
-        parseSubnets("forward_subnets"),
-        parseSubnets("excluded_subnets")};
-
-    center.connect(config);
-    shouldMonitorDisconnect.fire();
-
-    disconnectMonitor.callback = [&shouldMonitorDisconnect, &reconnectTimer]() {
-      LOG_I("Main") << "Will reconnect in " << kReconnectDelayInterval << " ms."
-                    << std::endl;
-      shouldMonitorDisconnect.arm();
-      reconnectTimer.reset(kReconnectDelayInterval);
-    };
-
-    reconnector.callback = [&shouldMonitorDisconnect, &reconnectTimer, &center,
-                            config]() {
-      LOG_I("Main") << "Reconnecting..." << std::endl;
-      center.connect(config);
-      shouldMonitorDisconnect.fire();
-      reconnectTimer.reset();
-    };
+    setupClient();
   }
 
   loop.run();
