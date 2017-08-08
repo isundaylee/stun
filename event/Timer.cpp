@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <optional>
 #include <set>
 #include <stdexcept>
 #include <utility>
@@ -30,7 +29,7 @@ private:
   typedef std::pair<Time, BaseCondition*> TimeoutTrigger;
 
   std::vector<TimeoutTrigger> targets_;
-  std::optional<Time> currentTarget_;
+  std::unique_ptr<Time> currentTarget_;
   bool currentTargetFired_ = false;
 
   static void handleSignal(int sig, siginfo_t* si, void* uc);
@@ -132,7 +131,7 @@ void TimerManager::updateTimer(Time now) {
     return;
   }
 
-  if (!!currentTarget_ && targets_.back().first >= currentTarget_) {
+  if (!!currentTarget_ && targets_.back().first >= *currentTarget_) {
     // The current timer will still fire before our earliest event.
     // We don't have to change a thing.
     return;
@@ -154,7 +153,7 @@ void TimerManager::updateTimer(Time now) {
   int ret = setitimer(ITIMER_REAL, &its, NULL);
   assertTrue(ret == 0, "Cannot set timer.");
 
-  currentTarget_ = now + timeout;
+  currentTarget_.reset(new Time(now + timeout));
 }
 
 Timer::Timer() : didFire_(new BaseCondition()) {}
