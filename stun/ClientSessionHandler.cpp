@@ -62,6 +62,13 @@ void ClientSessionHandler::attachHandlers() {
 
     return Message::null();
   });
+
+  messenger_->addHandler("message", [](auto const& message) {
+    LOG_I("Session") << "Message from the server: "
+                     << message.getBody().template get<std::string>()
+                     << std::endl;
+    return Message::null();
+  });
 }
 
 Tunnel ClientSessionHandler::createTunnel(std::string const& myTunnelAddr,
