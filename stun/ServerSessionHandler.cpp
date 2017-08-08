@@ -20,7 +20,8 @@ using networking::InterfaceConfig;
 static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
 
 ServerSessionHandler::ServerSessionHandler(
-    Server* server, ServerConfig config, std::unique_ptr<TCPSocket> commandPipe)
+    Server* server, ServerSessionConfig config,
+    std::unique_ptr<TCPSocket> commandPipe)
     : server_(server), config_(config),
       messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {

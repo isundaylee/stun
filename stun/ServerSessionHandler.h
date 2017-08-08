@@ -16,10 +16,8 @@ using networking::TCPSocket;
 using networking::Messenger;
 using networking::SubnetAddress;
 
-struct ServerConfig {
+struct ServerSessionConfig {
 public:
-  int port;
-  SubnetAddress addressPool;
   bool encryption;
   std::string secret;
   size_t paddingTo;
@@ -30,14 +28,14 @@ class Server;
 
 class ServerSessionHandler {
 public:
-  ServerSessionHandler(Server* server, ServerConfig config,
+  ServerSessionHandler(Server* server, ServerSessionConfig config,
                        std::unique_ptr<TCPSocket> commandPipe);
 
   event::Condition* didEnd() const;
 
 private:
   Server* server_;
-  ServerConfig config_;
+  ServerSessionConfig config_;
 
   std::unique_ptr<Messenger> messenger_;
   std::unique_ptr<Dispatcher> dispatcher_;

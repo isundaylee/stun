@@ -12,6 +12,16 @@ using networking::SubnetAddress;
 using networking::TCPServer;
 using networking::IPAddressPool;
 
+struct ServerConfig {
+public:
+  int port;
+  SubnetAddress addressPool;
+  bool encryption;
+  std::string secret;
+  size_t paddingTo;
+  event::Duration dataPipeRotationInterval;
+};
+
 class Server {
 public:
   Server(ServerConfig config);
