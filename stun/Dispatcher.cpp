@@ -56,6 +56,7 @@ void Dispatcher::doSend() {
   }
 
   DataPacket out;
+  bytesDispatched += in.size;
   statTxBytes_.accumulate(in.size);
   out.fill(std::move(in));
 
@@ -80,6 +81,7 @@ void Dispatcher::doReceive() {
     if (dataPipe_->inboundQ->canPop()->eval()) {
       TunnelPacket in;
       in.fill(dataPipe_->inboundQ->pop());
+      bytesDispatched += in.size;
       statRxBytes_.accumulate(in.size);
 
       if (!tunnel_.write(std::move(in))) {

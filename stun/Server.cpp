@@ -16,6 +16,15 @@ Server::Server(ServerConfig config) : config_(config) {
   listener_.reset(new event::Action({server_->canAccept()}));
   listener_->callback.setMethod<Server, &Server::doAccept>(this);
   server_->bind(config.port);
+
+  if (config.authentication && config.quotaTable.empty()) {
+    LOG_I("Server") << "Warning: Authentication turned on yet quota table is "
+                       "unspecified/empty."
+                    << std::endl;
+    LOG_I("Server")
+        << "Warning: All user names would be able to use unlimited data."
+        << std::endl;
+  }
 }
 
 void Server::doAccept() {
@@ -25,8 +34,9 @@ void Server::doAccept() {
                   << client.getPeerAddress().getHost() << std::endl;
 
   auto sessionConfig = ServerSessionConfig{
-      config_.encryption, config_.secret, config_.paddingTo,
-      config_.dataPipeRotationInterval, config_.authentication};
+      config_.encryption,     config_.secret,
+      config_.paddingTo,      config_.dataPipeRotationInterval,
+      config_.authentication, config_.quotaTable};
 
   auto handler = std::make_unique<ServerSessionHandler>(
       this, sessionConfig, std::make_unique<TCPSocket>(std::move(client)));

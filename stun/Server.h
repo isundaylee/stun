@@ -21,6 +21,7 @@ public:
   size_t paddingTo;
   event::Duration dataPipeRotationInterval;
   bool authentication;
+  std::map<std::string, size_t> quotaTable;
 };
 
 class Server {

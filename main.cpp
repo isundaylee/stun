@@ -143,18 +143,27 @@ auto parseSubnets(std::string const& key) {
 
 std::unique_ptr<stun::Server> server;
 
+std::map<std::string, size_t> parseQuotaTable() {
+  auto raw =
+      common::Configerator::get<std::map<std::string, size_t>>("quotas", {});
+  for (auto it = raw.begin(); it != raw.end(); it++) {
+    it->second *= 1024 * 1024 * 1024 /* GB */;
+  }
+  return raw;
+}
+
 void setupServer() {
-  auto config = ServerConfig{
-      kServerPort,
-      networking::SubnetAddress{
-          common::Configerator::get<std::string>("address_pool")},
-      common::Configerator::get<bool>("encryption", true),
-      common::Configerator::get<std::string>("secret", ""),
-      common::Configerator::get<size_t>("padding_to", 0),
-      std::chrono::seconds(
-          common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
-      common::Configerator::get<bool>("authentication", false),
-  };
+  auto config =
+      ServerConfig{kServerPort,
+                   networking::SubnetAddress{
+                       common::Configerator::get<std::string>("address_pool")},
+                   common::Configerator::get<bool>("encryption", true),
+                   common::Configerator::get<std::string>("secret", ""),
+                   common::Configerator::get<size_t>("padding_to", 0),
+                   std::chrono::seconds(common::Configerator::get<size_t>(
+                       "data_pipe_rotate_interval", 0)),
+                   common::Configerator::get<bool>("authentication", false),
+                   parseQuotaTable()};
 
   server = std::make_unique<stun::Server>(config);
 }

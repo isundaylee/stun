@@ -13,6 +13,8 @@ class Dispatcher {
 public:
   Dispatcher(networking::Tunnel&& tunnel);
 
+  size_t bytesDispatched = 0;
+
   void addDataPipe(std::unique_ptr<DataPipe> dataPipe);
 
 private:

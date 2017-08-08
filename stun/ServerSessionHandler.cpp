@@ -17,7 +17,49 @@ using networking::Tunnel;
 using networking::kTunnelEthernetMTU;
 using networking::InterfaceConfig;
 
+static const event::Duration kSessionHandlerQuotaReportInterval = 30min;
 static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
+
+class ServerSessionHandler::QuotaReporter {
+public:
+  QuotaReporter(ServerSessionHandler* session) : session_(session) {
+    timer_.reset(new event::Timer(0s));
+    reporter_.reset(new event::Action(
+        {timer_->didFire(), session->messenger_->outboundQ->canPush()}));
+    reporter_->callback.setMethod<QuotaReporter, &QuotaReporter::doReport>(
+        this);
+  }
+
+private:
+  ServerSessionHandler* session_;
+
+  std::unique_ptr<event::Timer> timer_;
+  std::unique_ptr<event::Action> reporter_;
+
+  std::string toMegaBytesString(size_t bytes) {
+    double megabytes = (1.0 / 1024 / 1024) * bytes;
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << megabytes << " MB";
+    return ss.str();
+  }
+
+  void doReport() {
+    session_->messenger_->outboundQ->push(
+        Message("message",
+                "You have used " +
+                    toMegaBytesString(session_->dispatcher_->bytesDispatched) +
+                    +" out of your quota of " +
+                    toMegaBytesString(session_->config_.quota) + "."));
+    timer_->extend(kSessionHandlerQuotaReportInterval);
+  }
+
+private:
+  QuotaReporter(QuotaReporter const& copy) = delete;
+  QuotaReporter& operator=(QuotaReporter const& copy) = delete;
+
+  QuotaReporter(QuotaReporter&& move) = delete;
+  QuotaReporter& operator=(QuotaReporter&& move) = delete;
+};
 
 ServerSessionHandler::ServerSessionHandler(
     Server* server, ServerSessionConfig config,
@@ -31,6 +73,8 @@ ServerSessionHandler::ServerSessionHandler(
   }
   attachHandlers();
 }
+
+ServerSessionHandler::~ServerSessionHandler() = default;
 
 event::Condition* ServerSessionHandler::didEnd() const { return didEnd_.get(); }
 
@@ -50,6 +94,23 @@ void ServerSessionHandler::attachHandlers() {
       config_.user = body["user"].template get<std::string>();
       LOG_I("Session") << "Client " << config_.user << " said hello!"
                        << std::endl;
+
+      // Retrieve this user's quota
+      if (!config_.quotaTable.empty()) {
+        auto it = config_.quotaTable.find(config_.user);
+        if (it == config_.quotaTable.end()) {
+          return Message(
+              "error", "User " + config_.user + " not allowed on the server.");
+        }
+
+        config_.quota = it->second;
+        LOG_V("Session") << "Client " << config_.user << " has a quota of "
+                         << config_.quota << " bytes." << std::endl;
+
+        if (config_.quota != 0) {
+          quotaReporter_.reset(new QuotaReporter(this));
+        }
+      }
     }
 
     // Acquire IP addresses
