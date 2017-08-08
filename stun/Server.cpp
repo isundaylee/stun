@@ -24,9 +24,9 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  auto sessionConfig =
-      ServerSessionConfig{config_.encryption, config_.secret, config_.paddingTo,
-                          config_.dataPipeRotationInterval};
+  auto sessionConfig = ServerSessionConfig{
+      config_.encryption, config_.secret, config_.paddingTo,
+      config_.dataPipeRotationInterval, config_.authentication};
 
   auto handler = std::make_unique<ServerSessionHandler>(
       this, sessionConfig, std::make_unique<TCPSocket>(std::move(client)));

@@ -22,7 +22,12 @@ ClientSessionHandler::ClientSessionHandler(
   assertTrue(
       messenger_->outboundQ->canPush()->eval(),
       "How can I not be able to send at the very start of a connection?");
-  messenger_->outboundQ->push(Message("hello", ""));
+
+  auto helloBody = json{};
+  if (!config_.user.empty()) {
+    helloBody["user"] = config_.user;
+  }
+  messenger_->outboundQ->push(Message("hello", helloBody));
 
   attachHandlers();
 }
@@ -68,6 +73,13 @@ void ClientSessionHandler::attachHandlers() {
                      << message.getBody().template get<std::string>()
                      << std::endl;
     return Message::null();
+  });
+
+  messenger_->addHandler("error", [](auto const& message) {
+    LOG_I("Session") << "Session ended with error: "
+                     << message.getBody().template get<std::string>()
+                     << std::endl;
+    return Message::disconnect();
   });
 }
 

@@ -18,11 +18,18 @@ namespace networking {
 using json = nlohmann::json;
 
 const size_t kMessageSize = 2048;
+const std::string kDisconnectMessageType = "disconnect";
 
 struct Message : public Packet {
   Message() : Packet(kMessageSize) {}
 
   static Message null() { return Message(); }
+
+  static Message disconnect() { return Message(kDisconnectMessageType, ""); }
+
+  bool isDisconnect() const {
+    return this->getType() == kDisconnectMessageType;
+  }
 
   Message(std::string const& type, json const& body) : Packet(kMessageSize) {
     json payload = {

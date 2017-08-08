@@ -40,6 +40,18 @@ void ServerSessionHandler::attachHandlers() {
                       [this]() { didEnd_->fire(); });
 
   messenger_->addHandler("hello", [this](auto const& message) {
+    if (config_.authentication) {
+      auto body = message.getBody();
+
+      if (body.find("user") == body.end()) {
+        return Message("error", "No user name provided.");
+      }
+
+      config_.user = body["user"].template get<std::string>();
+      LOG_I("Session") << "Client " << config_.user << " said hello!"
+                       << std::endl;
+    }
+
     // Acquire IP addresses
     auto myTunnelAddr = server_->addrPool->acquire();
     auto peerTunnelAddr = server_->addrPool->acquire();

@@ -19,6 +19,7 @@ public:
   std::string secret;
   size_t paddingTo;
   event::Duration dataPipeRotationInterval;
+  std::string user;
 
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;

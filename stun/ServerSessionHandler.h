@@ -22,6 +22,8 @@ public:
   std::string secret;
   size_t paddingTo;
   event::Duration dataPipeRotationInterval;
+  bool authentication;
+  std::string user = "";
 };
 
 class Server;

@@ -153,6 +153,7 @@ void setupServer() {
       common::Configerator::get<size_t>("padding_to", 0),
       std::chrono::seconds(
           common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
+      common::Configerator::get<bool>("authentication", false),
   };
 
   server = std::make_unique<stun::Server>(config);
@@ -168,6 +169,7 @@ void setupClient() {
       common::Configerator::get<size_t>("padding_to", 0),
       std::chrono::seconds(
           common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
+      common::Configerator::get<std::string>("user", ""),
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 

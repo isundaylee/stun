@@ -146,6 +146,12 @@ public:
   void doSend() {
     Message message = messenger_->outboundQ->pop();
 
+    if (message.isDisconnect()) {
+      LOG_I("Messenger") << "Disconnected." << std::endl;
+      messenger_->disconnect();
+      return;
+    }
+
     LOG_V("Messenger") << "Sent: " << message.getType() << " = "
                        << message.getBody() << std::endl;
 
