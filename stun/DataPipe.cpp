@@ -85,49 +85,55 @@ void DataPipe::doProbe() {
 }
 
 void DataPipe::doSend() {
-  DataPacket data = outboundQ->pop();
-  UDPPacket out;
+  while (outboundQ->canPop()->eval()) {
+    DataPacket data = outboundQ->pop();
+    UDPPacket out;
 
-  out.fill(std::move(data));
-  if (!!padder_) {
-    out.size = padder_->encrypt(out.data, out.size, out.capacity);
-  }
-  if (!!aesEncryptor_) {
-    out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
-  }
+    out.fill(std::move(data));
+    if (!!padder_) {
+      out.size = padder_->encrypt(out.data, out.size, out.capacity);
+    }
+    if (!!aesEncryptor_) {
+      out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
+    }
 
-  try {
-    socket_->write(std::move(out));
-  } catch (networking::SocketClosedException const& ex) {
-    LOG_V("DataPipe") << "While sending: " << ex.what() << std::endl;
-    doKill();
-    return;
+    try {
+      socket_->write(std::move(out));
+    } catch (networking::SocketClosedException const& ex) {
+      LOG_V("DataPipe") << "While sending: " << ex.what() << std::endl;
+      doKill();
+      return;
+    }
   }
 }
 
 void DataPipe::doReceive() {
-  UDPPacket in;
-  DataPacket data;
+  while (inboundQ->canPush()->eval()) {
+    UDPPacket in;
+    DataPacket data;
 
-  try {
-    bool read = socket_->read(in);
-    assertTrue(read, "Am I being lied to by socket_->canRead()?");
-  } catch (networking::SocketClosedException const& ex) {
-    LOG_V("DataPipe") << "While receiving: " << ex.what() << std::endl;
-    doKill();
-    return;
-  }
+    try {
+      bool read = socket_->read(in);
+      if (!read) {
+        break;
+      }
+    } catch (networking::SocketClosedException const& ex) {
+      LOG_V("DataPipe") << "While receiving: " << ex.what() << std::endl;
+      doKill();
+      return;
+    }
 
-  data.fill(std::move(in));
-  if (!!aesEncryptor_) {
-    data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
-  }
-  if (!!padder_) {
-    data.size = padder_->decrypt(data.data, data.size, data.capacity);
-  }
+    data.fill(std::move(in));
+    if (!!aesEncryptor_) {
+      data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
+    }
+    if (!!padder_) {
+      data.size = padder_->decrypt(data.data, data.size, data.capacity);
+    }
 
-  if (data.size > 0) {
-    inboundQ->push(std::move(data));
+    if (data.size > 0) {
+      inboundQ->push(std::move(data));
+    }
   }
 
   isPrimed_->fire();

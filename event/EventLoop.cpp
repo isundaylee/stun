@@ -154,9 +154,12 @@ void EventLoop::run() {
       }
 
       for (auto actionToInvoke : toInvoke) {
-        if (actions_.find(actionToInvoke) != actions_.end()) {
+        if (actionToInvoke->canInvoke() &&
+            actions_.find(actionToInvoke) != actions_.end()) {
           // Invoking some previous action in this round could have caused this
-          // action to be removed already. So we need to check.
+          // action to be removed already. So we need to recheck.
+          // Also firing an action could invalidate other actions. So we need to
+          // recheck that as well.
           actionToInvoke->invoke();
         }
       }

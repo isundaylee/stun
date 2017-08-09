@@ -43,42 +43,51 @@ bool Dispatcher::calculateCanReceive() {
 }
 
 void Dispatcher::doSend() {
-  TunnelPacket in;
-
-  try {
-    auto ret = tunnel_.read(in);
-    if (!ret) {
-      return;
-    }
-  } catch (TunnelClosedException const& ex) {
-    LOG_E("Dispatcher") << "Tunnel is closed: " << ex.what() << std::endl;
-    assertTrue(false, "Tunnel should never close.");
-  }
-
-  DataPacket out;
-  bytesDispatched += in.size;
-  statTxBytes_.accumulate(in.size);
-  out.fill(std::move(in));
-
   bool sent = false;
+
+  // Finding a data pipe that can accept packets
   for (int i = 0; i < dataPipes_.size(); i++) {
     int pipeIndex = (currentDataPipeIndex_ + i) % dataPipes_.size();
+
     if (dataPipes_[pipeIndex]->isPrimed()->eval() &&
         dataPipes_[pipeIndex]->outboundQ->canPush()->eval()) {
-      dataPipes_[pipeIndex]->outboundQ->push(std::move(out));
+      // Found a data pipe that can accept packets
+      // Push as many as possible
+      while (dataPipes_[pipeIndex]->outboundQ->canPush()->eval()) {
+        TunnelPacket in;
+
+        try {
+          auto ret = tunnel_.read(in);
+          if (!ret) {
+            break;
+          }
+        } catch (TunnelClosedException const& ex) {
+          LOG_E("Dispatcher") << "Tunnel is closed: " << ex.what() << std::endl;
+          assertTrue(false, "Tunnel should never close.");
+        }
+
+        DataPacket out;
+        bytesDispatched += in.size;
+        statTxBytes_.accumulate(in.size);
+        out.fill(std::move(in));
+
+        dataPipes_[pipeIndex]->outboundQ->push(std::move(out));
+      }
+
       sent = true;
       break;
     }
   }
-  currentDataPipeIndex_ = (currentDataPipeIndex_ + 1) % dataPipes_.size();
 
+  currentDataPipeIndex_ = (currentDataPipeIndex_ + 1) % dataPipes_.size();
   assertTrue(sent, "Cannot find a free DataPipe to send to.");
 }
 
 void Dispatcher::doReceive() {
   bool received = false;
+
   for (auto const& dataPipe_ : dataPipes_) {
-    if (dataPipe_->inboundQ->canPop()->eval()) {
+    while (dataPipe_->inboundQ->canPop()->eval()) {
       TunnelPacket in;
       in.fill(dataPipe_->inboundQ->pop());
       bytesDispatched += in.size;
@@ -86,10 +95,10 @@ void Dispatcher::doReceive() {
 
       if (!tunnel_.write(std::move(in))) {
         LOG_I("Dispatcher") << "Dropped an incoming packet." << std::endl;
+        return;
       }
 
       received = true;
-      break;
     }
   }
 
