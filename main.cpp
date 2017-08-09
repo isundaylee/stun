@@ -147,7 +147,7 @@ std::map<std::string, size_t> parseQuotaTable() {
   auto raw =
       common::Configerator::get<std::map<std::string, size_t>>("quotas", {});
   for (auto it = raw.begin(); it != raw.end(); it++) {
-    it->second *= 1024 * 1024 * 1024 /* GB */;
+    it->second *= 1024 * 1024 * 1024 /* GB -> Bytes */;
   }
   return raw;
 }

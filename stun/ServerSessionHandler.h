@@ -44,6 +44,7 @@ private:
   ServerSessionConfig config_;
 
   class QuotaReporter;
+  class QuotaPolice;
 
   std::unique_ptr<Messenger> messenger_;
   std::unique_ptr<Dispatcher> dispatcher_;
@@ -52,6 +53,7 @@ private:
   std::unique_ptr<event::Action> dataPipeRotator_;
 
   std::unique_ptr<QuotaReporter> quotaReporter_;
+  std::unique_ptr<QuotaPolice> quotaPolice_;
 
   std::unique_ptr<event::BaseCondition> didEnd_;
 

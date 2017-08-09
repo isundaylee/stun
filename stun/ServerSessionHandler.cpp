@@ -20,9 +20,14 @@ using networking::InterfaceConfig;
 static const event::Duration kSessionHandlerQuotaReportInterval = 30min;
 static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
 
+static const event::Duration kSessionHandlerQuotaPoliceInterval = 1s;
+
 class ServerSessionHandler::QuotaReporter {
 public:
   QuotaReporter(ServerSessionHandler* session) : session_(session) {
+    assertTrue(session->config_.quota != 0,
+               "QuotaReporter running on a unlimited session.");
+
     timer_.reset(new event::Timer(0s));
     reporter_.reset(new event::Action(
         {timer_->didFire(), session->messenger_->outboundQ->canPush()}));
@@ -59,6 +64,42 @@ private:
 
   QuotaReporter(QuotaReporter&& move) = delete;
   QuotaReporter& operator=(QuotaReporter&& move) = delete;
+};
+
+class ServerSessionHandler::QuotaPolice {
+public:
+  QuotaPolice(ServerSessionHandler* session) : session_(session) {
+    assertTrue(session->config_.quota != 0,
+               "QuotaPolice running on a unlimited session.");
+
+    timer_.reset(new event::Timer(0s));
+    police_.reset(new event::Action(
+        {timer_->didFire(), session->messenger_->outboundQ->canPush()}));
+    police_->callback.setMethod<QuotaPolice, &QuotaPolice::doPolice>(this);
+  }
+
+private:
+  ServerSessionHandler* session_;
+
+  std::unique_ptr<event::Timer> timer_;
+  std::unique_ptr<event::Action> police_;
+
+  void doPolice() {
+    if (session_->dispatcher_->bytesDispatched >= session_->config_.quota) {
+      session_->messenger_->outboundQ->push(
+          Message("error", "You have reached your usage quota. Goodbye!"));
+      timer_->reset();
+    } else {
+      timer_->extend(kSessionHandlerQuotaPoliceInterval);
+    }
+  }
+
+private:
+  QuotaPolice(QuotaPolice const& copy) = delete;
+  QuotaPolice& operator=(QuotaPolice const& copy) = delete;
+
+  QuotaPolice(QuotaPolice&& move) = delete;
+  QuotaPolice& operator=(QuotaPolice&& move) = delete;
 };
 
 ServerSessionHandler::ServerSessionHandler(
@@ -109,6 +150,7 @@ void ServerSessionHandler::attachHandlers() {
 
         if (config_.quota != 0) {
           quotaReporter_.reset(new QuotaReporter(this));
+          quotaPolice_.reset(new QuotaPolice(this));
         }
       }
     }
