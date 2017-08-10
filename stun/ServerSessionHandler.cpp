@@ -2,6 +2,7 @@
 
 #include <stun/Server.h>
 
+#include <common/Notebook.h>
 #include <event/Action.h>
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
@@ -52,7 +53,8 @@ private:
     session_->messenger_->outboundQ->push(
         Message("message",
                 "You have used " +
-                    toMegaBytesString(session_->dispatcher_->bytesDispatched) +
+                    toMegaBytesString(session_->config_.priorQuotaUsed +
+                                      session_->dispatcher_->bytesDispatched) +
                     +" out of your quota of " +
                     toMegaBytesString(session_->config_.quota) + "."));
     timer_->extend(kSessionHandlerQuotaReportInterval);
@@ -85,7 +87,11 @@ private:
   std::unique_ptr<event::Action> police_;
 
   void doPolice() {
-    if (session_->dispatcher_->bytesDispatched >= session_->config_.quota) {
+    session_->savePriorQuota();
+
+    if (session_->config_.priorQuotaUsed +
+            session_->dispatcher_->bytesDispatched >=
+        session_->config_.quota) {
       session_->messenger_->outboundQ->push(
           Message("error", "You have reached your usage quota. Goodbye!"));
       timer_->reset();
@@ -115,7 +121,15 @@ ServerSessionHandler::ServerSessionHandler(
   attachHandlers();
 }
 
+void ServerSessionHandler::savePriorQuota() {
+  auto& notebook = *common::Notebook::getInstance();
+  notebook["priorQuotas"][config_.user] =
+      config_.priorQuotaUsed + dispatcher_->bytesDispatched;
+  notebook.save();
+}
+
 ServerSessionHandler::~ServerSessionHandler() {
+  savePriorQuota();
   server_->addrPool->release(config_.myTunnelAddr);
   server_->addrPool->release(config_.peerTunnelAddr);
 }
@@ -150,6 +164,17 @@ void ServerSessionHandler::attachHandlers() {
         config_.quota = it->second;
         LOG_V("Session") << "Client " << config_.user << " has a quota of "
                          << config_.quota << " bytes." << std::endl;
+
+        // Retrieve the user's prior used quota
+        auto& notebook = *common::Notebook::getInstance();
+        if (notebook["priorQuotas"].is_null()) {
+          notebook["priorQuotas"] = json({});
+        }
+        if (notebook["priorQuotas"][config_.user].is_null()) {
+          notebook["priorQuotas"][config_.user] = 0;
+        }
+        config_.priorQuotaUsed = notebook["priorQuotas"][config_.user];
+        notebook.save();
 
         if (config_.quota != 0) {
           quotaReporter_.reset(new QuotaReporter(this));

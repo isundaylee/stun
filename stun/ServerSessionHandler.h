@@ -27,6 +27,7 @@ public:
 
   std::string user = "";
   size_t quota = 0;
+  size_t priorQuotaUsed = 0;
   std::string myTunnelAddr;
   std::string peerTunnelAddr;
 };
@@ -62,5 +63,6 @@ private:
   void attachHandlers();
   json createDataPipe();
   void doRotateDataPipe();
+  void savePriorQuota();
 };
 }

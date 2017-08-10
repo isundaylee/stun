@@ -1,6 +1,7 @@
 #include <cxxopts/cxxopts.hpp>
 
 #include <common/Configerator.h>
+#include <common/Notebook.h>
 #include <common/Util.h>
 #include <event/EventLoop.h>
 #include <event/Timer.h>
@@ -185,6 +186,15 @@ void setupClient() {
   client.reset(new stun::Client(config));
 }
 
+std::string generateNotebookPath(std::string const& configPath) {
+  unsigned long hash = 5381;
+  for (size_t i = 0; i < configPath.length(); i++) {
+    hash = ((hash << 5) + hash) + configPath[i];
+  }
+
+  return "/tmp/stun-notebook-" + std::to_string(hash);
+}
+
 int main(int argc, char* argv[]) {
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
@@ -193,7 +203,12 @@ int main(int argc, char* argv[]) {
   }
 
   common::Configerator config(configPath);
+  common::Notebook notebook(generateNotebookPath(configPath));
   event::EventLoop loop;
+
+  LOG_V("Main") << "Config path is: " << configPath << std::endl;
+  LOG_V("Main") << "Notebook path is: " << generateNotebookPath(configPath)
+                << std::endl;
 
   std::unique_ptr<event::Timer> statsTimer;
   std::unique_ptr<event::Action> statsDumper;
