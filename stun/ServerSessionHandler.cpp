@@ -115,7 +115,10 @@ ServerSessionHandler::ServerSessionHandler(
   attachHandlers();
 }
 
-ServerSessionHandler::~ServerSessionHandler() = default;
+ServerSessionHandler::~ServerSessionHandler() {
+  server_->addrPool->release(config_.myTunnelAddr);
+  server_->addrPool->release(config_.peerTunnelAddr);
+}
 
 event::Condition* ServerSessionHandler::didEnd() const { return didEnd_.get(); }
 
@@ -156,14 +159,15 @@ void ServerSessionHandler::attachHandlers() {
     }
 
     // Acquire IP addresses
-    auto myTunnelAddr = server_->addrPool->acquire();
-    auto peerTunnelAddr = server_->addrPool->acquire();
+    config_.myTunnelAddr = server_->addrPool->acquire();
+    config_.peerTunnelAddr = server_->addrPool->acquire();
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = Tunnel{};
     auto interface = InterfaceConfig{};
     interface.newLink(tunnel.deviceName, kTunnelEthernetMTU);
-    interface.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
+    interface.setLinkAddress(tunnel.deviceName, config_.myTunnelAddr,
+                             config_.peerTunnelAddr);
 
     dispatcher_.reset(new Dispatcher(std::move(tunnel)));
 
@@ -178,8 +182,9 @@ void ServerSessionHandler::attachHandlers() {
           ServerSessionHandler, &ServerSessionHandler::doRotateDataPipe>(this);
     }
 
-    return Message("config", json{{"server_tunnel_ip", myTunnelAddr},
-                                  {"client_tunnel_ip", peerTunnelAddr}});
+    return Message("config",
+                   json{{"server_tunnel_ip", config_.myTunnelAddr},
+                        {"client_tunnel_ip", config_.peerTunnelAddr}});
   });
 
   messenger_->addHandler("config_done", [this](auto const& message) {
