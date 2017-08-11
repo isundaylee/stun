@@ -48,6 +48,10 @@ bool IPAddress::operator!=(IPAddress const& other) const {
   return !(*this == other);
 }
 
+bool IPAddress::operator<(IPAddress const& other) const {
+  return toNumerical() < other.toNumerical();
+}
+
 /* friend */ std::ostream& operator<<(std::ostream& os, IPAddress const& addr) {
   os << addr.toString();
   return os;
@@ -82,7 +86,7 @@ std::string SubnetAddress::toString() const {
 }
 
 bool SubnetAddress::contains(IPAddress const& addr) const {
-  return (addr.toNumerical() & mask) == (addr.toNumerical() & mask);
+  return (this->addr.toNumerical() & mask) == (addr.toNumerical() & mask);
 }
 
 IPAddress SubnetAddress::firstHostAddress() const {
@@ -115,8 +119,12 @@ IPAddress IPAddressPool::acquire() {
     return addr;
   }
 
-  auto addr = nextAddr_;
-  nextAddr_ = nextAddr_.next();
+  auto addr = IPAddress{};
+
+  do {
+    addr = nextAddr_;
+    nextAddr_ = nextAddr_.next();
+  } while (addr != subnet_.broadcastAddress() && (reserved_.count(addr) > 0));
 
   assertTrue(addr != subnet_.broadcastAddress(), "Ran out of addresses.");
 
@@ -124,4 +132,12 @@ IPAddress IPAddressPool::acquire() {
 }
 
 void IPAddressPool::release(IPAddress const& addr) { reusables_.push(addr); }
+
+void IPAddressPool::reserve(IPAddress const& addr) {
+  assertTrue(subnet_.contains(addr),
+             "Trying to reserve out-of-pool address: " + addr.toString());
+
+  auto inserted = reserved_.insert(addr).second;
+  assertTrue(inserted, "Address reserved more than once: " + addr.toString());
+}
 }

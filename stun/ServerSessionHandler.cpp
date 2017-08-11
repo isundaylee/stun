@@ -188,7 +188,14 @@ void ServerSessionHandler::attachHandlers() {
 
     // Acquire IP addresses
     config_.myTunnelAddr = server_->addrPool->acquire();
-    config_.peerTunnelAddr = server_->addrPool->acquire();
+
+    if (config_.authentication &&
+        (server_->config_.staticHosts.count(config_.user) != 0)) {
+      // This host has a static IP assigned
+      config_.peerTunnelAddr = server_->config_.staticHosts[config_.user];
+    } else {
+      config_.peerTunnelAddr = server_->addrPool->acquire();
+    }
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = Tunnel{};

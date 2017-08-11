@@ -22,6 +22,7 @@ public:
   event::Duration dataPipeRotationInterval;
   bool authentication;
   std::map<std::string, size_t> quotaTable;
+  std::map<std::string, IPAddress> staticHosts;
 };
 
 class Server {
@@ -38,5 +39,8 @@ private:
   std::vector<std::unique_ptr<ServerSessionHandler>> sessionHandlers_;
 
   void doAccept();
+
+  // FIXME: This should really be a inner class instead;
+  friend ServerSessionHandler;
 };
 }

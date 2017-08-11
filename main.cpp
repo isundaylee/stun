@@ -142,6 +142,18 @@ auto parseSubnets(std::string const& key) {
   return results;
 }
 
+auto parseStaticHosts() {
+  auto result = std::map<std::string, IPAddress>{};
+  auto entries = common::Configerator::get(
+      "static_hosts", std::map<std::string, std::string>{});
+
+  for (auto const& entry : entries) {
+    result[entry.first] = IPAddress(entry.second);
+  }
+
+  return result;
+}
+
 std::unique_ptr<stun::Server> server;
 
 std::map<std::string, size_t> parseQuotaTable() {
@@ -164,7 +176,8 @@ void setupServer() {
                    std::chrono::seconds(common::Configerator::get<size_t>(
                        "data_pipe_rotate_interval", 0)),
                    common::Configerator::get<bool>("authentication", false),
-                   parseQuotaTable()};
+                   parseQuotaTable(),
+                   parseStaticHosts()};
 
   server = std::make_unique<stun::Server>(config);
 }

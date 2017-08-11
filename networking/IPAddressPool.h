@@ -7,6 +7,7 @@
 #include <array>
 #include <iostream>
 #include <queue>
+#include <set>
 #include <string>
 
 namespace networking {
@@ -30,6 +31,7 @@ public:
 
   bool operator==(IPAddress const& other) const;
   bool operator!=(IPAddress const& other) const;
+  bool operator<(IPAddress const& other) const;
 
   friend std::ostream& operator<<(std::ostream& os, IPAddress const& addr);
 };
@@ -63,11 +65,13 @@ public:
 
   IPAddress acquire();
   void release(IPAddress const& addr);
+  void reserve(IPAddress const& addr);
 
 private:
   SubnetAddress subnet_;
   IPAddress nextAddr_;
 
   std::queue<IPAddress> reusables_;
+  std::set<IPAddress> reserved_;
 };
 }

@@ -12,6 +12,10 @@ Server::Server(ServerConfig config) : config_(config) {
   IPTables::masquerade(config.addressPool);
   addrPool.reset(new IPAddressPool(config.addressPool));
 
+  for (auto const& entry : config_.staticHosts) {
+    addrPool->reserve(entry.second);
+  }
+
   server_.reset(new TCPServer());
   listener_.reset(new event::Action({server_->canAccept()}));
   listener_->callback.setMethod<Server, &Server::doAccept>(this);
