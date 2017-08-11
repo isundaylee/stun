@@ -129,7 +129,10 @@ void ServerSessionHandler::savePriorQuota() {
 }
 
 ServerSessionHandler::~ServerSessionHandler() {
-  savePriorQuota();
+  if (!!dispatcher_) {
+    savePriorQuota();
+  }
+
   server_->addrPool->release(config_.myTunnelAddr);
   server_->addrPool->release(config_.peerTunnelAddr);
 }
