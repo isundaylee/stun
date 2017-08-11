@@ -63,7 +63,7 @@ void ClientSessionHandler::attachHandlers() {
 
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
 
-    LOG_I("Session") << "Rotated to a new data pipe." << std::endl;
+    LOG_V("Session") << "Rotated to a new data pipe." << std::endl;
 
     return Message::null();
   });

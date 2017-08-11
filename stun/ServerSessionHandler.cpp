@@ -229,14 +229,14 @@ json ServerSessionHandler::createDataPipe() {
   UDPSocket udpPipe;
   int port = udpPipe.bind(0);
 
-  LOG_I("Session") << "Creating a new data pipe." << std::endl;
+  LOG_V("Session") << "Creating a new data pipe." << std::endl;
 
   // Prepare encryption config
   std::string aesKey;
   if (config_.encryption) {
     aesKey = crypto::AESKey::randomStringKey();
   } else {
-    LOG_I("Session") << "Data encryption is disabled per configuration."
+    LOG_V("Session") << "Data encryption is disabled per configuration."
                      << std::endl;
   }
 
