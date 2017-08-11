@@ -38,6 +38,7 @@ static const std::string clientConfigTemplate = R"(
 {
   "role": "client",
   "server": "SERVER_IP",
+  "user": "USER",
   "secret": "SECRET",
   "forward_subnets": [
     "0.0.0.0/1",
@@ -63,7 +64,7 @@ std::string getConfigPath() {
 }
 
 void generateConfig(std::string path) {
-  std::string role, serverAddr, secret;
+  std::string role, serverAddr, user, secret;
 
   std::cout << "I will help you create a stun config file at " << path << "."
             << std::endl;
@@ -74,12 +75,16 @@ void generateConfig(std::string path) {
     std::getline(std::cin, role);
   }
 
-  // Prompt the user for server address if we're a client
+  // Prompt the user for server address and client name if we're a client
   if (role == "client") {
     while (serverAddr.empty()) {
       std::cout << "What is the server's address? ";
       std::getline(std::cin, serverAddr);
     }
+
+    std::cout << "What is your assigned user name? (May be left empty for an "
+                 "unauthenticated server) ";
+    std::getline(std::cin, user);
   }
 
   // Prompt the user for the secret
@@ -92,6 +97,7 @@ void generateConfig(std::string path) {
       (role == "server" ? serverConfigTemplate : clientConfigTemplate);
   content = std::regex_replace(content, std::regex("SERVER_IP"), serverAddr);
   content = std::regex_replace(content, std::regex("SECRET"), secret);
+  content = std::regex_replace(content, std::regex("USER"), user);
 
   std::ofstream config(path);
   config.write(content.c_str(), content.length());
