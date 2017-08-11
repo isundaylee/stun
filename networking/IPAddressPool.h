@@ -1,32 +1,73 @@
 #pragma once
 
+#include <json/json.hpp>
+
+#include <common/Util.h>
+
+#include <array>
+#include <iostream>
 #include <queue>
 #include <string>
 
 namespace networking {
 
-class SubnetAddress {
+using json = nlohmann::json;
+
+struct SubnetAddress;
+
+struct IPAddress {
+public:
+  IPAddress();
+  IPAddress(std::string const& addr);
+  IPAddress(uint32_t numerical);
+
+  std::array<Byte, 4> octets;
+
+  std::string toString() const;
+  uint32_t toNumerical() const;
+  IPAddress next() const;
+  bool empty() const;
+
+  bool operator==(IPAddress const& other) const;
+  bool operator!=(IPAddress const& other) const;
+
+  friend std::ostream& operator<<(std::ostream& os, IPAddress const& addr);
+};
+
+void to_json(json& j, IPAddress const& addr);
+void from_json(json const& j, IPAddress& addr);
+
+struct SubnetAddress {
 public:
   SubnetAddress(std::string const& subnet);
   SubnetAddress(std::string const& addr, int prefixLen);
 
-  std::string toString() const;
-
-  std::string addr;
+  IPAddress addr;
   size_t prefixLen;
+
+  std::string toString() const;
+  bool contains(IPAddress const& addr) const;
+  IPAddress firstHostAddress() const;
+  IPAddress lastHostAddress() const;
+  IPAddress broadcastAddress() const;
+
+  friend std::ostream& operator<<(std::ostream& os, SubnetAddress const& addr);
+
+private:
+  uint32_t mask;
 };
 
 class IPAddressPool {
 public:
   IPAddressPool(SubnetAddress const& subnet);
 
-  std::string acquire();
-  void release(std::string const& addr);
+  IPAddress acquire();
+  void release(IPAddress const& addr);
 
 private:
-  uint32_t subnet_;
-  uint32_t current_;
+  SubnetAddress subnet_;
+  IPAddress nextAddr_;
 
-  std::queue<std::string> reusables_;
+  std::queue<IPAddress> reusables_;
 };
 }

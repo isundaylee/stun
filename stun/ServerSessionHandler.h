@@ -15,6 +15,7 @@ using json = nlohmann::json;
 using networking::TCPSocket;
 using networking::Messenger;
 using networking::SubnetAddress;
+using networking::IPAddress;
 
 struct ServerSessionConfig {
 public:
@@ -28,8 +29,8 @@ public:
   std::string user = "";
   size_t quota = 0;
   size_t priorQuotaUsed = 0;
-  std::string myTunnelAddr;
-  std::string peerTunnelAddr;
+  IPAddress myTunnelAddr;
+  IPAddress peerTunnelAddr;
 };
 
 class Server;

@@ -73,3 +73,19 @@ std::string runCommand(std::string command) {
 
   return result.str();
 }
+
+std::vector<std::string> split(std::string const& string,
+                               std::string const& separator) {
+  auto tokens = std::vector<std::string>{};
+  auto found = string.find(separator), start = 0UL;
+
+  while (found != std::string::npos) {
+    tokens.push_back(string.substr(start, found - start));
+    start = found + separator.length();
+    found = string.find(separator, found + separator.length());
+  }
+
+  tokens.push_back(string.substr(start, string.length() - start));
+
+  return tokens;
+}

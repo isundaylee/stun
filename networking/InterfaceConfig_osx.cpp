@@ -22,22 +22,23 @@ void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
 }
 
 void InterfaceConfig::setLinkAddress(std::string const& deviceName,
-                                     std::string const& localAddress,
-                                     std::string const& peerAddress) {
+                                     IPAddress const& localAddress,
+                                     IPAddress const& peerAddress) {
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
-                        " inet " + localAddress + " " + peerAddress;
+                        " inet " + localAddress.toString() + " " +
+                        peerAddress.toString();
   runCommand(command);
 }
 
 void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
                                RouteDestination const& routeDest) {
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
-                        destSubnet.addr + "/" +
+                        destSubnet.addr.toString() + "/" +
                         std::to_string(destSubnet.prefixLen);
 
   assertTrue(!routeDest.gatewayAddr.empty(),
              "Only gateway routes are currently supported on OSX.");
-  command += " " + routeDest.gatewayAddr;
+  command += " " + routeDest.gatewayAddr.toString();
 
   runCommand(command);
 
@@ -45,9 +46,9 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
                      << routeDest.gatewayAddr << "." << std::endl;
 }
 
-RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
+RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   std::string output =
-      runCommand(kInterfaceConfigRoutePath + " -n get " + destAddr);
+      runCommand(kInterfaceConfigRoutePath + " -n get " + destAddr.toString());
   std::stringstream data(output);
 
   // Sample output:

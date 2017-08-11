@@ -24,20 +24,20 @@ public:
 #elif OSX
   std::string interfaceName;
 #endif
-  std::string gatewayAddr;
+  IPAddress gatewayAddr;
 
 #if LINUX
-  RouteDestination(int interfaceIndex, std::string const& gatewayAddr)
+  RouteDestination(int interfaceIndex, IPAddress const& gatewayAddr)
       : interfaceIndex(interfaceIndex), gatewayAddr(gatewayAddr) {}
-  explicit RouteDestination(std::string const& gatewayAddr)
+  explicit RouteDestination(IPAddress const& gatewayAddr)
       : interfaceIndex(-1), gatewayAddr(gatewayAddr) {}
 #endif
 
 #if OSX
   RouteDestination(std::string const& interfaceName,
-                   std::string const& gatewayAddr)
+                   IPAddress const& gatewayAddr)
       : interfaceName(interfaceName), gatewayAddr(gatewayAddr) {}
-  explicit RouteDestination(std::string const& gatewayAddr)
+  explicit RouteDestination(IPAddress const& gatewayAddr)
       : interfaceName(""), gatewayAddr(gatewayAddr) {}
 #endif
 };
@@ -52,12 +52,12 @@ public:
 
   void newLink(std::string const& deviceName, unsigned int mtu);
   void setLinkAddress(std::string const& deviceName,
-                      std::string const& localAddress,
-                      std::string const& peerAddress);
+                      IPAddress const& localAddress,
+                      IPAddress const& peerAddress);
 
   void newRoute(SubnetAddress const& destSubnet,
                 RouteDestination const& routeDest);
-  RouteDestination getRoute(std::string const& destAddr);
+  RouteDestination getRoute(IPAddress const& destAddr);
 
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;

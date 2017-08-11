@@ -203,8 +203,8 @@ void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 
 void InterfaceConfig::setLinkAddress(std::string const& deviceName,
-                                     std::string const& localAddress,
-                                     std::string const& peerAddress) {
+                                     IPAddress const& localAddress,
+                                     IPAddress const& peerAddress) {
   LOG_V("Interface") << "Setting link " << deviceName << "'s address to "
                      << localAddress << " -> " << peerAddress << std::endl;
   int interfaceIndex = getInterfaceIndex(deviceName);
@@ -212,8 +212,8 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
   NetlinkChangeAddressRequest req;
   struct in_addr localAddr;
   struct in_addr peerAddr;
-  inet_pton(AF_INET, localAddress.c_str(), &localAddr);
-  inet_pton(AF_INET, peerAddress.c_str(), &peerAddr);
+  inet_pton(AF_INET, localAddress.toString().c_str(), &localAddr);
+  inet_pton(AF_INET, peerAddress.toString().c_str(), &peerAddr);
 
   req.fillHeader(RTM_NEWADDR, NLM_F_CREATE | NLM_F_ACK);
   req.msg.ifa_family = AF_INET;
@@ -232,7 +232,7 @@ typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 
 void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
                                RouteDestination const& routeDest) {
-  LOG_V("Interface") << "Adding a route to " << destSubnet.toString() << " via "
+  LOG_V("Interface") << "Adding a route to " << destSubnet << " via "
                      << routeDest.gatewayAddr << " (dev "
                      << routeDest.interfaceIndex << ")" << std::endl;
 
@@ -246,12 +246,12 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
   req.msg.rtm_dst_len = destSubnet.prefixLen;
 
   struct in_addr dest;
-  inet_pton(AF_INET, destSubnet.addr.c_str(), &dest);
+  inet_pton(AF_INET, destSubnet.addr.toString().c_str(), &dest);
   req.addAttr(RTA_DST, sizeof(dest), &dest);
 
   if (!routeDest.gatewayAddr.empty()) {
     struct in_addr gateway;
-    inet_pton(AF_INET, routeDest.gatewayAddr.c_str(), &gateway);
+    inet_pton(AF_INET, routeDest.gatewayAddr.toString().c_str(), &gateway);
     req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
   }
 
@@ -268,7 +268,7 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
 
 typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
 
-RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
+RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_GETROUTE, NLM_F_ACK);
   req.msg.rtm_family = AF_INET;
@@ -279,7 +279,7 @@ RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
   req.msg.rtm_dst_len = 32;
 
   struct in_addr dest;
-  inet_pton(AF_INET, destAddr.c_str(), &dest);
+  inet_pton(AF_INET, destAddr.toString().c_str(), &dest);
   req.addAttr(RTA_DST, sizeof(dest), &dest);
 
   int interface = -1;
@@ -319,7 +319,7 @@ RouteDestination InterfaceConfig::getRoute(std::string const& destAddr) {
   });
 
   assertTrue((interface >= 0) || !gateway.empty(),
-             "Error getting route to " + destAddr);
+             "Error getting route to " + destAddr.toString());
   return RouteDestination(interface, gateway);
 }
 }

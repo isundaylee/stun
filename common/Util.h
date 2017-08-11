@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #if defined(__linux__)
 #define LINUX 1
@@ -20,3 +21,5 @@ void assertTrue(bool condition, std::string const& reason);
 bool checkUnixError(int ret, std::string const& action, int allowed = 0);
 bool checkRetryableError(int ret, std::string const& action, int allowed = 0);
 std::string runCommand(std::string command);
+std::vector<std::string> split(std::string const& string,
+                               std::string const& separator);
