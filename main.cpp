@@ -107,6 +107,9 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "c", "config",
                      "Path to the config file. Default is ~/.stunrc.",
                      cxxopts::value<std::string>(), "");
+  options.add_option("", "w", "wizard",
+                     "Show config wizard even if a config file exists already.",
+                     cxxopts::value<bool>(), "");
   options.add_option("", "s", "stats", "Enable connection stats logging. You "
                                        "can also give a numeric frequency in "
                                        "milliseconds.",
@@ -217,7 +220,7 @@ std::string generateNotebookPath(std::string const& configPath) {
 int main(int argc, char* argv[]) {
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
-  if (access(configPath.c_str(), F_OK) == -1) {
+  if (options.count("wizard") || access(configPath.c_str(), F_OK) == -1) {
     generateConfig(configPath);
   }
 
