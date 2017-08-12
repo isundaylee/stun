@@ -1,9 +1,13 @@
 #include "flutter/Server.h"
 
+#include <flutter/protobuf/flutter.pb.h>
+
 #include <common/Logger.h>
 #include <stats/StatsManager.h>
 
 namespace flutter {
+
+static const size_t kFlutterServerMessageBufferSize = 1024;
 
 class Server::Session {
 public:
@@ -11,8 +15,25 @@ public:
       : client_(std::move(client)) {}
 
   void publish(stats::StatsManager::SubscribeData const& data) {
-    char const* hello = "hello";
-    client_->write((Byte*)hello, 5);
+    flutter::protobuf::Data protoData;
+    for (auto const& entry : data) {
+      flutter::protobuf::DataPoint* protoPoint = protoData.add_points();
+      protoPoint->set_entity(entry.first.first);
+      protoPoint->set_metric(entry.first.second);
+      protoPoint->set_value(entry.second);
+    }
+
+    Byte message[kFlutterServerMessageBufferSize];
+    uint32_t protoSize = protoData.ByteSizeLong();
+    *((uint32_t*)message) = htonl(protoSize);
+    uint32_t headerSize = sizeof(uint32_t);
+    bool ret = protoData.SerializeToArray(message + headerSize,
+                                          sizeof(message) - headerSize);
+    assertTrue(ret, "Flutter protobuf serialization failed.");
+
+    size_t messageSize = headerSize + protoSize;
+    size_t written = client_->write(message, messageSize);
+    assertTrue(written == messageSize, "Flutter data fragmented.");
   }
 
 private:

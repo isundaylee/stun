@@ -12,4 +12,5 @@ cxx_library(
         '//networking:networking',
         '//stats:stats',
     ],
+    exported_linker_flags = ['-lprotobuf'],
 )
