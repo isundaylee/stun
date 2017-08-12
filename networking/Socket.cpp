@@ -12,8 +12,15 @@ namespace networking {
 
 const int kSocketListenBacklog = 10;
 
+std::once_flag ignoreSigPipeOnceFlag;
+
 Socket::Socket(SocketType type)
     : type_(type), bound_(false), connected_(false) {
+  std::call_once(ignoreSigPipeOnceFlag, []() {
+    signal(SIGPIPE, SIG_IGN);
+    LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
+  });
+
   int fd = socket(PF_INET, type == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
   checkUnixError(fd, "creating SocketPipe's socket");
   fd_ = common::FileDescriptor(fd);
@@ -135,10 +142,11 @@ size_t Socket::write(Byte* buffer, size_t size) {
 
   int ret = send(fd_.fd, buffer, size, 0);
 
-  // Just close the socket if the connection is refused (UDP) or reset (TCP)
-  if (ret < 0 && (errno == ECONNRESET || errno == ECONNREFUSED)) {
-    throw SocketClosedException((errno == ECONNRESET) ? "Connection reset."
-                                                      : "Connection refused.");
+  // Just close the socket if the connection is refused (UDP), reset (TCP), or
+  // encountered a broken pipe.
+  if (ret < 0 &&
+      (errno == ECONNRESET || errno == ECONNREFUSED || errno == EPIPE)) {
+    throw SocketClosedException(std::string(strerror(errno)));
   }
 
   if (!checkRetryableError(ret,
