@@ -6,6 +6,7 @@
 #include <event/EventLoop.h>
 #include <event/Timer.h>
 #include <event/Trigger.h>
+#include <flutter/Server.h>
 #include <networking/IPTables.h>
 #include <networking/InterfaceConfig.h>
 #include <stats/StatsManager.h>
@@ -110,6 +111,9 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "w", "wizard",
                      "Show config wizard even if a config file exists already.",
                      cxxopts::value<bool>(), "");
+  options.add_option("", "f", "flutter",
+                     "Starts a flutter server on given port to export stats.",
+                     cxxopts::value<int>()->implicit_value("4999"), "");
   options.add_option("", "s", "stats", "Enable connection stats logging. You "
                                        "can also give a numeric frequency in "
                                        "milliseconds.",
@@ -208,6 +212,18 @@ void setupClient() {
   client.reset(new stun::Client(config));
 }
 
+std::unique_ptr<flutter::Server> flutterServer;
+void setupFlutterServer() {
+  if (options.count("flutter") == 0) {
+    return;
+  }
+
+  auto port = options["flutter"].as<int>();
+  auto flutterServerConfig = flutter::ServerConfig{port};
+
+  flutterServer.reset(new flutter::Server(flutterServerConfig));
+}
+
 std::string generateNotebookPath(std::string const& configPath) {
   unsigned long hash = 5381;
   for (size_t i = 0; i < configPath.length(); i++) {
@@ -246,8 +262,10 @@ int main(int argc, char* argv[]) {
     };
 
     stats::StatsManager::subscribe([](auto const& data) {
-      stats::StatsManager::dump(LOG_I("Stats"), data);
+      stats::StatsManager::dump(LOG_V("Stats"), data);
     });
+
+    setupFlutterServer();
   }
 
   std::string role = common::Configerator::getString("role");

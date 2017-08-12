@@ -1,0 +1,14 @@
+cxx_library(
+    name = 'flutter',
+    visibility = [
+        'PUBLIC',
+    ],
+    exported_headers = glob(['*.h']),
+    srcs = glob(['*.cpp']),
+    deps = [
+        '//common:common',
+        '//event:event',
+        '//networking:networking',
+        '//stats:stats',
+    ],
+)

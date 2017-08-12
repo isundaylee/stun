@@ -3,6 +3,7 @@ cxx_binary(
     srcs = ['main.cpp'],
     deps = [
         '//stun:stun',
+        '//flutter:flutter',
         '//cxxopts:cxxopts',
     ],
 )
