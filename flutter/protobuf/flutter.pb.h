@@ -30,12 +30,19 @@
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
-class FlutterData;
-class FlutterDataDefaultTypeInternal;
-extern FlutterDataDefaultTypeInternal _FlutterData_default_instance_;
-class FlutterDataPoint;
-class FlutterDataPointDefaultTypeInternal;
-extern FlutterDataPointDefaultTypeInternal _FlutterDataPoint_default_instance_;
+namespace flutter {
+namespace protobuf {
+class Data;
+class DataDefaultTypeInternal;
+extern DataDefaultTypeInternal _Data_default_instance_;
+class DataPoint;
+class DataPointDefaultTypeInternal;
+extern DataPointDefaultTypeInternal _DataPoint_default_instance_;
+}  // namespace protobuf
+}  // namespace flutter
+
+namespace flutter {
+namespace protobuf {
 
 namespace protobuf_flutter_2eproto {
 // Internal implementation detail -- do not call these.
@@ -53,39 +60,39 @@ void InitDefaults();
 
 // ===================================================================
 
-class FlutterDataPoint : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:FlutterDataPoint) */ {
+class DataPoint : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:flutter.protobuf.DataPoint) */ {
  public:
-  FlutterDataPoint();
-  virtual ~FlutterDataPoint();
+  DataPoint();
+  virtual ~DataPoint();
 
-  FlutterDataPoint(const FlutterDataPoint& from);
+  DataPoint(const DataPoint& from);
 
-  inline FlutterDataPoint& operator=(const FlutterDataPoint& from) {
+  inline DataPoint& operator=(const DataPoint& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const FlutterDataPoint& default_instance();
+  static const DataPoint& default_instance();
 
-  static inline const FlutterDataPoint* internal_default_instance() {
-    return reinterpret_cast<const FlutterDataPoint*>(
-               &_FlutterDataPoint_default_instance_);
+  static inline const DataPoint* internal_default_instance() {
+    return reinterpret_cast<const DataPoint*>(
+               &_DataPoint_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
     0;
 
-  void Swap(FlutterDataPoint* other);
+  void Swap(DataPoint* other);
 
   // implements Message ----------------------------------------------
 
-  inline FlutterDataPoint* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline DataPoint* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  FlutterDataPoint* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  DataPoint* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const FlutterDataPoint& from);
-  void MergeFrom(const FlutterDataPoint& from);
+  void CopyFrom(const DataPoint& from);
+  void MergeFrom(const DataPoint& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -101,7 +108,7 @@ class FlutterDataPoint : public ::google::protobuf::Message /* @@protoc_insertio
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(FlutterDataPoint* other);
+  void InternalSwap(DataPoint* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -151,7 +158,7 @@ class FlutterDataPoint : public ::google::protobuf::Message /* @@protoc_insertio
   double value() const;
   void set_value(double value);
 
-  // @@protoc_insertion_point(class_scope:FlutterDataPoint)
+  // @@protoc_insertion_point(class_scope:flutter.protobuf.DataPoint)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
@@ -163,39 +170,39 @@ class FlutterDataPoint : public ::google::protobuf::Message /* @@protoc_insertio
 };
 // -------------------------------------------------------------------
 
-class FlutterData : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:FlutterData) */ {
+class Data : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:flutter.protobuf.Data) */ {
  public:
-  FlutterData();
-  virtual ~FlutterData();
+  Data();
+  virtual ~Data();
 
-  FlutterData(const FlutterData& from);
+  Data(const Data& from);
 
-  inline FlutterData& operator=(const FlutterData& from) {
+  inline Data& operator=(const Data& from) {
     CopyFrom(from);
     return *this;
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const FlutterData& default_instance();
+  static const Data& default_instance();
 
-  static inline const FlutterData* internal_default_instance() {
-    return reinterpret_cast<const FlutterData*>(
-               &_FlutterData_default_instance_);
+  static inline const Data* internal_default_instance() {
+    return reinterpret_cast<const Data*>(
+               &_Data_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
     1;
 
-  void Swap(FlutterData* other);
+  void Swap(Data* other);
 
   // implements Message ----------------------------------------------
 
-  inline FlutterData* New() const PROTOBUF_FINAL { return New(NULL); }
+  inline Data* New() const PROTOBUF_FINAL { return New(NULL); }
 
-  FlutterData* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  Data* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
   void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
   void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
-  void CopyFrom(const FlutterData& from);
-  void MergeFrom(const FlutterData& from);
+  void CopyFrom(const Data& from);
+  void MergeFrom(const Data& from);
   void Clear() PROTOBUF_FINAL;
   bool IsInitialized() const PROTOBUF_FINAL;
 
@@ -211,7 +218,7 @@ class FlutterData : public ::google::protobuf::Message /* @@protoc_insertion_poi
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const PROTOBUF_FINAL;
-  void InternalSwap(FlutterData* other);
+  void InternalSwap(Data* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return NULL;
@@ -227,23 +234,23 @@ class FlutterData : public ::google::protobuf::Message /* @@protoc_insertion_poi
 
   // accessors -------------------------------------------------------
 
-  // repeated .FlutterDataPoint points = 1;
+  // repeated .flutter.protobuf.DataPoint points = 1;
   int points_size() const;
   void clear_points();
   static const int kPointsFieldNumber = 1;
-  const ::FlutterDataPoint& points(int index) const;
-  ::FlutterDataPoint* mutable_points(int index);
-  ::FlutterDataPoint* add_points();
-  ::google::protobuf::RepeatedPtrField< ::FlutterDataPoint >*
+  const ::flutter::protobuf::DataPoint& points(int index) const;
+  ::flutter::protobuf::DataPoint* mutable_points(int index);
+  ::flutter::protobuf::DataPoint* add_points();
+  ::google::protobuf::RepeatedPtrField< ::flutter::protobuf::DataPoint >*
       mutable_points();
-  const ::google::protobuf::RepeatedPtrField< ::FlutterDataPoint >&
+  const ::google::protobuf::RepeatedPtrField< ::flutter::protobuf::DataPoint >&
       points() const;
 
-  // @@protoc_insertion_point(class_scope:FlutterData)
+  // @@protoc_insertion_point(class_scope:flutter.protobuf.Data)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::RepeatedPtrField< ::FlutterDataPoint > points_;
+  ::google::protobuf::RepeatedPtrField< ::flutter::protobuf::DataPoint > points_;
   mutable int _cached_size_;
   friend struct protobuf_flutter_2eproto::TableStruct;
 };
@@ -253,159 +260,159 @@ class FlutterData : public ::google::protobuf::Message /* @@protoc_insertion_poi
 // ===================================================================
 
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
-// FlutterDataPoint
+// DataPoint
 
 // string entity = 1;
-inline void FlutterDataPoint::clear_entity() {
+inline void DataPoint::clear_entity() {
   entity_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& FlutterDataPoint::entity() const {
-  // @@protoc_insertion_point(field_get:FlutterDataPoint.entity)
+inline const ::std::string& DataPoint::entity() const {
+  // @@protoc_insertion_point(field_get:flutter.protobuf.DataPoint.entity)
   return entity_.GetNoArena();
 }
-inline void FlutterDataPoint::set_entity(const ::std::string& value) {
+inline void DataPoint::set_entity(const ::std::string& value) {
   
   entity_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_set:flutter.protobuf.DataPoint.entity)
 }
 #if LANG_CXX11
-inline void FlutterDataPoint::set_entity(::std::string&& value) {
+inline void DataPoint::set_entity(::std::string&& value) {
   
   entity_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_set_rvalue:flutter.protobuf.DataPoint.entity)
 }
 #endif
-inline void FlutterDataPoint::set_entity(const char* value) {
+inline void DataPoint::set_entity(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   entity_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_set_char:flutter.protobuf.DataPoint.entity)
 }
-inline void FlutterDataPoint::set_entity(const char* value, size_t size) {
+inline void DataPoint::set_entity(const char* value, size_t size) {
   
   entity_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_set_pointer:flutter.protobuf.DataPoint.entity)
 }
-inline ::std::string* FlutterDataPoint::mutable_entity() {
+inline ::std::string* DataPoint::mutable_entity() {
   
-  // @@protoc_insertion_point(field_mutable:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_mutable:flutter.protobuf.DataPoint.entity)
   return entity_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* FlutterDataPoint::release_entity() {
-  // @@protoc_insertion_point(field_release:FlutterDataPoint.entity)
+inline ::std::string* DataPoint::release_entity() {
+  // @@protoc_insertion_point(field_release:flutter.protobuf.DataPoint.entity)
   
   return entity_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void FlutterDataPoint::set_allocated_entity(::std::string* entity) {
+inline void DataPoint::set_allocated_entity(::std::string* entity) {
   if (entity != NULL) {
     
   } else {
     
   }
   entity_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), entity);
-  // @@protoc_insertion_point(field_set_allocated:FlutterDataPoint.entity)
+  // @@protoc_insertion_point(field_set_allocated:flutter.protobuf.DataPoint.entity)
 }
 
 // string metric = 2;
-inline void FlutterDataPoint::clear_metric() {
+inline void DataPoint::clear_metric() {
   metric_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline const ::std::string& FlutterDataPoint::metric() const {
-  // @@protoc_insertion_point(field_get:FlutterDataPoint.metric)
+inline const ::std::string& DataPoint::metric() const {
+  // @@protoc_insertion_point(field_get:flutter.protobuf.DataPoint.metric)
   return metric_.GetNoArena();
 }
-inline void FlutterDataPoint::set_metric(const ::std::string& value) {
+inline void DataPoint::set_metric(const ::std::string& value) {
   
   metric_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_set:flutter.protobuf.DataPoint.metric)
 }
 #if LANG_CXX11
-inline void FlutterDataPoint::set_metric(::std::string&& value) {
+inline void DataPoint::set_metric(::std::string&& value) {
   
   metric_.SetNoArena(
     &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_set_rvalue:flutter.protobuf.DataPoint.metric)
 }
 #endif
-inline void FlutterDataPoint::set_metric(const char* value) {
+inline void DataPoint::set_metric(const char* value) {
   GOOGLE_DCHECK(value != NULL);
   
   metric_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_set_char:flutter.protobuf.DataPoint.metric)
 }
-inline void FlutterDataPoint::set_metric(const char* value, size_t size) {
+inline void DataPoint::set_metric(const char* value, size_t size) {
   
   metric_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_set_pointer:flutter.protobuf.DataPoint.metric)
 }
-inline ::std::string* FlutterDataPoint::mutable_metric() {
+inline ::std::string* DataPoint::mutable_metric() {
   
-  // @@protoc_insertion_point(field_mutable:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_mutable:flutter.protobuf.DataPoint.metric)
   return metric_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* FlutterDataPoint::release_metric() {
-  // @@protoc_insertion_point(field_release:FlutterDataPoint.metric)
+inline ::std::string* DataPoint::release_metric() {
+  // @@protoc_insertion_point(field_release:flutter.protobuf.DataPoint.metric)
   
   return metric_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void FlutterDataPoint::set_allocated_metric(::std::string* metric) {
+inline void DataPoint::set_allocated_metric(::std::string* metric) {
   if (metric != NULL) {
     
   } else {
     
   }
   metric_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), metric);
-  // @@protoc_insertion_point(field_set_allocated:FlutterDataPoint.metric)
+  // @@protoc_insertion_point(field_set_allocated:flutter.protobuf.DataPoint.metric)
 }
 
 // double value = 3;
-inline void FlutterDataPoint::clear_value() {
+inline void DataPoint::clear_value() {
   value_ = 0;
 }
-inline double FlutterDataPoint::value() const {
-  // @@protoc_insertion_point(field_get:FlutterDataPoint.value)
+inline double DataPoint::value() const {
+  // @@protoc_insertion_point(field_get:flutter.protobuf.DataPoint.value)
   return value_;
 }
-inline void FlutterDataPoint::set_value(double value) {
+inline void DataPoint::set_value(double value) {
   
   value_ = value;
-  // @@protoc_insertion_point(field_set:FlutterDataPoint.value)
+  // @@protoc_insertion_point(field_set:flutter.protobuf.DataPoint.value)
 }
 
 // -------------------------------------------------------------------
 
-// FlutterData
+// Data
 
-// repeated .FlutterDataPoint points = 1;
-inline int FlutterData::points_size() const {
+// repeated .flutter.protobuf.DataPoint points = 1;
+inline int Data::points_size() const {
   return points_.size();
 }
-inline void FlutterData::clear_points() {
+inline void Data::clear_points() {
   points_.Clear();
 }
-inline const ::FlutterDataPoint& FlutterData::points(int index) const {
-  // @@protoc_insertion_point(field_get:FlutterData.points)
+inline const ::flutter::protobuf::DataPoint& Data::points(int index) const {
+  // @@protoc_insertion_point(field_get:flutter.protobuf.Data.points)
   return points_.Get(index);
 }
-inline ::FlutterDataPoint* FlutterData::mutable_points(int index) {
-  // @@protoc_insertion_point(field_mutable:FlutterData.points)
+inline ::flutter::protobuf::DataPoint* Data::mutable_points(int index) {
+  // @@protoc_insertion_point(field_mutable:flutter.protobuf.Data.points)
   return points_.Mutable(index);
 }
-inline ::FlutterDataPoint* FlutterData::add_points() {
-  // @@protoc_insertion_point(field_add:FlutterData.points)
+inline ::flutter::protobuf::DataPoint* Data::add_points() {
+  // @@protoc_insertion_point(field_add:flutter.protobuf.Data.points)
   return points_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::FlutterDataPoint >*
-FlutterData::mutable_points() {
-  // @@protoc_insertion_point(field_mutable_list:FlutterData.points)
+inline ::google::protobuf::RepeatedPtrField< ::flutter::protobuf::DataPoint >*
+Data::mutable_points() {
+  // @@protoc_insertion_point(field_mutable_list:flutter.protobuf.Data.points)
   return &points_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::FlutterDataPoint >&
-FlutterData::points() const {
-  // @@protoc_insertion_point(field_list:FlutterData.points)
+inline const ::google::protobuf::RepeatedPtrField< ::flutter::protobuf::DataPoint >&
+Data::points() const {
+  // @@protoc_insertion_point(field_list:flutter.protobuf.Data.points)
   return points_;
 }
 
@@ -415,6 +422,9 @@ FlutterData::points() const {
 
 // @@protoc_insertion_point(namespace_scope)
 
+
+}  // namespace protobuf
+}  // namespace flutter
 
 // @@protoc_insertion_point(global_scope)
 
