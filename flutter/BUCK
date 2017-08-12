@@ -4,7 +4,8 @@ cxx_library(
         'PUBLIC',
     ],
     exported_headers = glob(['*.h']),
-    srcs = glob(['*.cpp']),
+    headers = glob(['*.h', 'protobuf/*.h']),
+    srcs = glob(['*.cpp', 'protobuf/*.cc']),
     deps = [
         '//common:common',
         '//event:event',

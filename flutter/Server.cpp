@@ -7,8 +7,8 @@ namespace flutter {
 
 class Server::Session {
 public:
-  Session(Server* server, std::unique_ptr<networking::TCPSocket> client)
-      : server_(server), client_(std::move(client)) {}
+  Session(std::unique_ptr<networking::TCPSocket> client)
+      : client_(std::move(client)) {}
 
   void publish(stats::StatsManager::SubscribeData const& data) {
     char const* hello = "hello";
@@ -16,7 +16,6 @@ public:
   }
 
 private:
-  Server* server_;
   std::unique_ptr<networking::TCPSocket> client_;
 
 private:
@@ -27,7 +26,7 @@ private:
   Session& operator=(Session&& move) = delete;
 };
 
-Server::Server(ServerConfig config) : config_(config) {
+Server::Server(ServerConfig config) {
   socket_.reset(new networking::TCPServer());
   socket_->bind(config.port);
 
@@ -48,6 +47,6 @@ Server::~Server() = default;
 
 void Server::doAccept() {
   auto client = std::make_unique<networking::TCPSocket>(socket_->accept());
-  sessions_.emplace_back(new Session(this, std::move(client)));
+  sessions_.emplace_back(new Session(std::move(client)));
 }
 }

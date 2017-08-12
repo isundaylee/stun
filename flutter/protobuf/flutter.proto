@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message FlutterDataPoint {
+  string entity = 1;
+  string metric = 2;
+  double value = 3;
+}
+
+message FlutterData {
+  repeated FlutterDataPoint points = 1;
+}

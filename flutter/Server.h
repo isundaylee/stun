@@ -16,8 +16,6 @@ public:
   ~Server();
 
 private:
-  ServerConfig config_;
-
   std::unique_ptr<networking::TCPServer> socket_;
   std::unique_ptr<event::Action> acceptor_;
 
