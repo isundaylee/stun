@@ -241,9 +241,13 @@ int main(int argc, char* argv[]) {
     statsTimer.reset(new event::Timer{statsDumpInerval});
     statsDumper.reset(new event::Action{{statsTimer->didFire()}});
     statsDumper->callback = [&statsTimer, statsDumpInerval]() {
-      stats::StatsManager::dump(LOG_I("Stats"));
+      stats::StatsManager::collect();
       statsTimer->extend(statsDumpInerval);
     };
+
+    stats::StatsManager::subscribe([](auto const& data) {
+      stats::StatsManager::dump(LOG_I("Stats"), data);
+    });
   }
 
   std::string role = common::Configerator::getString("role");

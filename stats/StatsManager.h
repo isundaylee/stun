@@ -43,26 +43,51 @@ private:
 
 class StatsManager {
 public:
+  using SubscribeData = std::map<std::pair<std::string, std::string>, double>;
+  using SubscribeCallback = std::function<void(SubscribeData const&)>;
+
   static void addStat(StatBase* stat);
   static void removeStat(StatBase* stat);
 
-  template <typename O> static void dump(O& output) {
-    dump(output, [](std::string const&, std::string const&) { return true; });
+  static void subscribe(SubscribeCallback callback) {
+    getInstance().callbacks_.push_back(callback);
+  }
+
+  // Collects all the stats the send the aggregated data to all the subscribed
+  // callbacks.
+  static void collect() {
+    auto data = SubscribeData{};
+
+    for (auto stat : getInstance().stats_) {
+      data[std::make_pair(stat->entity_, stat->metric_)] = stat->collect();
+    }
+
+    for (auto const& callback : getInstance().callbacks_) {
+      callback(data);
+    }
+  }
+
+  template <typename O> static void dump(O& output, SubscribeData const& data) {
+    dump(output, data,
+         [](std::string const&, std::string const&) { return true; });
   }
 
   template <typename O>
   static void
-  dump(O& output,
+  dump(O& output, SubscribeData const& data,
        std::function<bool(std::string const&, std::string const&)> filter) {
-    std::map<std::string, std::vector<StatBase*>> statsByName;
-    for (StatBase* stat : getInstance().stats_) {
-      statsByName[stat->entity_].push_back(stat);
+    auto byEntity =
+        std::map<std::string, std::vector<std::pair<std::string, double>>>{};
+
+    for (auto const& entry : data) {
+      byEntity[entry.first.first].push_back(
+          std::make_pair(entry.first.second, entry.second));
     }
 
-    for (auto const& pair : statsByName) {
-      std::vector<StatBase*> filteredStats;
-      for (auto const& stat : pair.second) {
-        if (filter(stat->entity_, stat->metric_)) {
+    for (auto const& entity : byEntity) {
+      std::vector<std::pair<std::string, double>> filteredStats;
+      for (auto const& stat : entity.second) {
+        if (filter(entity.first, stat.first)) {
           filteredStats.push_back(stat);
         }
       }
@@ -70,7 +95,7 @@ public:
         continue;
       }
 
-      output << std::left << std::setw(kNamePaddingLength) << pair.first
+      output << std::left << std::setw(kNamePaddingLength) << entity.first
              << ": ";
       bool isFirst = true;
       for (auto const& stat : filteredStats) {
@@ -79,7 +104,7 @@ public:
         } else {
           output << ", ";
         }
-        output << stat->metric_ << " = " << stat->collect();
+        output << stat.first << " = " << stat.second;
       }
       output << std::endl;
     }
@@ -89,6 +114,7 @@ private:
   static const size_t kNamePaddingLength = 10;
 
   std::set<StatBase*> stats_;
+  std::vector<SubscribeCallback> callbacks_;
 
   static StatsManager& getInstance();
 };
