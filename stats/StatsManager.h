@@ -36,7 +36,7 @@ private:
   size_t id_;
   Prefix prefix_;
 
-  virtual std::string collect() = 0;
+  virtual double collect() = 0;
 
   friend class StatsManager;
 };

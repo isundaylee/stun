@@ -22,7 +22,7 @@ public:
   Heartbeater(Messenger* messenger)
       : messenger_(messenger), beatTimer_(new event::Timer(0s)),
         missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
-        statRtt_("Connection", "rtt", 0) {
+        statRtt_("Connection", "rtt") {
     beater_.reset(new event::Action(
         {beatTimer_->didFire(), messenger_->outboundQ->canPush()}));
 
@@ -67,7 +67,7 @@ private:
   std::unique_ptr<event::Action> beater_;
   std::unique_ptr<event::Timer> missedTimer_;
 
-  stats::AvgStat<int> statRtt_;
+  stats::AvgStat statRtt_;
 };
 
 class Messenger::Transporter {

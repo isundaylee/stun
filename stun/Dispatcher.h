@@ -34,8 +34,8 @@ private:
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
 
-  stats::RateStat<size_t> statTxBytes_;
-  stats::RateStat<size_t> statRxBytes_;
+  stats::RateStat statTxBytes_;
+  stats::RateStat statRxBytes_;
 
   void doSend();
   void doReceive();

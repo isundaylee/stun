@@ -9,8 +9,8 @@ using networking::TunnelClosedException;
 Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
     : tunnel_(std::move(tunnel)), canSend_(new event::ComputedCondition()),
       canReceive_(new event::ComputedCondition()),
-      statTxBytes_("Connection", "tx_bytes", 0),
-      statRxBytes_("Connection", "rx_bytes", 0) {
+      statTxBytes_("Connection", "tx_bytes"),
+      statRxBytes_("Connection", "rx_bytes") {
   canSend_->expression.setMethod<Dispatcher, &Dispatcher::calculateCanSend>(
       this);
   canReceive_->expression
