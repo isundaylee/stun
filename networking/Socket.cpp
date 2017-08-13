@@ -4,8 +4,11 @@
 #include <event/IOCondition.h>
 
 #include <fcntl.h>
+#include <signal.h>
+#include <string.h>
 #include <unistd.h>
 
+#include <mutex>
 #include <string>
 
 namespace networking {

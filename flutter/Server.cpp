@@ -6,6 +6,8 @@
 #include <event/Trigger.h>
 #include <stats/StatsManager.h>
 
+#include <algorithm>
+
 namespace flutter {
 
 static const size_t kFlutterServerMessageBufferSize = 1024;
