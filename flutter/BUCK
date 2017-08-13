@@ -4,13 +4,12 @@ cxx_library(
         'PUBLIC',
     ],
     exported_headers = glob(['*.h']),
-    headers = glob(['*.h', 'protobuf/*.h']),
-    srcs = glob(['*.cpp', 'protobuf/*.cc']),
+    headers = glob(['*.h']),
+    srcs = glob(['*.cpp']),
     deps = [
         '//common:common',
         '//event:event',
         '//networking:networking',
         '//stats:stats',
     ],
-    exported_linker_flags = ['-lprotobuf'],
 )

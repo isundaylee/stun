@@ -1,56 +1,55 @@
 #include "flutter/Server.h"
 
-#include <flutter/protobuf/flutter.pb.h>
+#include <json/json.hpp>
 
 #include <common/Logger.h>
 #include <event/Trigger.h>
+#include <networking/Messenger.h>
 #include <stats/StatsManager.h>
 
 #include <algorithm>
 
 namespace flutter {
 
-static const size_t kFlutterServerMessageBufferSize = 1024;
+using json = nlohmann::json;
 
 class Server::Session {
 public:
   Session(std::unique_ptr<networking::TCPSocket> client)
-      : client_(std::move(client)), didEnd_(new event::BaseCondition()) {}
+      : messenger_(new networking::Messenger(std::move(client))),
+        didEnd_(new event::BaseCondition()) {
+    event::Trigger::arm({messenger_->didDisconnect()},
+                        [this]() { didEnd_->fire(); });
+  }
 
   void publish(stats::StatsManager::SubscribeData const& data) {
     if (didEnd_->eval()) {
       return;
     }
 
-    flutter::protobuf::Data protoData;
+    if (!messenger_->outboundQ->canPush()->eval()) {
+      LOG_I("Flutter") << "Dropping a data message due to full Messenger queue."
+                       << std::endl;
+      return;
+    }
+
+    json payload = json::array();
+
     for (auto const& entry : data) {
-      flutter::protobuf::DataPoint* protoPoint = protoData.add_points();
-      protoPoint->set_entity(entry.first.first);
-      protoPoint->set_metric(entry.first.second);
-      protoPoint->set_value(entry.second);
+      payload.push_back({
+          {"entity", entry.first.first},
+          {"name", entry.first.second},
+          {"value", entry.second},
+      });
     }
 
-    Byte message[kFlutterServerMessageBufferSize];
-    uint32_t protoSize = protoData.ByteSizeLong();
-    *((uint32_t*)message) = htonl(protoSize);
-    uint32_t headerSize = sizeof(uint32_t);
-    bool ret = protoData.SerializeToArray(message + headerSize,
-                                          sizeof(message) - headerSize);
-    assertTrue(ret, "Flutter protobuf serialization failed.");
-
-    try {
-      size_t messageSize = headerSize + protoSize;
-      size_t written = client_->write(message, messageSize);
-      assertTrue(written == messageSize, "Flutter data fragmented.");
-    } catch (networking::SocketClosedException const& ex) {
-      didEnd_->fire();
-    }
+    messenger_->outboundQ->push(networking::Message("data", payload));
   }
 
   event::Condition* didEnd() const { return didEnd_.get(); }
 
 private:
-  std::unique_ptr<networking::TCPSocket> client_;
+  std::unique_ptr<networking::Messenger> messenger_;
   std::unique_ptr<event::BaseCondition> didEnd_;
 
 private:
