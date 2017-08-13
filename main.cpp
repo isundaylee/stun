@@ -114,10 +114,11 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "f", "flutter",
                      "Starts a flutter server on given port to export stats.",
                      cxxopts::value<int>()->implicit_value("4999"), "");
-  options.add_option("", "s", "stats", "Enable connection stats logging. You "
-                                       "can also give a numeric frequency in "
-                                       "milliseconds.",
-                     cxxopts::value<int>()->implicit_value("1000"), "");
+  options.add_option(
+      "", "s", "stats", "Enable connection stats logging. You "
+                        "can also give a numeric frequency in "
+                        "milliseconds.",
+      cxxopts::value<int>()->implicit_value("1000")->default_value("1000"), "");
   options.add_option("", "v", "verbose", "Log more verbosely.",
                      cxxopts::value<bool>(), "");
   options.add_option("", "h", "help", "Print help and usage info.",
@@ -251,22 +252,21 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<event::Timer> statsTimer;
   std::unique_ptr<event::Action> statsDumper;
 
-  if (options.count("stats")) {
-    event::Duration statsDumpInerval =
-        std::chrono::milliseconds(options["stats"].as<int>());
-    statsTimer.reset(new event::Timer{statsDumpInerval});
-    statsDumper.reset(new event::Action{{statsTimer->didFire()}});
-    statsDumper->callback = [&statsTimer, statsDumpInerval]() {
-      stats::StatsManager::collect();
-      statsTimer->extend(statsDumpInerval);
-    };
+  // Sets up stats collection
+  event::Duration statsDumpInerval =
+      std::chrono::milliseconds(options["stats"].as<int>());
+  statsTimer.reset(new event::Timer{statsDumpInerval});
+  statsDumper.reset(new event::Action{{statsTimer->didFire()}});
+  statsDumper->callback = [&statsTimer, statsDumpInerval]() {
+    stats::StatsManager::collect();
+    statsTimer->extend(statsDumpInerval);
+  };
 
-    stats::StatsManager::subscribe([](auto const& data) {
-      stats::StatsManager::dump(LOG_V("Stats"), data);
-    });
+  stats::StatsManager::subscribe([](auto const& data) {
+    stats::StatsManager::dump(LOG_V("Stats"), data);
+  });
 
-    setupFlutterServer();
-  }
+  setupFlutterServer();
 
   std::string role = common::Configerator::getString("role");
 
