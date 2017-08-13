@@ -15,14 +15,10 @@ namespace networking {
 
 const int kSocketListenBacklog = 10;
 
-std::once_flag ignoreSigPipeOnceFlag;
-
 Socket::Socket(SocketType type)
     : type_(type), bound_(false), connected_(false) {
-  std::call_once(ignoreSigPipeOnceFlag, []() {
-    signal(SIGPIPE, SIG_IGN);
-    LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
-  });
+  signal(SIGPIPE, SIG_IGN);
+  LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
 
   int fd = socket(PF_INET, type == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
   checkUnixError(fd, "creating SocketPipe's socket");
