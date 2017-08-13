@@ -47,5 +47,6 @@ private:
   Socket& operator=(Socket const& copy) = delete;
 
   void setNonblock();
+  void checkSocketException(int ret, int err);
 };
 }

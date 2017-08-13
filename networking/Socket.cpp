@@ -122,10 +122,7 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
     throw SocketClosedException("The socket connection is closed.");
   }
 
-  if (ret < 0 && (err == ECONNRESET || err == ECONNREFUSED)) {
-    // the socket is closed
-    throw SocketClosedException("Connection reset.");
-  }
+  checkSocketException(ret, err);
 
   if (!checkRetryableError(ret,
                            "receiving a " +
@@ -142,12 +139,11 @@ size_t Socket::write(Byte* buffer, size_t size) {
 
   int ret = send(fd_.fd, buffer, size, 0);
 
-  // Just close the socket if the connection is refused (UDP), reset (TCP), or
-  // encountered a broken pipe.
-  if (ret < 0 &&
-      (errno == ECONNRESET || errno == ECONNREFUSED || errno == EPIPE)) {
-    throw SocketClosedException(std::string(strerror(errno)));
+  if (ret == 0) {
+    throw SocketClosedException("The socket connection is closed.");
   }
+
+  checkSocketException(ret, errno);
 
   if (!checkRetryableError(ret,
                            "sending a " +
@@ -162,6 +158,15 @@ size_t Socket::write(Byte* buffer, size_t size) {
 void Socket::setNonblock() {
   int ret = fcntl(fd_.fd, F_SETFL, fcntl(fd_.fd, F_GETFL, 0) | O_NONBLOCK);
   checkUnixError(ret, "setting O_NONBLOCK for SocketPipe");
+}
+
+void Socket::checkSocketException(int ret, int err) {
+  // Just close the socket if the connection is refused (UDP), reset (TCP),
+  // encountered a broken pipe, or the network is down.
+  if (ret < 0 && (err == ECONNRESET || err == ECONNREFUSED || err == EPIPE ||
+                  err == ENETDOWN)) {
+    throw SocketClosedException(std::string(strerror(err)));
+  }
 }
 
 event::Condition* Socket::canRead() const {
