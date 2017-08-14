@@ -1,5 +1,7 @@
 #pragma once
 
+#include <networking/InterfaceConfig.h>
+
 #include <netinet/in.h>
 #include <sys/socket.h>
 
@@ -15,7 +17,7 @@ public:
   struct sockaddr* asSocketAddress() const;
   struct sockaddr_in* asInetAddress() const;
 
-  std::string getHost() const;
+  IPAddress getHost() const;
   int getPort() const;
   size_t getLength() const;
   size_t getStorageLength() const;

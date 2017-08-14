@@ -320,7 +320,12 @@ RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
 
   assertTrue((interface >= 0) || !gateway.empty(),
              "Error getting route to " + destAddr.toString());
-  return RouteDestination(interface, gateway);
+
+  if (gateway.empty()) {
+    return RouteDestination(interface, IPAddress());
+  } else {
+    return RouteDestination(interface, IPAddress(gateway));
+  }
 }
 }
 

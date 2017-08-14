@@ -37,10 +37,10 @@ struct sockaddr_in* SocketAddress::asInetAddress() const {
   return (struct sockaddr_in*)&storage_;
 }
 
-std::string SocketAddress::getHost() const {
+IPAddress SocketAddress::getHost() const {
   assertTrue(storage_.ss_family == AF_INET,
              "Unsupported sa_family: " + std::to_string(storage_.ss_family));
-  return std::string(inet_ntoa(asInetAddress()->sin_addr));
+  return IPAddress(std::string(inet_ntoa(asInetAddress()->sin_addr)));
 }
 
 int SocketAddress::getPort() const {

@@ -81,7 +81,11 @@ RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   LOG_V("Interface") << "Route to " << destAddr << " is through "
                      << interface + " via " << gateway << "." << std::endl;
 
-  return RouteDestination(interface, gateway);
+  if (gateway.empty()) {
+    return RouteDestination(interface, IPAddress());
+  } else {
+    return RouteDestination(interface, IPAddress(gateway));
+  }
 }
 }
 

@@ -19,8 +19,8 @@ struct SubnetAddress;
 struct IPAddress {
 public:
   IPAddress();
-  IPAddress(std::string const& addr);
-  IPAddress(uint32_t numerical);
+  explicit IPAddress(std::string const& addr);
+  explicit IPAddress(uint32_t numerical);
 
   std::array<Byte, 4> octets;
 
@@ -42,7 +42,7 @@ void from_json(json const& j, IPAddress& addr);
 struct SubnetAddress {
 public:
   SubnetAddress(std::string const& subnet);
-  SubnetAddress(std::string const& addr, int prefixLen);
+  SubnetAddress(IPAddress const& addr, int prefixLen);
 
   IPAddress addr;
   size_t prefixLen;

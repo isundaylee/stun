@@ -67,7 +67,7 @@ SubnetAddress::SubnetAddress(std::string const& subnet) {
   std::size_t slashPos = subnet.find('/');
   assertTrue(slashPos != std::string::npos, "Invalid subnet: " + subnet);
 
-  addr = subnet.substr(0, slashPos);
+  addr = IPAddress(subnet.substr(0, slashPos));
   prefixLen = std::stoi(subnet.substr(slashPos + 1));
 
   assertTrue(1 <= prefixLen && prefixLen <= 32,
@@ -76,7 +76,7 @@ SubnetAddress::SubnetAddress(std::string const& subnet) {
   mask = ((1ULL << prefixLen) - 1) << (32 - prefixLen);
 }
 
-SubnetAddress::SubnetAddress(std::string const& addr, int prefixLen)
+SubnetAddress::SubnetAddress(IPAddress const& addr, int prefixLen)
     : addr(addr) {
   this->prefixLen = prefixLen;
 }

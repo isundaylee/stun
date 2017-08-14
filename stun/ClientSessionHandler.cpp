@@ -54,7 +54,8 @@ void ClientSessionHandler::attachHandlers() {
     auto body = message.getBody();
 
     UDPSocket udpPipe;
-    udpPipe.connect(SocketAddress(config_.serverAddr.getHost(), body["port"]));
+    udpPipe.connect(
+        SocketAddress(config_.serverAddr.getHost().toString(), body["port"]));
 
     DataPipe* dataPipe =
         new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
@@ -83,8 +84,8 @@ void ClientSessionHandler::attachHandlers() {
   });
 }
 
-Tunnel ClientSessionHandler::createTunnel(std::string const& myTunnelAddr,
-                                          std::string const& peerTunnelAddr) {
+Tunnel ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
+                                          IPAddress const& peerTunnelAddr) {
   Tunnel tunnel;
 
   // Configure the new interface
