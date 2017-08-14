@@ -131,7 +131,14 @@ IPAddress IPAddressPool::acquire() {
   return addr;
 }
 
-void IPAddressPool::release(IPAddress const& addr) { reusables_.push(addr); }
+void IPAddressPool::release(IPAddress const& addr) {
+  auto found = reserved_.find(addr);
+  assertTrue(found == reserved_.end(),
+             "Reserved address " + addr.toString() +
+                 " released to IPAddressPool.");
+
+  reusables_.push(addr);
+}
 
 void IPAddressPool::reserve(IPAddress const& addr) {
   assertTrue(subnet_.contains(addr),

@@ -134,7 +134,12 @@ ServerSessionHandler::~ServerSessionHandler() {
   }
 
   server_->addrPool->release(config_.myTunnelAddr);
-  server_->addrPool->release(config_.peerTunnelAddr);
+
+  if (!config_.authentication ||
+      server_->config_.staticHosts.count(config_.user) == 0) {
+    // We should only release non-static host addresses
+    server_->addrPool->release(config_.peerTunnelAddr);
+  }
 }
 
 event::Condition* ServerSessionHandler::didEnd() const { return didEnd_.get(); }
