@@ -38,7 +38,7 @@ public:
     for (auto const& entry : data) {
       payload.push_back({
           {"entity", entry.first.first},
-          {"name", entry.first.second},
+          {"metric", entry.first.second},
           {"value", entry.second},
       });
     }
