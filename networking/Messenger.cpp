@@ -8,8 +8,6 @@ namespace networking {
 
 using namespace std::chrono_literals;
 
-typedef uint32_t MessengerLengthHeaderType;
-
 static const std::string kMessengerHeartBeatMessageType = "heartbeat";
 static const std::string kMessengerHeartBeatReplyMessageType =
     "heartbeat_reply";
@@ -71,6 +69,9 @@ private:
 };
 
 class Messenger::Transporter {
+private:
+  using LengthHeaderType = uint32_t;
+
 public:
   Transporter(Messenger* messenger, std::unique_ptr<TCPSocket> socket)
       : messenger_(messenger), socket_(std::move(socket)), bufferUsed_(0),
@@ -96,18 +97,18 @@ public:
     }
 
     // Deliver complete messages
-    while (bufferUsed_ >= sizeof(MessengerLengthHeaderType)) {
-      int messageLen = *((MessengerLengthHeaderType*)buffer_);
-      int totalLen = sizeof(MessengerLengthHeaderType) + messageLen;
+    while (bufferUsed_ >= sizeof(LengthHeaderType)) {
+      int messageLen = ntohl(*((LengthHeaderType*)buffer_));
+      int totalLen = sizeof(LengthHeaderType) + messageLen;
       if (bufferUsed_ < totalLen) {
         break;
       }
 
       // We have a complete message
       Message message;
-      message.fill(buffer_ + sizeof(MessengerLengthHeaderType), messageLen);
+      message.fill(buffer_ + sizeof(LengthHeaderType), messageLen);
 
-      MessengerLengthHeaderType payloadLen = messageLen;
+      LengthHeaderType payloadLen = messageLen;
       for (auto decryptor = encryptors_.rbegin();
            decryptor != encryptors_.rend(); decryptor++) {
         payloadLen =
@@ -155,14 +156,16 @@ public:
     LOG_V("Messenger") << "Sent: " << message.getType() << " = "
                        << message.getBody() << std::endl;
 
-    MessengerLengthHeaderType payloadSize = message.size;
+    LengthHeaderType payloadSize = message.size;
     for (auto const& encryptor : encryptors_) {
       payloadSize =
           encryptor->encrypt(message.data, payloadSize, message.capacity);
     }
 
     try {
-      int written = socket_->write((Byte*)&payloadSize, sizeof(payloadSize));
+      LengthHeaderType networkPayloadSize = htonl(payloadSize);
+      int written =
+          socket_->write((Byte*)&networkPayloadSize, sizeof(payloadSize));
       assertTrue(written == sizeof(payloadSize),
                  "Message length header fragmented");
       written = socket_->write(message.data, payloadSize);
