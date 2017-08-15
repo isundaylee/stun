@@ -11,6 +11,8 @@
 
 namespace event {
 
+static const int kIOPollTimeout = 1;
+
 #if LINUX
 const int kReadPollMask = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
 #else
@@ -53,7 +55,7 @@ void IOConditionManager::prepareConditions(
         (condition->type == IOType::Read ? kReadPollMask : kWritePollMask);
     polls[i].revents = 0;
   }
-  int ret = poll(polls, interesting.size(), -1);
+  int ret = poll(polls, interesting.size(), kIOPollTimeout);
 
   if (ret < 0) {
     if (errno == EINTR) {

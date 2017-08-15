@@ -22,7 +22,7 @@ EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {
   // This is needed to force IOConditionManager to initialize and attach its
   // preparer, even in the case that the program doesn't actually use IO.
   // Otherwise we have no blocking operation on the event loop, and the CPU
-  // usage is going to skyrocket
+  // usage is going to skyrocket.
   IOConditionManager::canRead(0);
 }
 
@@ -81,15 +81,12 @@ void EventLoop::run() {
     }
 
     // Tell condition managers to prepare conditions they manage. For example,
-    // the
-    // IO condition manager might use select, poll, or epoll to resolve values
-    // for
-    // all IO conditions.
+    // the IO condition manager might use select, poll, or epoll to resolve
+    // values for all IO conditions.
 
     // Conditions are divided into two types: internal and external. External
     // conditions are those related to external I/O. Internal conditions are
-    // those
-    // changed exclusively as a result of an Action.
+    // those changed exclusively as a result of an Action.
 
     // First we need to find all "interesting" external conditions. An external
     // condition is interesting if it could potentially unblock at least one
