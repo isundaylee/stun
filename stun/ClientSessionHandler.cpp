@@ -42,8 +42,10 @@ void ClientSessionHandler::attachHandlers() {
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
 
-    dispatcher_.reset(new Dispatcher(
-        createTunnel(body["client_tunnel_ip"], body["server_tunnel_ip"])));
+    dispatcher_.reset(new Dispatcher(createTunnel(
+        IPAddress(body["client_tunnel_ip"].template get<std::string>()),
+        IPAddress(body["server_tunnel_ip"].template get<std::string>()),
+        SubnetAddress(body["server_subnet"].template get<std::string>()))));
 
     LOG_I("Session") << "Received config from the server." << std::endl;
 
@@ -84,8 +86,10 @@ void ClientSessionHandler::attachHandlers() {
   });
 }
 
-Tunnel ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
-                                          IPAddress const& peerTunnelAddr) {
+Tunnel
+ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
+                                   IPAddress const& peerTunnelAddr,
+                                   SubnetAddress const& serverSubnetAddr) {
   Tunnel tunnel;
 
   // Configure the new interface
@@ -94,16 +98,18 @@ Tunnel ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
   config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
   // Create routing rules for subnets NOT to forward
-  auto excluded_subnets = config_.subnetsToExclude;
-  excluded_subnets.emplace_back(config_.serverAddr.getHost(), 32);
+  auto excludedSubnets = config_.subnetsToExclude;
+  excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
   networking::RouteDestination originalRouteDest =
       config.getRoute(config_.serverAddr.getHost());
-  for (networking::SubnetAddress const& exclusion : excluded_subnets) {
+  for (networking::SubnetAddress const& exclusion : excludedSubnets) {
     config.newRoute(exclusion, originalRouteDest);
   }
 
   // Create routing rules for subnets to forward
-  for (auto const& subnet : config_.subnetsToForward) {
+  auto forwardSubnets = config_.subnetsToForward;
+  forwardSubnets.emplace_back(serverSubnetAddr);
+  for (auto const& subnet : forwardSubnets) {
     networking::RouteDestination routeDest(peerTunnelAddr);
     config.newRoute(SubnetAddress(subnet), routeDest);
   }

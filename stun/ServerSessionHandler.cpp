@@ -224,7 +224,8 @@ void ServerSessionHandler::attachHandlers() {
 
     return Message("config",
                    json{{"server_tunnel_ip", config_.myTunnelAddr},
-                        {"client_tunnel_ip", config_.peerTunnelAddr}});
+                        {"client_tunnel_ip", config_.peerTunnelAddr},
+                        {"server_subnet", server_->config_.addressPool}});
   });
 
   messenger_->addHandler("config_done", [this](auto const& message) {

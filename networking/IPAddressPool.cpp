@@ -108,6 +108,12 @@ IPAddress SubnetAddress::broadcastAddress() const {
   return os;
 }
 
+void to_json(json& j, SubnetAddress const& addr) { j = addr.toString(); }
+
+void from_json(json const& j, SubnetAddress& addr) {
+  addr = SubnetAddress(j.get<std::string>());
+}
+
 IPAddressPool::IPAddressPool(SubnetAddress const& subnet) : subnet_(subnet) {
   nextAddr_ = subnet_.firstHostAddress();
 }

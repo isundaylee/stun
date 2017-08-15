@@ -41,6 +41,7 @@ private:
   std::unique_ptr<event::BaseCondition> didEnd_;
 
   void attachHandlers();
-  Tunnel createTunnel(IPAddress const& myAddr, IPAddress const& peerAddr);
+  Tunnel createTunnel(IPAddress const& myAddr, IPAddress const& peerAddr,
+                      SubnetAddress const& serverSubnetAddr);
 };
 }

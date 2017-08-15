@@ -59,6 +59,9 @@ private:
   uint32_t mask;
 };
 
+void to_json(json& j, SubnetAddress const& addr);
+void from_json(json const& j, SubnetAddress& addr);
+
 class IPAddressPool {
 public:
   IPAddressPool(SubnetAddress const& subnet);
