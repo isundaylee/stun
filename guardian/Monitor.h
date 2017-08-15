@@ -17,12 +17,13 @@ public:
 
 private:
   cv::VideoCapture capture_;
-  cv::Mat frame_;
+  cv::Mat background_;
 
   std::unique_ptr<event::Action> processor_;
   std::unique_ptr<event::Timer> timer_;
 
   std::unique_ptr<stats::RateStat> statsFrames_;
+  std::unique_ptr<stats::RateStat> statsMotionLevel_;
 
   void doProcess();
 
