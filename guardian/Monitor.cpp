@@ -39,7 +39,10 @@ void Monitor::doProcess() {
   auto success = capture_.read(colorFrame);
 
   if (!success) {
-    L() << "UNSUCCESSFUL!\n";
+    LOG_I("Monitor")
+        << "Reading from camera failed. Is the camera not ready yet?"
+        << std::endl;
+    ;
     return;
   }
 
