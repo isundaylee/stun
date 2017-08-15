@@ -37,7 +37,11 @@ void Monitor::doProcess() {
   // Capture a new frame
   auto colorFrame = cv::Mat{};
   auto success = capture_.read(colorFrame);
-  assertTrue(success, "Reading from camera failed.");
+
+  if (!success) {
+    L() << "UNSUCCESSFUL!\n";
+    return;
+  }
 
   // Turns it into grayscale
   auto frame = cv::Mat{};
