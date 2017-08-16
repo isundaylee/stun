@@ -55,8 +55,9 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
 
 DataPipe::DataPipe(DataPipe&& move)
     : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
-      socket_(std::move(move.socket_)), aesKey_(std::move(move.aesKey_)),
-      minPaddingTo_(move.minPaddingTo_), didClose_(std::move(move.didClose_)),
+      statEfficiency(move.statEfficiency), socket_(std::move(move.socket_)),
+      aesKey_(std::move(move.aesKey_)), minPaddingTo_(move.minPaddingTo_),
+      didClose_(std::move(move.didClose_)),
       isPrimed_(std::move(move.isPrimed_)),
       ttlTimer_(std::move(move.ttlTimer_)),
       probeTimer_(std::move(move.probeTimer_)),
@@ -94,6 +95,8 @@ void DataPipe::doSend() {
     DataPacket data = outboundQ->pop();
     UDPPacket out;
 
+    size_t payloadSize = data.size;
+
     out.fill(std::move(data));
     if (!!compressor_) {
       out.size = compressor_->encrypt(out.data, out.size, out.capacity);
@@ -103,6 +106,10 @@ void DataPipe::doSend() {
     }
     if (!!aesEncryptor_) {
       out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
+    }
+
+    if (statEfficiency != nullptr) {
+      statEfficiency->accumulate(payloadSize, out.size);
     }
 
     try {
@@ -131,6 +138,8 @@ void DataPipe::doReceive() {
       return;
     }
 
+    size_t wireSize = in.size;
+
     data.fill(std::move(in));
     if (!!aesEncryptor_) {
       data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
@@ -140,6 +149,10 @@ void DataPipe::doReceive() {
     }
     if (!!compressor_) {
       data.size = compressor_->decrypt(data.data, data.size, data.capacity);
+    }
+
+    if (statEfficiency != nullptr) {
+      statEfficiency->accumulate(data.size, wireSize);
     }
 
     if (data.size > 0) {

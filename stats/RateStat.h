@@ -6,20 +6,16 @@ namespace stats {
 
 class RateStat : StatBase {
 public:
-  RateStat(std::string entity, std::string metric, double nullValue = 0.0,
-           Prefix prefix = Prefix::None)
-      : StatBase(entity, metric, prefix), nullValue_(nullValue),
-        value_(nullValue) {}
+  RateStat(std::string entity, std::string metric) : StatBase(entity, metric) {}
 
   void accumulate(double const& increment) { value_ += increment; }
 
 private:
-  double nullValue_;
-  double value_;
+  double value_ = 0.0;
 
   virtual double collect() override {
     auto result = value_;
-    value_ = nullValue_;
+    value_ = 0.0;
     return result;
   }
 };

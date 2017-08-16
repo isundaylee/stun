@@ -10,7 +10,8 @@ Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
     : tunnel_(std::move(tunnel)), canSend_(new event::ComputedCondition()),
       canReceive_(new event::ComputedCondition()),
       statTxBytes_("Connection", "tx_bytes"),
-      statRxBytes_("Connection", "rx_bytes") {
+      statRxBytes_("Connection", "rx_bytes"),
+      statEfficiency_("Connection", "efficiency") {
   canSend_->expression.setMethod<Dispatcher, &Dispatcher::calculateCanSend>(
       this);
   canReceive_->expression
@@ -106,6 +107,7 @@ void Dispatcher::doReceive() {
 }
 
 void Dispatcher::addDataPipe(std::unique_ptr<DataPipe> dataPipe) {
+  dataPipe->statEfficiency = &statEfficiency_;
   DataPipe* pipe = dataPipe.get();
   dataPipes_.emplace_back(std::move(dataPipe));
 

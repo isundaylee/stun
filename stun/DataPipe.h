@@ -8,7 +8,7 @@
 #include <networking/Packet.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPSocket.h>
-#include <stats/AvgStat.h>
+#include <stats/RatioStat.h>
 
 using crypto::AESEncryptor;
 using crypto::LZOCompressor;
@@ -41,6 +41,8 @@ public:
   event::Condition* isPrimed();
   event::Condition* didClose();
 
+  stats::RatioStat* statEfficiency;
+
 private:
   DataPipe(DataPipe const& copy) = delete;
   DataPipe& operator=(DataPipe const& copy) = delete;
@@ -68,8 +70,6 @@ private:
 
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
-
-  std::unique_ptr<stats::AvgStat> statsEfficiency_;
 
   void doKill();
   void doProbe();

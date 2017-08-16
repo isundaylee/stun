@@ -4,6 +4,7 @@
 
 #include <networking/Tunnel.h>
 #include <stats/RateStat.h>
+#include <stats/RatioStat.h>
 
 namespace stun {
 
@@ -36,6 +37,7 @@ private:
 
   stats::RateStat statTxBytes_;
   stats::RateStat statRxBytes_;
+  stats::RatioStat statEfficiency_;
 
   void doSend();
   void doReceive();
