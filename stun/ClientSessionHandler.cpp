@@ -59,9 +59,9 @@ void ClientSessionHandler::attachHandlers() {
     udpPipe.connect(
         SocketAddress(config_.serverAddr.getHost().toString(), body["port"]));
 
-    DataPipe* dataPipe =
-        new DataPipe(std::make_unique<UDPSocket>(std::move(udpPipe)),
-                     body["aes_key"], body["padding_to_size"], 0s);
+    DataPipe* dataPipe = new DataPipe(
+        std::make_unique<UDPSocket>(std::move(udpPipe)), body["aes_key"],
+        body["padding_to_size"], body["compression"], 0s);
     dataPipe->setPrePrimed();
 
     dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));

@@ -37,10 +37,13 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  auto sessionConfig = ServerSessionConfig{
-      config_.encryption,     config_.secret,
-      config_.paddingTo,      config_.dataPipeRotationInterval,
-      config_.authentication, config_.quotaTable};
+  auto sessionConfig = ServerSessionConfig{config_.encryption,
+                                           config_.secret,
+                                           config_.paddingTo,
+                                           config_.compression,
+                                           config_.dataPipeRotationInterval,
+                                           config_.authentication,
+                                           config_.quotaTable};
 
   auto handler = std::make_unique<ServerSessionHandler>(
       this, sessionConfig, std::make_unique<TCPSocket>(std::move(client)));

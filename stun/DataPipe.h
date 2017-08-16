@@ -1,14 +1,17 @@
 #pragma once
 
 #include <crypto/AESEncryptor.h>
+#include <crypto/LZOCompressor.h>
 #include <crypto/Padder.h>
 #include <event/FIFO.h>
 #include <event/Timer.h>
 #include <networking/Packet.h>
 #include <networking/Tunnel.h>
 #include <networking/UDPSocket.h>
+#include <stats/AvgStat.h>
 
 using crypto::AESEncryptor;
+using crypto::LZOCompressor;
 using crypto::Padder;
 using networking::Packet;
 using networking::TunnelPacket;
@@ -27,7 +30,7 @@ public:
 class DataPipe {
 public:
   DataPipe(std::unique_ptr<UDPSocket> socket, std::string const& aesKey,
-           size_t minPaddingTo, event::Duration ttl);
+           size_t minPaddingTo, bool compression, event::Duration ttl);
 
   DataPipe(DataPipe&& move);
 
@@ -59,10 +62,14 @@ private:
   std::unique_ptr<event::Action> prober_;
 
   // Data channel
-  std::unique_ptr<AESEncryptor> aesEncryptor_;
+  std::unique_ptr<LZOCompressor> compressor_;
   std::unique_ptr<Padder> padder_;
+  std::unique_ptr<AESEncryptor> aesEncryptor_;
+
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
+
+  std::unique_ptr<stats::AvgStat> statsEfficiency_;
 
   void doKill();
   void doProbe();

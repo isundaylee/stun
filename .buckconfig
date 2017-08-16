@@ -2,5 +2,6 @@
   cxxpp = /usr/bin/clang++
   cxx = /usr/bin/clang++
   ld = /usr/bin/clang++
+  cc = /usr/bin/clang++
   ldflags = -static-libstdc++ -fsanitize=address
   cxxflags = -Wall -g -std=c++1z -fno-omit-frame-pointer -fsanitize=address -O0

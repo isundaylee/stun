@@ -22,6 +22,7 @@ public:
   bool encryption;
   std::string secret;
   size_t paddingTo;
+  bool compression;
   event::Duration dataPipeRotationInterval;
   bool authentication;
   std::map<std::string, size_t> quotaTable;

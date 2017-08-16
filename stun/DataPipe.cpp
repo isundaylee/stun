@@ -13,7 +13,7 @@ static const size_t kDataPipeFIFOSize = 256;
 
 DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
                    std::string const& aesKey, size_t minPaddingTo,
-                   event::Duration ttl)
+                   bool compression, event::Duration ttl)
     : inboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
       socket_(std::move(socket)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
@@ -29,6 +29,10 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
   // Prepare Encryptor-s
   if (minPaddingTo_ != 0) {
     padder_.reset(new crypto::Padder(minPaddingTo_));
+  }
+
+  if (compression) {
+    compressor_.reset(new crypto::LZOCompressor());
   }
 
   if (!aesKey_.empty()) {
@@ -57,9 +61,10 @@ DataPipe::DataPipe(DataPipe&& move)
       ttlTimer_(std::move(move.ttlTimer_)),
       probeTimer_(std::move(move.probeTimer_)),
       prober_(std::move(move.prober_)),
+      compressor_(std::move(move.compressor_)),
+      padder_(std::move(move.padder_)),
       aesEncryptor_(std::move(move.aesEncryptor_)),
-      padder_(std::move(move.padder_)), sender_(std::move(move.sender_)),
-      receiver_(std::move(move.receiver_)) {
+      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)) {
   ttlKiller_->callback.target = this;
   prober_->callback.target = this;
   sender_->callback.target = this;
@@ -90,6 +95,9 @@ void DataPipe::doSend() {
     UDPPacket out;
 
     out.fill(std::move(data));
+    if (!!compressor_) {
+      out.size = compressor_->encrypt(out.data, out.size, out.capacity);
+    }
     if (!!padder_) {
       out.size = padder_->encrypt(out.data, out.size, out.capacity);
     }
@@ -129,6 +137,9 @@ void DataPipe::doReceive() {
     }
     if (!!padder_) {
       data.size = padder_->decrypt(data.data, data.size, data.capacity);
+    }
+    if (!!compressor_) {
+      data.size = compressor_->decrypt(data.data, data.size, data.capacity);
     }
 
     if (data.size > 0) {

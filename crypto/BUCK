@@ -8,5 +8,6 @@ cxx_library(
     deps = [
         '//cryptopp:cryptopp',
         '//common:common',
+        '//minilzo:minilzo',
     ],
 )

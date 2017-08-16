@@ -187,6 +187,7 @@ void setupServer() {
                    common::Configerator::get<bool>("encryption", true),
                    common::Configerator::get<std::string>("secret", ""),
                    common::Configerator::get<size_t>("padding_to", 0),
+                   common::Configerator::get<bool>("compression", false),
                    std::chrono::seconds(common::Configerator::get<size_t>(
                        "data_pipe_rotate_interval", 0)),
                    common::Configerator::get<bool>("authentication", false),
