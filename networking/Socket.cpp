@@ -117,7 +117,7 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
     err = errno;
   }
 
-  if (ret == 0) {
+  if (type_ == TCP && ret == 0) {
     throw SocketClosedException("The socket connection is closed.");
   }
 
@@ -138,7 +138,7 @@ size_t Socket::write(Byte* buffer, size_t size) {
 
   int ret = send(fd_.fd, buffer, size, 0);
 
-  if (ret == 0) {
+  if (type_ == TCP && ret == 0 && size != 0) {
     throw SocketClosedException("The socket connection is closed.");
   }
 
