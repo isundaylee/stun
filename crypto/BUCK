@@ -6,8 +6,8 @@ cxx_library(
     exported_headers = glob(['*.h']),
     srcs = glob(['*.cpp']),
     deps = [
-        '//cryptopp:cryptopp',
         '//common:common',
-        '//minilzo:minilzo',
+        '//third-party/cryptopp:cryptopp',
+        '//third-party/minilzo:minilzo',
     ],
 )

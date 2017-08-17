@@ -7,6 +7,6 @@ cxx_library(
         '//common:common',
         '//networking:networking',
         '//event:event',
-        '//json:json'
+        '//third-party/json:json'
     ],
 )

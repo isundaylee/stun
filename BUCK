@@ -4,7 +4,7 @@ cxx_binary(
     deps = [
         '//stun:stun',
         '//flutter:flutter',
-        '//cxxopts:cxxopts',
+        '//third-party/cxxopts:cxxopts',
     ],
 )
 

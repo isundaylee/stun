@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cryptopp/secblock.h>
+#include <third-party/cryptopp/secblock.h>
 
 #include <crypto/Encryptor.h>
 

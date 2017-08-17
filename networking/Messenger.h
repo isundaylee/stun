@@ -1,6 +1,6 @@
 #pragma once
 
-#include <json/json.hpp>
+#include <third-party/json/json.hpp>
 
 #include <networking/Packet.h>
 #include <networking/TCPSocket.h>
