@@ -230,11 +230,10 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
 
 typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 
-void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
-                               RouteDestination const& routeDest) {
-  LOG_V("Interface") << "Adding a route to " << destSubnet << " via "
-                     << routeDest.gatewayAddr << " (dev "
-                     << routeDest.interfaceIndex << ")" << std::endl;
+void InterfaceConfig::newRoute(Route const& route) {
+  LOG_V("Interface") << "Adding a route to " << route.subnet << " via "
+                     << route.dest.gatewayAddr << " (dev "
+                     << route.dest.interfaceIndex << ")" << std::endl;
 
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_NEWROUTE, NLM_F_CREATE | NLM_F_ACK);
@@ -243,21 +242,21 @@ void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
   req.msg.rtm_protocol = RTPROT_BOOT;
   req.msg.rtm_scope = RT_SCOPE_UNIVERSE;
   req.msg.rtm_type = RTN_UNICAST;
-  req.msg.rtm_dst_len = destSubnet.prefixLen;
+  req.msg.rtm_dst_len = route.subnet.prefixLen;
 
   struct in_addr dest;
-  inet_pton(AF_INET, destSubnet.addr.toString().c_str(), &dest);
+  inet_pton(AF_INET, route.subnet.addr.toString().c_str(), &dest);
   req.addAttr(RTA_DST, sizeof(dest), &dest);
 
-  if (!routeDest.gatewayAddr.empty()) {
+  if (!route.dest.gatewayAddr.empty()) {
     struct in_addr gateway;
-    inet_pton(AF_INET, routeDest.gatewayAddr.toString().c_str(), &gateway);
+    inet_pton(AF_INET, route.dest.gatewayAddr.toString().c_str(), &gateway);
     req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
   }
 
-  if (routeDest.interfaceIndex >= 0) {
-    int interfaceIndex = routeDest.interfaceIndex;
-    req.addAttr(RTA_OIF, sizeof(routeDest.interfaceIndex), &interfaceIndex);
+  if (route.dest.interfaceIndex >= 0) {
+    int interfaceIndex = route.dest.interfaceIndex;
+    req.addAttr(RTA_OIF, sizeof(route.dest.interfaceIndex), &interfaceIndex);
   }
 
   sendRequest(req);

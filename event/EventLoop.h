@@ -54,7 +54,5 @@ private:
   std::vector<EventLoopPreparer*> preparers_;
 
   static EventLoop* instance;
-
-  void resetExternalConditions();
 };
 }

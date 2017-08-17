@@ -42,6 +42,12 @@ public:
 #endif
 };
 
+struct Route {
+public:
+  SubnetAddress subnet;
+  RouteDestination dest;
+};
+
 class InterfaceConfig {
 public:
   InterfaceConfig();
@@ -55,8 +61,7 @@ public:
                       IPAddress const& localAddress,
                       IPAddress const& peerAddress);
 
-  void newRoute(SubnetAddress const& destSubnet,
-                RouteDestination const& routeDest);
+  void newRoute(Route const& route);
   RouteDestination getRoute(IPAddress const& destAddr);
 
 private:

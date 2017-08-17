@@ -19,6 +19,8 @@ public:
   static void arm(std::vector<event::Condition*> conditions,
                   std::function<void(void)> callback);
 
+  static void perform(std::function<void(void)> callback);
+
   static void performIn(event::Duration delay,
                         std::function<void(void)> callback);
 

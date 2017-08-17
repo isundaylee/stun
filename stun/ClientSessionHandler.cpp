@@ -7,6 +7,8 @@
 
 namespace stun {
 
+const static size_t kClientSessionHandlerRouteChunkSize = 50;
+
 using namespace std::chrono_literals;
 
 ClientSessionHandler::ClientSessionHandler(
@@ -86,6 +88,34 @@ void ClientSessionHandler::attachHandlers() {
   });
 }
 
+/* static */ void
+ClientSessionHandler::createRoutes(std::vector<Route> routes) {
+  InterfaceConfig config;
+
+  // Adding routes under OSX is slow if we have thousands of routes to add.
+  // We need to chunk them, as otherwise, doing it all at the same time would
+  // starve our Messenger heartbeats, and cause the connection to fail.
+  size_t left = kClientSessionHandlerRouteChunkSize;
+
+  while (!routes.empty()) {
+    config.newRoute(routes.back());
+    routes.pop_back();
+    left--;
+
+    if (left == 0) {
+      LOG_V("Session") << "Added " << kClientSessionHandlerRouteChunkSize
+                       << " routes." << std::endl;
+
+      // We yield the remaining routes to the next event loop iteration
+      event::Trigger::perform([routes = std::move(routes)]() {
+        ClientSessionHandler::createRoutes(routes);
+      });
+
+      break;
+    }
+  }
+}
+
 Tunnel
 ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
                                    IPAddress const& peerTunnelAddr,
@@ -97,22 +127,26 @@ ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
   config.newLink(tunnel.deviceName, kTunnelEthernetMTU);
   config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
 
+  auto routes = std::vector<Route>{};
+
   // Create routing rules for subnets NOT to forward
   auto excludedSubnets = config_.subnetsToExclude;
   excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
-  networking::RouteDestination originalRouteDest =
+  RouteDestination originalRouteDest =
       config.getRoute(config_.serverAddr.getHost());
-  for (networking::SubnetAddress const& exclusion : excludedSubnets) {
-    config.newRoute(exclusion, originalRouteDest);
+  for (auto const& exclusion : excludedSubnets) {
+    routes.push_back(Route{exclusion, originalRouteDest});
   }
 
   // Create routing rules for subnets to forward
   auto forwardSubnets = config_.subnetsToForward;
   forwardSubnets.emplace_back(serverSubnetAddr);
   for (auto const& subnet : forwardSubnets) {
-    networking::RouteDestination routeDest(peerTunnelAddr);
-    config.newRoute(SubnetAddress(subnet), routeDest);
+    RouteDestination routeDest(peerTunnelAddr);
+    routes.push_back(Route{subnet, routeDest});
   }
+
+  ClientSessionHandler::createRoutes(std::move(routes));
 
   return tunnel;
 }

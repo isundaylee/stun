@@ -46,6 +46,11 @@ IOConditionManager::IOConditionManager() : conditions_() {
 void IOConditionManager::prepareConditions(
     std::vector<Condition*> const& conditions,
     std::vector<Condition*> const& interesting) {
+  // First reset all conditions
+  for (auto condition : conditions) {
+    static_cast<IOCondition*>(condition)->arm();
+  }
+
   // Let's poll!
   struct pollfd polls[interesting.size()];
   for (size_t i = 0; i < interesting.size(); i++) {

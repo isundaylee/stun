@@ -139,40 +139,23 @@ void EventLoop::run() {
     }
 
     // Invoke actions that have all their conditions met
-    while (true) {
-      bool stablized = true;
-      std::set<Action*> toInvoke;
+    std::set<Action*> toInvoke;
 
-      for (auto action : actions_) {
-        if (action->canInvoke()) {
-          stablized = false;
-          toInvoke.insert(action);
-        }
-      }
-
-      for (auto actionToInvoke : toInvoke) {
-        if (actions_.find(actionToInvoke) != actions_.end() &&
-            actionToInvoke->canInvoke()) {
-          // Invoking some previous action in this round could have caused this
-          // action to be removed already. So we need to recheck.
-          // Also firing an action could invalidate other actions. So we need to
-          // recheck that as well.
-          actionToInvoke->invoke();
-        }
-      }
-
-      resetExternalConditions();
-      if (stablized) {
-        break;
+    for (auto action : actions_) {
+      if (action->canInvoke()) {
+        toInvoke.insert(action);
       }
     }
-  }
-}
 
-void EventLoop::resetExternalConditions() {
-  for (auto condition : conditions_) {
-    if (condition->type != ConditionType::Internal) {
-      static_cast<BaseCondition*>(condition)->arm();
+    for (auto actionToInvoke : toInvoke) {
+      // Invoking some previous action in this round could have caused this
+      // action to be removed already. So we need to recheck.
+      // Also firing an action could invalidate other actions. So we need to
+      // recheck that as well.
+      if (actions_.find(actionToInvoke) != actions_.end() &&
+          actionToInvoke->canInvoke()) {
+        actionToInvoke->invoke();
+      }
     }
   }
 }

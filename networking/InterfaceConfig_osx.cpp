@@ -30,20 +30,19 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
   runCommand(command);
 }
 
-void InterfaceConfig::newRoute(SubnetAddress const& destSubnet,
-                               RouteDestination const& routeDest) {
+void InterfaceConfig::newRoute(Route const& route) {
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
-                        destSubnet.addr.toString() + "/" +
-                        std::to_string(destSubnet.prefixLen);
+                        route.subnet.addr.toString() + "/" +
+                        std::to_string(route.subnet.prefixLen);
 
-  assertTrue(!routeDest.gatewayAddr.empty(),
+  assertTrue(!route.dest.gatewayAddr.empty(),
              "Only gateway routes are currently supported on OSX.");
-  command += " " + routeDest.gatewayAddr.toString();
+  command += " " + route.dest.gatewayAddr.toString();
 
   runCommand(command);
 
-  LOG_V("Interface") << "Added a route to " << destSubnet.toString() << " via "
-                     << routeDest.gatewayAddr << "." << std::endl;
+  LOG_V("Interface") << "Added a route to " << route.subnet.toString()
+                     << " via " << route.dest.gatewayAddr << "." << std::endl;
 }
 
 RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {

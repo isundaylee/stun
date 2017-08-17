@@ -29,6 +29,10 @@ Trigger::Trigger() { EventLoop::getCurrentLoop()->addPreparer(this); }
   instance.triggerActions_.push_back(std::move(action));
 }
 
+/* static */ void Trigger::perform(std::function<void(void)> callback) {
+  Trigger::arm({}, [callback]() { callback(); });
+}
+
 /* static */ void Trigger::performIn(event::Duration delay,
                                      std::function<void(void)> callback) {
   auto timer = std::make_shared<event::Timer>(delay);
