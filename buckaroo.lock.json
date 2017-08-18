@@ -9,5 +9,16 @@
       "url": "https://raw.githubusercontent.com/njlr/json/92fde249a513c03b956b783e131bb0c181ba9bce/BUCK",
       "sha256": "8e5ef7bdebc1d766a66e3ba5b1bb810a4544c7e8bc94dab7639b42b3d63c713a"
     }
+  },
+  "jarro2783/cxxopts": {
+    "source": {
+      "url": "https://github.com/jarro2783/cxxopts/archive/5e9f8225982e9711b548c886fe6b477cdefd0fd4.zip",
+      "sha256": "0bf217dc6d35d137dc0f800ebf32b47e93340303a5876f345c668a5f70722a6f",
+      "subPath": "cxxopts-5e9f8225982e9711b548c886fe6b477cdefd0fd4"
+    },
+    "buck": {
+      "url": "https://raw.githubusercontent.com/isundaylee/cxxopts/50eccb7e0a387be31b19a69c0558d617afd09536/BUCK",
+      "sha256": "d006e588ed737025d48d081165a81d53560117935ba0003037bfee5eed329764"
+    }
   }
 }

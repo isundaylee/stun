@@ -1,4 +1,4 @@
-#include <third-party/cxxopts/cxxopts.hpp>
+#include <cxxopts/cxxopts.hpp>
 
 #include <common/Configerator.h>
 #include <common/Notebook.h>

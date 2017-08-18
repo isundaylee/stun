@@ -1,6 +1,7 @@
 {
   "name": "stun",
   "dependencies": {
-    "nlohmann/json": "2.1.1"
+    "nlohmann/json": "2.1.1",
+    "jarro2783/cxxopts": "1.4.0"
   }
 }
