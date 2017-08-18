@@ -8,7 +8,7 @@ cxx_library(
     deps = [
         '//common:common',
         '//event:event',
-        '//third-party/json:json',
+        'nlohmann.json//:json',
         '//stats:stats',
         '//crypto:crypto',
     ],

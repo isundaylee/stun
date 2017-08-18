@@ -1,6 +1,6 @@
 #pragma once
 
-#include <third-party/json/json.hpp>
+#include <json/src/json.hpp>
 
 #include <common/Util.h>
 
@@ -32,8 +32,11 @@ public:
       return defaultValue;
     }
 
-    return instance_->config_[key].get<T>();
+    T result = instance_->config_[key];
+    return result;
   }
+
+  json static getJSON() { return instance_->config_; }
 
 private:
   static Configerator* instance_;

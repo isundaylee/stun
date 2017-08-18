@@ -1,0 +1,6 @@
+{
+  "name": "stun",
+  "dependencies": {
+    "nlohmann/json": "2.1.1"
+  }
+}

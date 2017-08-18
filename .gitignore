@@ -10,3 +10,6 @@ perf.data.old
 dist/stun.zip
 dist/stun-*.zip
 dist/stun
+
+/buckaroo/
+BUCKAROO_DEPS

@@ -1,0 +1,13 @@
+{
+  "nlohmann/json": {
+    "source": {
+      "url": "https://github.com/nlohmann/json/archive/9ff0cc0f0212cb1e85b83ce5d2907ba9531b6cae.zip",
+      "sha256": "21401d9d8dac0ef949c0da6b77089cbd47c776d68b80708dfbb848024d185037",
+      "subPath": "json-9ff0cc0f0212cb1e85b83ce5d2907ba9531b6cae"
+    },
+    "buck": {
+      "url": "https://raw.githubusercontent.com/njlr/json/92fde249a513c03b956b783e131bb0c181ba9bce/BUCK",
+      "sha256": "8e5ef7bdebc1d766a66e3ba5b1bb810a4544c7e8bc94dab7639b42b3d63c713a"
+    }
+  }
+}

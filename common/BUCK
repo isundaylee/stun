@@ -6,6 +6,6 @@ cxx_library(
     exported_headers = glob(['*.h']),
     srcs = glob(['*.cpp']),
     deps = [
-        '//third-party/json:json',
+        'nlohmann.json//:json',
     ],
 )

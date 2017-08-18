@@ -1,6 +1,6 @@
 #pragma once
 
-#include <third-party/json/json.hpp>
+#include <json/src/json.hpp>
 
 #include <networking/Packet.h>
 #include <networking/TCPSocket.h>
@@ -54,7 +54,8 @@ struct Message : public Packet {
     try {
       auto type = getType();
       auto body = getBody();
-    } catch (const json::exception&) {
+    } catch (...) {
+      // FIXME: catch more cautiously once json cuts a new release.
       return false;
     }
     return true;

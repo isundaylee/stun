@@ -1,6 +1,6 @@
 #include "flutter/Server.h"
 
-#include <third-party/json/json.hpp>
+#include <json/src/json.hpp>
 
 #include <common/Logger.h>
 #include <event/Trigger.h>
