@@ -2,7 +2,7 @@
 
 #include <common/Util.h>
 
-#include <third-party/cryptopp/osrng.h>
+#include <cryptopp/osrng.h>
 
 #include <unistd.h>
 

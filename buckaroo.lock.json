@@ -31,5 +31,16 @@
       "url": "https://raw.githubusercontent.com/isundaylee/minilzo/b41efa689dc0a5d613c6c3bb6f2a3392a3fb3c20/BUCK",
       "sha256": "35fb8d7f9afb1db0b73af7286a2070e11c4cb620e53b5cda1a46e302e3ba864f"
     }
+  },
+  "weidai11/cryptopp": {
+    "source": {
+      "url": "https://github.com/weidai11/cryptopp/archive/c621ce053298fafc1e59191079c33acd76045c26.zip",
+      "sha256": "bb77668092d3bfe17cb8ed5294614a204440d81a9e6a9975d277c21fdbd84877",
+      "subPath": "cryptopp-c621ce053298fafc1e59191079c33acd76045c26"
+    },
+    "buck": {
+      "url": "https://raw.githubusercontent.com/njlr/cryptopp/e57ae042c31587e809cf92eb73139620e7e67049/BUCK",
+      "sha256": "2c1850e965c905c9eebe63903b2a034455022684f95b9a7ac14f7d26c796abf6"
+    }
   }
 }

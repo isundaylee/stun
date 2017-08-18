@@ -1,7 +1,7 @@
 #include "AESEncryptor.h"
 
-#include <third-party/cryptopp/aes.h>
-#include <third-party/cryptopp/modes.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/modes.h>
 
 namespace crypto {
 
