@@ -1,6 +1,6 @@
 #pragma once
 
-#include <third-party/minilzo/minilzo.h>
+#include <minilzo/minilzo.h>
 
 #include <crypto/Encryptor.h>
 

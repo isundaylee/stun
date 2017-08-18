@@ -20,5 +20,16 @@
       "url": "https://raw.githubusercontent.com/isundaylee/cxxopts/50eccb7e0a387be31b19a69c0558d617afd09536/BUCK",
       "sha256": "d006e588ed737025d48d081165a81d53560117935ba0003037bfee5eed329764"
     }
+  },
+  "oberhumer/minilzo": {
+    "source": {
+      "url": "https://github.com/isundaylee/minilzo/archive/37b3b91abcabd5a23330094d717eb950fb688ca3.zip",
+      "sha256": "3d0d7383a98d3fb78deaeb3bff1d600035b95998febe7cfb6e5253d5181c878f",
+      "subPath": "minilzo-37b3b91abcabd5a23330094d717eb950fb688ca3"
+    },
+    "buck": {
+      "url": "https://raw.githubusercontent.com/isundaylee/minilzo/b41efa689dc0a5d613c6c3bb6f2a3392a3fb3c20/BUCK",
+      "sha256": "35fb8d7f9afb1db0b73af7286a2070e11c4cb620e53b5cda1a46e302e3ba864f"
+    }
   }
 }
