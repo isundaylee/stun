@@ -1,6 +1,6 @@
 #pragma once
 
-#include <json/src/json.hpp>
+#include <json/json.hpp>
 
 #include <stun/Dispatcher.h>
 
