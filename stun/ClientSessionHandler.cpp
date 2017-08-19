@@ -7,7 +7,7 @@
 
 namespace stun {
 
-const static size_t kClientSessionHandlerRouteChunkSize = 50;
+const static size_t kClientSessionHandlerRouteChunkSize = 1;
 
 using namespace std::chrono_literals;
 
