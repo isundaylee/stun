@@ -158,11 +158,11 @@ auto parseSubnets(std::string const& key) {
 
 auto parseStaticHosts() {
   auto result = std::map<std::string, IPAddress>{};
+  auto staticHosts = common::Configerator::getJSON()["static_hosts"];
 
   // FIXME: Remove workaround of https://github.com/nlohmann/json/issues/600
   // once json 3.0.0 is released.
-  for (auto const& entry : json::iterator_wrapper(
-           common::Configerator::getJSON()["static_hosts"])) {
+  for (auto const& entry : json::iterator_wrapper(staticHosts)) {
     result[entry.key()] = entry.value();
   }
 
