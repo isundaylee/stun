@@ -180,9 +180,10 @@ int InterfaceConfig::getInterfaceIndex(std::string const& deviceName) {
 
 typedef NetlinkRequest<struct ifinfomsg> NetlinkChangeLinkRequest;
 
-void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
+/* static */ void InterfaceConfig::newLink(std::string const& deviceName,
+                                           unsigned int mtu) {
   LOG_V("Interface") << "Turning up link " << deviceName << std::endl;
-  int interfaceIndex = getInterfaceIndex(deviceName);
+  int interfaceIndex = getInstance().getInterfaceIndex(deviceName);
 
   NetlinkChangeLinkRequest req;
 
@@ -194,20 +195,21 @@ void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
 
   req.addAttr(IFLA_MTU, sizeof(mtu), &mtu);
 
-  sendRequest(req);
-  waitForReply([](struct nlmsghdr* msg) {});
+  getInstance().sendRequest(req);
+  getInstance().waitForReply([](struct nlmsghdr* msg) {});
 
   LOG_V("Interface") << "Successfully turned link up" << std::endl;
 }
 
 typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 
-void InterfaceConfig::setLinkAddress(std::string const& deviceName,
-                                     IPAddress const& localAddress,
-                                     IPAddress const& peerAddress) {
+/* static */ void
+InterfaceConfig::setLinkAddress(std::string const& deviceName,
+                                IPAddress const& localAddress,
+                                IPAddress const& peerAddress) {
   LOG_V("Interface") << "Setting link " << deviceName << "'s address to "
                      << localAddress << " -> " << peerAddress << std::endl;
-  int interfaceIndex = getInterfaceIndex(deviceName);
+  int interfaceIndex = getInstance().getInterfaceIndex(deviceName);
 
   NetlinkChangeAddressRequest req;
   struct in_addr localAddr;
@@ -222,15 +224,15 @@ void InterfaceConfig::setLinkAddress(std::string const& deviceName,
   req.addAttr(IFA_LOCAL, sizeof(localAddr), &localAddr);
   req.addAttr(IFA_ADDRESS, sizeof(peerAddr), &peerAddr);
 
-  sendRequest(req);
-  waitForReply([](struct nlmsghdr* msg) {});
+  getInstance().sendRequest(req);
+  getInstance().waitForReply([](struct nlmsghdr* msg) {});
 
   LOG_V("Interface") << "Successfully set link address" << std::endl;
 }
 
 typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
 
-void InterfaceConfig::newRoute(Route const& route) {
+/* static */ void InterfaceConfig::newRoute(Route const& route) {
   LOG_V("Interface") << "Adding a route to " << route.subnet << " via "
                      << route.dest.gatewayAddr << " (dev "
                      << route.dest.interfaceIndex << ")" << std::endl;
@@ -259,15 +261,16 @@ void InterfaceConfig::newRoute(Route const& route) {
     req.addAttr(RTA_OIF, sizeof(route.dest.interfaceIndex), &interfaceIndex);
   }
 
-  sendRequest(req);
-  waitForReply([](struct nlmsghdr* msg) {});
+  getInstance().sendRequest(req);
+  getInstance().waitForReply([](struct nlmsghdr* msg) {});
 
   LOG_V("Interface") << "Successfully added a route" << std::endl;
 }
 
 typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
 
-RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
+/* static */ RouteDestination
+InterfaceConfig::getRoute(IPAddress const& destAddr) {
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_GETROUTE, NLM_F_ACK);
   req.msg.rtm_family = AF_INET;
@@ -284,8 +287,8 @@ RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   int interface = -1;
   std::string gateway = "";
 
-  sendRequest(req);
-  waitForReply([&interface, &gateway](struct nlmsghdr* msg) {
+  getInstance().sendRequest(req);
+  getInstance().waitForReply([&interface, &gateway](struct nlmsghdr* msg) {
     switch (msg->nlmsg_type) {
     case 24:
       struct rtmsg* route;
@@ -325,6 +328,11 @@ RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   } else {
     return RouteDestination(interface, IPAddress(gateway));
   }
+}
+
+/* static */ InterfaceConfig& InterfaceConfig::getInstance() {
+  static InterfaceConfig instance;
+  return instance;
 }
 }
 

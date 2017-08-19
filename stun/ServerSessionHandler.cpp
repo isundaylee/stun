@@ -204,10 +204,9 @@ void ServerSessionHandler::attachHandlers() {
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = Tunnel{};
-    auto interface = InterfaceConfig{};
-    interface.newLink(tunnel.deviceName, kTunnelEthernetMTU);
-    interface.setLinkAddress(tunnel.deviceName, config_.myTunnelAddr,
-                             config_.peerTunnelAddr);
+    InterfaceConfig::newLink(tunnel.deviceName, kTunnelEthernetMTU);
+    InterfaceConfig::setLinkAddress(tunnel.deviceName, config_.myTunnelAddr,
+                                    config_.peerTunnelAddr);
 
     dispatcher_.reset(new Dispatcher(std::move(tunnel)));
 

@@ -56,17 +56,19 @@ public:
   InterfaceConfig(InterfaceConfig&& move) = default;
   InterfaceConfig& operator=(InterfaceConfig&& move) = default;
 
-  void newLink(std::string const& deviceName, unsigned int mtu);
-  void setLinkAddress(std::string const& deviceName,
-                      IPAddress const& localAddress,
-                      IPAddress const& peerAddress);
+  static void newLink(std::string const& deviceName, unsigned int mtu);
+  static void setLinkAddress(std::string const& deviceName,
+                             IPAddress const& localAddress,
+                             IPAddress const& peerAddress);
 
-  void newRoute(Route const& route);
-  RouteDestination getRoute(IPAddress const& destAddr);
+  static void newRoute(Route const& route);
+  static RouteDestination getRoute(IPAddress const& destAddr);
 
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;
   InterfaceConfig& operator=(InterfaceConfig const&) = delete;
+
+  static InterfaceConfig& getInstance();
 
 #if LINUX
   template <typename R> void sendRequest(R& req);

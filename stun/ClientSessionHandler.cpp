@@ -90,15 +90,13 @@ void ClientSessionHandler::attachHandlers() {
 
 /* static */ void
 ClientSessionHandler::createRoutes(std::vector<Route> routes) {
-  InterfaceConfig config;
-
   // Adding routes under OSX is slow if we have thousands of routes to add.
   // We need to chunk them, as otherwise, doing it all at the same time would
   // starve our Messenger heartbeats, and cause the connection to fail.
   size_t left = kClientSessionHandlerRouteChunkSize;
 
   while (!routes.empty()) {
-    config.newRoute(routes.back());
+    InterfaceConfig::newRoute(routes.back());
     routes.pop_back();
     left--;
 
@@ -123,9 +121,9 @@ ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
   Tunnel tunnel;
 
   // Configure the new interface
-  InterfaceConfig config;
-  config.newLink(tunnel.deviceName, kTunnelEthernetMTU);
-  config.setLinkAddress(tunnel.deviceName, myTunnelAddr, peerTunnelAddr);
+  InterfaceConfig::newLink(tunnel.deviceName, kTunnelEthernetMTU);
+  InterfaceConfig::setLinkAddress(tunnel.deviceName, myTunnelAddr,
+                                  peerTunnelAddr);
 
   auto routes = std::vector<Route>{};
 
@@ -133,7 +131,7 @@ ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
   auto excludedSubnets = config_.subnetsToExclude;
   excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
   RouteDestination originalRouteDest =
-      config.getRoute(config_.serverAddr.getHost());
+      InterfaceConfig::getRoute(config_.serverAddr.getHost());
   for (auto const& exclusion : excludedSubnets) {
     routes.push_back(Route{exclusion, originalRouteDest});
   }

@@ -15,22 +15,24 @@ InterfaceConfig::InterfaceConfig() {}
 
 InterfaceConfig::~InterfaceConfig() {}
 
-void InterfaceConfig::newLink(std::string const& deviceName, unsigned int mtu) {
+/* static */ void InterfaceConfig::newLink(std::string const& deviceName,
+                                           unsigned int mtu) {
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " mtu " + std::to_string(mtu);
   runCommand(command);
 }
 
-void InterfaceConfig::setLinkAddress(std::string const& deviceName,
-                                     IPAddress const& localAddress,
-                                     IPAddress const& peerAddress) {
+/* static */ void
+InterfaceConfig::setLinkAddress(std::string const& deviceName,
+                                IPAddress const& localAddress,
+                                IPAddress const& peerAddress) {
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " inet " + localAddress.toString() + " " +
                         peerAddress.toString();
   runCommand(command);
 }
 
-void InterfaceConfig::newRoute(Route const& route) {
+/* static */ void InterfaceConfig::newRoute(Route const& route) {
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
                         route.subnet.addr.toString() + "/" +
                         std::to_string(route.subnet.prefixLen);
@@ -45,7 +47,8 @@ void InterfaceConfig::newRoute(Route const& route) {
                      << " via " << route.dest.gatewayAddr << "." << std::endl;
 }
 
-RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
+/* static */ RouteDestination
+InterfaceConfig::getRoute(IPAddress const& destAddr) {
   std::string output =
       runCommand(kInterfaceConfigRoutePath + " -n get " + destAddr.toString());
   std::stringstream data(output);
@@ -85,6 +88,11 @@ RouteDestination InterfaceConfig::getRoute(IPAddress const& destAddr) {
   } else {
     return RouteDestination(interface, IPAddress(gateway));
   }
+}
+
+/* static */ InterfaceConfig& InterfaceConfig::getInstance() {
+  static InterfaceConfig instance;
+  return instance;
 }
 }
 
