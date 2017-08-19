@@ -1,4 +1,0 @@
---config
-cxx.ldflags=-static-libstdc++
---config
-cxx.cxxflags=-Wall -O3 -g -std=c++1z -fno-omit-frame-pointer
