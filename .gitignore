@@ -13,3 +13,6 @@ dist/stun
 
 /buckaroo/
 BUCKAROO_DEPS
+
+/ios/ios.xcodeproj
+/ios/Stun.xcworkspace

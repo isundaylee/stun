@@ -15,7 +15,6 @@ apple_bundle(
   binary = ':StunBinary',
   extension = 'app',
   info_plist = 'Info.plist',
-  tests = [':StunTest'],
 )
 
 apple_binary(
