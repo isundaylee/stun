@@ -6,6 +6,7 @@ cxx_binary(
         '//flutter:flutter',
         'jarro2783.cxxopts//:cxxopts',
     ],
+    visibility = ['PUBLIC'],
 )
 
 cxx_binary(

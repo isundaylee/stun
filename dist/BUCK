@@ -1,0 +1,22 @@
+genrule(
+    name = "stun-binary",
+    out = "stun",
+    cmd = "cp $(exe //:main#release) $OUT"
+)
+
+zip_file(
+    name = "osx",
+    srcs = [
+        ":stun-binary"
+    ],
+    out = "stun-osx.zip",
+)
+
+zip_file(
+    name = "linux",
+    srcs = [
+        ":stun-binary",
+        "stun.service",
+    ],
+    out = "stun-linux.zip",
+)
