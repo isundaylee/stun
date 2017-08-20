@@ -122,7 +122,7 @@ ServerSessionHandler::ServerSessionHandler(
 }
 
 void ServerSessionHandler::savePriorQuota() {
-  auto& notebook = *common::Notebook::getInstance();
+  auto& notebook = common::Notebook::getInstance();
   notebook["priorQuotas"][config_.user] =
       config_.priorQuotaUsed + dispatcher_->bytesDispatched;
   notebook.save();
@@ -174,7 +174,7 @@ void ServerSessionHandler::attachHandlers() {
                          << config_.quota << " bytes." << std::endl;
 
         // Retrieve the user's prior used quota
-        auto& notebook = *common::Notebook::getInstance();
+        auto& notebook = common::Notebook::getInstance();
         if (notebook["priorQuotas"].is_null()) {
           notebook["priorQuotas"] = json({});
         }

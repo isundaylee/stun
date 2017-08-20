@@ -39,7 +39,7 @@ public:
   void addConditionManager(ConditionManager* manager, ConditionType type);
   void addPreparer(EventLoopPreparer* preparer);
 
-  static EventLoop* getCurrentLoop();
+  static EventLoop& getCurrentLoop();
 
 private:
   EventLoop(EventLoop const& copy) = delete;
@@ -53,6 +53,6 @@ private:
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
   std::vector<EventLoopPreparer*> preparers_;
 
-  static EventLoop* instance;
+  static EventLoop* instance_;
 };
 }

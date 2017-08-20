@@ -22,7 +22,7 @@ const int kReadPollMask = POLLIN | POLLPRI | POLLHUP;
 const int kWritePollMask = POLLOUT;
 
 IOConditionManager::IOConditionManager() : conditions_() {
-  EventLoop::getCurrentLoop()->addConditionManager(this, ConditionType::IO);
+  EventLoop::getCurrentLoop().addConditionManager(this, ConditionType::IO);
 }
 
 /* static */ IOConditionManager& IOConditionManager::getInstance() {

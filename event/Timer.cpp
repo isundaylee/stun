@@ -49,7 +49,7 @@ TimerManager::TimerManager() {
   sa.sa_sigaction = &TimerManager::handleSignal;
   sigemptyset(&sa.sa_mask);
 
-  EventLoop::getCurrentLoop()->addConditionManager(this, Signal);
+  EventLoop::getCurrentLoop().addConditionManager(this, Signal);
 
   // Bind the timer singal handler
   if (sigaction(SIGALRM, &sa, NULL) < 0) {

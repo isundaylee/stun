@@ -6,7 +6,7 @@
 
 namespace event {
 
-Trigger::Trigger() { EventLoop::getCurrentLoop()->addPreparer(this); }
+Trigger::Trigger() { EventLoop::getCurrentLoop().addPreparer(this); }
 
 /* static */ void Trigger::arm(std::vector<event::Condition*> conditions,
                                std::function<void(void)> callback) {

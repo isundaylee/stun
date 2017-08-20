@@ -12,7 +12,7 @@ class Notebook {
 public:
   Notebook(std::string path);
 
-  static Notebook* getInstance();
+  static Notebook& getInstance();
 
   void save();
   json& operator[](std::string key);

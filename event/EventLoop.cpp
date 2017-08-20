@@ -10,14 +10,14 @@
 
 namespace event {
 
-EventLoop* EventLoop::instance = nullptr;
+EventLoop* EventLoop::instance_ = nullptr;
 
 EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {
-  if (EventLoop::instance != nullptr) {
+  if (EventLoop::instance_ != nullptr) {
     throw std::runtime_error("Only 1 EventLoop should be created.");
   }
 
-  EventLoop::instance = this;
+  EventLoop::instance_ = this;
 
   // This is needed to force IOConditionManager to initialize and attach its
   // preparer, even in the case that the program doesn't actually use IO.
@@ -160,11 +160,11 @@ void EventLoop::run() {
   }
 }
 
-EventLoop* EventLoop::getCurrentLoop() {
-  if (EventLoop::instance == nullptr) {
+/* static */ EventLoop& EventLoop::getCurrentLoop() {
+  if (EventLoop::instance_ == nullptr) {
     throw std::runtime_error("No current EventLoop exists.");
   }
 
-  return EventLoop::instance;
+  return *EventLoop::instance_;
 }
 }

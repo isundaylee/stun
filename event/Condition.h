@@ -10,10 +10,10 @@ namespace event {
 class Condition {
 public:
   Condition(ConditionType type = ConditionType::Internal) : type(type) {
-    EventLoop::getCurrentLoop()->addCondition(this);
+    EventLoop::getCurrentLoop().addCondition(this);
   }
 
-  virtual ~Condition() { EventLoop::getCurrentLoop()->removeCondition(this); }
+  virtual ~Condition() { EventLoop::getCurrentLoop().removeCondition(this); }
 
   ConditionType type;
 

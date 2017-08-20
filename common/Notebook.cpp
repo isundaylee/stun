@@ -22,10 +22,10 @@ Notebook::Notebook(std::string path) : path_(path) {
   Notebook::instance_ = this;
 }
 
-/* static */ Notebook* Notebook::getInstance() {
+/* static */ Notebook& Notebook::getInstance() {
   assertTrue(Notebook::instance_ != nullptr, "No Notebook present.");
 
-  return Notebook::instance_;
+  return *Notebook::instance_;
 }
 
 void Notebook::save() {

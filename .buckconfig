@@ -1,9 +1,14 @@
+[alias]
+  debug = //:main#asan
+  release = //:main#release
+
 [cxx]
   cc = /usr/bin/clang++
   cpp = /usr/bin/clang++
   cxx = /usr/bin/clang++
   cxxpp = /usr/bin/clang++
   ld = /usr/bin/clang++
+  cxxflags = -std=c++1z
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
