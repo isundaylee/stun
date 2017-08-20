@@ -1,6 +1,7 @@
 [alias]
   debug = //:main#asan
   release = //:main#release
+  ios = //ios:Stun#iphonesimulator-x86_64
 
 [cxx]
   cc = /usr/bin/clang++
