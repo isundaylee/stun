@@ -20,7 +20,7 @@ using networking::UDPSocket;
 
 namespace stun {
 
-static const size_t kDataPacketSize = 1 << 20;
+static const size_t kDataPacketSize = 2048;
 
 class DataPacket : public Packet {
 public:
