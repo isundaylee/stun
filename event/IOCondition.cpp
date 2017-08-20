@@ -11,7 +11,7 @@
 
 namespace event {
 
-static const int kIOPollTimeout = 1;
+static const int kIOPollTimeout = 10;
 
 #if LINUX
 const int kReadPollMask = POLLIN | POLLPRI | POLLRDHUP | POLLHUP;
