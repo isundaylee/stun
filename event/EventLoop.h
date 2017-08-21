@@ -29,6 +29,7 @@ public:
 class EventLoop {
 public:
   void run();
+  void runOnce();
   void addAction(Action* action);
   void removeAction(Action* action);
   void addCondition(Condition* condition);
