@@ -13,16 +13,42 @@
 
 #import <common/Logger.h>
 #import <event/EventLoop.h>
+#import <event/Action.h>
+#import <event/Timer.h>
 
 #import <iostream>
 
+using namespace std::chrono_literals;
+
 @interface AppDelegate ()
+
+- (void)doStunEventLoop;
+- (void)setupStunEventLoop;
 
 @end
 
 @implementation AppDelegate
 
 @synthesize window;
+
+- (void)doStunEventLoop {
+    LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
+
+    event::Timer timer(0s);
+    event::Action hello({timer.didFire()});
+    hello.callback = [&timer]() {
+        L() << "============================== FIRED!" << std::endl;
+        timer.reset(3s);
+    };
+    
+    event::EventLoop::getCurrentLoop().run();
+}
+
+- (void)setupStunEventLoop {
+    LOG_I("Loop") << "Setting up stun event loop." << std::endl;
+    
+    [self performSelectorInBackground:@selector(doStunEventLoop) withObject:nil];
+}
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -34,8 +60,7 @@
     self.window.rootViewController = viewController;
     [self.window makeKeyAndVisible];
     
-    event::EventLoop::getCurrentLoop().runOnce();
-    L() << "==== Ain't I a beautiful log message? ===" << std::endl;
+    [self setupStunEventLoop];
     
     // Override point for customization after application launch.
     return YES;

@@ -94,7 +94,9 @@ private:
 
 #if IOS
   void flush() {
-    os_log_error(OS_LOG_DEFAULT, "%s", buffer_.str().c_str());
+    static os_log_t logObject = os_log_create("me.ljh.stun", "");
+
+    os_log_error(logObject, "%s", buffer_.str().c_str());
     buffer_.str("");
   }
 #else
