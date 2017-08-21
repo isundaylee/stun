@@ -32,6 +32,11 @@ void unreachable(std::string const& reason) {
   throw std::runtime_error(reason);
 }
 
+void notImplemented(std::string const& reason) {
+  LOG_E("Util") << "Not implemented: " << reason << std::endl;
+  throw std::runtime_error("Not implemented: " + reason);
+}
+
 bool checkUnixError(int ret, std::string const& action, int allowed /* = 0 */) {
   if (ret < 0) {
     if (errno != allowed) {

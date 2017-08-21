@@ -7,6 +7,7 @@ namespace stun {
 class Client {
 public:
   Client(ClientConfig config);
+  ~Client();
 
 private:
   ClientConfig config_;

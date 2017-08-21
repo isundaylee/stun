@@ -12,10 +12,7 @@
 #import "AppViewController.h"
 
 #import <common/Logger.h>
-#import <event/EventLoop.h>
-#import <event/Action.h>
-#import <event/Timer.h>
-#import <networking/TCPSocket.h>
+#import <stun/Client.h>
 
 #import <iostream>
 #import <memory>
@@ -36,23 +33,18 @@ using namespace std::chrono_literals;
 - (void)doStunEventLoop {
     LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
 
-    networking::TCPSocket client;
-    client.connect(networking::SocketAddress("192.168.0.53", 3919));
-    
-    std::unique_ptr<event::Action> reader(new event::Action({client.canRead()}));
-    reader->callback = [&client, &reader]() {
-        Byte buffer[4000];
-        try {
-            int read = client.read(&buffer[0], 4000);
-        
-            if (read > 0) {
-                LOG_I("TCP") << "Received " << read << " bytes" << std::endl;
-            }
-        } catch (networking::SocketClosedException const& ex) {
-            LOG_I("TCP") << "Disconnected" << std::endl;
-            reader.reset();
-        }
+    std::unique_ptr<stun::Client> client;
+    stun::ClientConfig config{
+        networking::SocketAddress("adp.mit.edu", 2859),
+        false,
+        "lovely",
+        0,
+        std::chrono::seconds(0),
+        "mbp",
+        {},
+        {}
     };
+    client.reset(new stun::Client(config));
     
     event::EventLoop::getCurrentLoop().run();
 }

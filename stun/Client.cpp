@@ -11,6 +11,8 @@ const event::Duration kReconnectDelayInterval = 5s;
 
 Client::Client(ClientConfig config) : config_(config) { connect(); }
 
+Client::~Client() = default;
+
 void Client::connect() {
   auto socket = TCPSocket{};
   socket.connect(config_.serverAddr);

@@ -27,9 +27,7 @@ apple_binary(
   name = 'StunBinary',
   deps = [
     ':StunResources',
-    '//stats:stats',
-    '//event:event',
-    '//networking:networking',
+    '//stun:stun',
   ],
   preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
   headers = glob([

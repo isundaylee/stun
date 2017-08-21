@@ -40,6 +40,11 @@ public:
   explicit RouteDestination(IPAddress const& gatewayAddr)
       : interfaceName(""), gatewayAddr(gatewayAddr) {}
 #endif
+
+#if IOS
+  explicit RouteDestination(IPAddress const& gatewayAddr)
+      : gatewayAddr(gatewayAddr) {}
+#endif
 };
 
 struct Route {
