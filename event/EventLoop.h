@@ -28,8 +28,6 @@ public:
 
 class EventLoop {
 public:
-  EventLoop();
-
   void run();
   void addAction(Action* action);
   void removeAction(Action* action);
@@ -42,6 +40,8 @@ public:
   static EventLoop& getCurrentLoop();
 
 private:
+  EventLoop();
+
   EventLoop(EventLoop const& copy) = delete;
   EventLoop& operator=(EventLoop const& copy) = delete;
 
@@ -52,7 +52,5 @@ private:
   std::set<Condition*> conditions_;
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
   std::vector<EventLoopPreparer*> preparers_;
-
-  static EventLoop* instance_;
 };
 }

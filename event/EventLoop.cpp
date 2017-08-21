@@ -10,21 +10,7 @@
 
 namespace event {
 
-EventLoop* EventLoop::instance_ = nullptr;
-
-EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {
-  if (EventLoop::instance_ != nullptr) {
-    throw std::runtime_error("Only 1 EventLoop should be created.");
-  }
-
-  EventLoop::instance_ = this;
-
-  // This is needed to force IOConditionManager to initialize and attach its
-  // preparer, even in the case that the program doesn't actually use IO.
-  // Otherwise we have no blocking operation on the event loop, and the CPU
-  // usage is going to skyrocket.
-  IOConditionManager::canRead(0);
-}
+EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {}
 
 void EventLoop::addAction(Action* action) { actions_.insert(action); }
 
@@ -52,6 +38,12 @@ void EventLoop::addPreparer(EventLoopPreparer* preparer) {
 }
 
 void EventLoop::run() {
+  // This is needed to force IOConditionManager to initialize and attach its
+  // preparer, even in the case that the program doesn't actually use IO.
+  // Otherwise we have no blocking operation on the event loop, and the CPU
+  // usage is going to skyrocket.
+  IOConditionManager::canRead(0);
+
   while (true) {
     // First we run all the preparers
     //
@@ -62,7 +54,7 @@ void EventLoop::run() {
       preparer->prepare();
     }
 
-    // First we purge the dead actions (i.e. actions that refer to at least one
+    // Then we purge the dead actions (i.e. actions that refer to at least one
     // condition that doesn't exist anymore)
     size_t purged = 0;
     for (auto it = actions_.begin(); it != actions_.end();) {
@@ -161,10 +153,7 @@ void EventLoop::run() {
 }
 
 /* static */ EventLoop& EventLoop::getCurrentLoop() {
-  if (EventLoop::instance_ == nullptr) {
-    throw std::runtime_error("No current EventLoop exists.");
-  }
-
-  return *EventLoop::instance_;
+  static EventLoop instance;
+  return instance;
 }
 }

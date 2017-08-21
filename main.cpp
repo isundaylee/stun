@@ -245,7 +245,6 @@ int main(int argc, char* argv[]) {
 
   common::Configerator config(configPath);
   common::Notebook notebook(generateNotebookPath(configPath));
-  event::EventLoop loop;
 
   LOG_V("Main") << "Config path is: " << configPath << std::endl;
   LOG_V("Main") << "Notebook path is: " << generateNotebookPath(configPath)
@@ -280,7 +279,7 @@ int main(int argc, char* argv[]) {
     setupClient();
   }
 
-  loop.run();
+  event::EventLoop::getCurrentLoop().run();
 
   return 0;
 }
