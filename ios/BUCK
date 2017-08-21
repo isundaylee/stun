@@ -4,34 +4,74 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-apple_resource(
-  name = 'StunResources',
-  files = glob(['*.png']),
-  dirs = [],
-)
 
 apple_bundle(
   name = 'Stun',
   binary = ':StunBinary',
   extension = 'app',
   info_plist = 'Info.plist',
+  deps = [
+    ':StunExtension',
+  ],
+)
+
+# Stun main app
+
+apple_resource(
+  name = 'StunResources',
+  files = glob(['Resources/*.png']),
+  dirs = [],
 )
 
 apple_binary(
   name = 'StunBinary',
-  deps = [':StunResources'],
+  deps = [
+    ':StunResources',
+    '//stats:stats',
+    '//event:event',
+  ],
   preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
   headers = glob([
-    '*.h',
+    'Stun/*.h',
+    'Stun/*.hh',
   ]),
   srcs = glob([
-    '*.m',
+    'Stun/*.m',
+    'Stun/*.mm',
   ]),
   frameworks = [
     '$SDKROOT/System/Library/Frameworks/UIKit.framework',
     '$SDKROOT/System/Library/Frameworks/Foundation.framework',
   ],
 )
+
+# Stun network extension
+
+apple_binary(
+  name = 'StunExtensionBinary',
+  preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
+  headers = glob([
+    'StunExtension/*.h',
+  ]),
+  srcs = glob([
+    'StunExtension/*.m',
+  ]),
+  frameworks = [
+    '$SDKROOT/System/Library/Frameworks/UIKit.framework',
+    '$SDKROOT/System/Library/Frameworks/Foundation.framework',
+    '$SDKROOT/System/Library/Frameworks/NetworkExtension.framework',
+  ],
+  linker_flags = ['-e', '_NSExtensionMain'],
+)
+
+apple_bundle(
+  name = 'StunExtension',
+  binary = ':StunExtensionBinary',
+  extension = 'appex',
+  info_plist = 'StunExtension/Info.plist',
+)
+
+# Package
 
 apple_package(
   name = 'StunPackage',

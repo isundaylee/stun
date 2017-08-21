@@ -21,6 +21,7 @@
     if ((self = [super initWithNibName:nil bundle:nil])) {
         _helloString = helloString;
     }
+    
     return self;
 }
 

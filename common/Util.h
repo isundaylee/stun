@@ -6,11 +6,21 @@
 #include <string>
 #include <vector>
 
+// clang-format off
 #if defined(__linux__)
-#define LINUX 1
-#elif defined(__APPLE__) && defined(__MACH__)
-#define OSX 1
+  #define LINUX 1
+#elif defined(__APPLE__)
+  #include "TargetConditionals.h"
+  #if TARGET_OS_IPHONE && TARGET_IPHONE_SIMULATOR
+    #define IOS 1
+    #define IOS_SIMULATOR 1
+  #elif TARGET_OS_IPHONE
+    #define IOS 1
+  #else
+    #define OSX 1
+  #endif
 #endif
+// clang-format on
 
 typedef unsigned char Byte;
 

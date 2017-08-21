@@ -4,12 +4,12 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
-  <key>CFBundleDisplayName</key>
-  <string>Simple Tunnel</string>
+	<key>CFBundleDisplayName</key>
+	<string>Simple Tunnel</string>
 	<key>CFBundleExecutable</key>
 	<string>Stun</string>
-  <key>CFBundleIconFiles</key>
-  <array>
+	<key>CFBundleIconFiles</key>
+	<array>
 		<string>Icon-60@2x.png</string>
 		<string>Icon-60@3x.png</string>
 		<string>Icon-76.png</string>
@@ -20,9 +20,9 @@
 		<string>Icon-Small.png</string>
 		<string>Icon-Small@2x.png</string>
 		<string>Icon-Small@3x.png</string>
-  </array>
+	</array>
 	<key>CFBundleIdentifier</key>
-	<string>me.ljh.stun</string>
+	<string>me.ljh.stun-cc</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -37,41 +37,41 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-        <key>UILaunchImages</key>
-        <array>
-                <dict>
-                        <key>UILaunchImageMinimumOSVersion</key>
-                        <string>8.0</string>
-                        <key>UILaunchImageName</key>
-                        <string>Default-568h</string>
-                        <key>UILaunchImageOrientation</key>
-                        <string>Portrait</string>
-                        <key>UILaunchImageSize</key>
-                        <string>{320, 568}</string>
-                </dict>
-                <dict>
-                        <key>UILaunchImageMinimumOSVersion</key>
-                        <string>8.0</string>
-                        <key>UILaunchImageName</key>
-                        <string>Default-667h</string>
-                        <key>UILaunchImageOrientation</key>
-                        <string>Portrait</string>
-                        <key>UILaunchImageSize</key>
-                        <string>{375, 667}</string>
-                </dict>
-                <dict>
-                        <key>UILaunchImageMinimumOSVersion</key>
-                        <string>8.0</string>
-                        <key>UILaunchImageName</key>
-                        <string>Default-736h</string>
-                        <key>UILaunchImageOrientation</key>
-                        <string>Portrait</string>
-                        <key>UILaunchImageSize</key>
-                        <string>{414, 736}</string>
-                </dict>
-        </array>
-        <key>UIPrerenderedIcon</key>
-        <true/>
+	<key>UILaunchImages</key>
+	<array>
+		<dict>
+			<key>UILaunchImageMinimumOSVersion</key>
+			<string>8.0</string>
+			<key>UILaunchImageName</key>
+			<string>Default-568h</string>
+			<key>UILaunchImageOrientation</key>
+			<string>Portrait</string>
+			<key>UILaunchImageSize</key>
+			<string>{320, 568}</string>
+		</dict>
+		<dict>
+			<key>UILaunchImageMinimumOSVersion</key>
+			<string>8.0</string>
+			<key>UILaunchImageName</key>
+			<string>Default-667h</string>
+			<key>UILaunchImageOrientation</key>
+			<string>Portrait</string>
+			<key>UILaunchImageSize</key>
+			<string>{375, 667}</string>
+		</dict>
+		<dict>
+			<key>UILaunchImageMinimumOSVersion</key>
+			<string>8.0</string>
+			<key>UILaunchImageName</key>
+			<string>Default-736h</string>
+			<key>UILaunchImageOrientation</key>
+			<string>Portrait</string>
+			<key>UILaunchImageSize</key>
+			<string>{414, 736}</string>
+		</dict>
+	</array>
+	<key>UIPrerenderedIcon</key>
+	<true/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>armv7</string>

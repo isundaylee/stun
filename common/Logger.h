@@ -1,6 +1,14 @@
 #pragma once
 
+#include <common/Util.h>
+
+#if IOS
+#include <os/log.h>
+#endif
+
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 #define L()                                                                    \
   ::common::Logger::getDefault("=======").withLogLevel(common::LogLevel::INFO)
@@ -27,13 +35,13 @@ public:
     }
 
     if (!linePrimed_) {
-      out_ << logHeader() << "[" << tag_ << "] ";
+      buffer_ << logHeader() << "[" << tag_ << "] ";
       for (size_t i = tag_.length(); i < kLoggerTagPaddingTo; i++) {
-        out_ << " ";
+        buffer_ << " ";
       }
       linePrimed_ = true;
     }
-    out_ << v;
+    buffer_ << v;
     return *this;
   }
 
@@ -42,8 +50,10 @@ public:
       return *this;
     }
 
-    out_ << os;
+    buffer_ << os;
     linePrimed_ = false;
+    flush();
+
     return *this;
   }
 
@@ -68,6 +78,7 @@ private:
   std::ostream& out_;
   LogLevel threshold_ = VERBOSE;
   LogLevel level_ = VERBOSE;
+  std::stringstream buffer_;
 
   std::string logHeader() {
     char timestampBuffer[kTimestampBufferSize];
@@ -80,5 +91,17 @@ private:
     strftime(timestampBuffer, kTimestampBufferSize, "[%F %H:%M:%S] ", timeInfo);
     return std::string(timestampBuffer);
   }
+
+#if IOS
+  void flush() {
+    os_log_error(OS_LOG_DEFAULT, "%s", buffer_.str().c_str());
+    buffer_.str("");
+  }
+#else
+  void flush() {
+    out_ << buffer_.str();
+    buffer_.str("");
+  }
+#endif
 };
 }

@@ -10,6 +10,7 @@
   cxxpp = /usr/bin/clang++
   ld = /usr/bin/clang++
   cxxflags = -std=c++1z
+  default_platform = iphonesimulator-x86_64
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
