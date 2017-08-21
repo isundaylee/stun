@@ -57,13 +57,18 @@ Tunnel::Tunnel() {
   checkUnixError(ret, "doing TUNSETIFF");
 
   deviceName = ifr.ifr_ifrn.ifrn_name;
+#elif IOS
+  LOG_E("Tunnel") << "Tunnel is not yet supported on iOS" << std::endl;
+  throw std::runtime_error("Tunnel is not yet supported on iOS");
 #endif
 
+#if LINUX || OSX
   ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK, 0);
   checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   fd_ = common::FileDescriptor{fd};
   LOG_V("Tunnel") << "Opened successfully as " << deviceName << std::endl;
+#endif
 }
 
 event::Condition* Tunnel::canRead() const {

@@ -15,8 +15,10 @@
 #import <event/EventLoop.h>
 #import <event/Action.h>
 #import <event/Timer.h>
+#import <networking/TCPSocket.h>
 
 #import <iostream>
+#import <memory>
 
 using namespace std::chrono_literals;
 
@@ -34,17 +36,29 @@ using namespace std::chrono_literals;
 - (void)doStunEventLoop {
     LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
 
-    event::Timer timer(0s);
-    event::Action hello({timer.didFire()});
-    hello.callback = [&timer]() {
-        L() << "============================== FIRED!" << std::endl;
-        timer.reset(3s);
+    networking::TCPSocket client;
+    client.connect(networking::SocketAddress("192.168.0.53", 3919));
+    
+    std::unique_ptr<event::Action> reader(new event::Action({client.canRead()}));
+    reader->callback = [&client, &reader]() {
+        Byte buffer[4000];
+        try {
+            int read = client.read(&buffer[0], 4000);
+        
+            if (read > 0) {
+                LOG_I("TCP") << "Received " << read << " bytes" << std::endl;
+            }
+        } catch (networking::SocketClosedException const& ex) {
+            LOG_I("TCP") << "Disconnected" << std::endl;
+            reader.reset();
+        }
     };
     
     event::EventLoop::getCurrentLoop().run();
 }
 
 - (void)setupStunEventLoop {
+    common::Logger::getDefault("").setLoggingThreshold(common::LogLevel::VERBOSE);
     LOG_I("Loop") << "Setting up stun event loop." << std::endl;
     
     [self performSelectorInBackground:@selector(doStunEventLoop) withObject:nil];
