@@ -26,9 +26,7 @@ private:
   Client(Client&& move) = delete;
   Client& operator=(Client&& move) = delete;
 
-#if IOS
   ClientSessionHandler::TunnelFactory tunnelFactory_;
-#endif
 
   std::unique_ptr<ClientSessionHandler> handler_;
   std::unique_ptr<event::Action> reconnector_;
