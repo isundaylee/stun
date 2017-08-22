@@ -31,45 +31,43 @@ using namespace std::chrono_literals;
 @synthesize window;
 
 - (void)doStunEventLoop {
-    LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
+  LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
 
-    std::unique_ptr<stun::Client> client;
-    stun::ClientConfig config{
-        networking::SocketAddress("adp.mit.edu", 2859),
-        false,
-        "lovely",
-        0,
-        std::chrono::seconds(0),
-        "mbp",
-        {},
-        {}
-    };
-    client.reset(new stun::Client(config));
-    
-    event::EventLoop::getCurrentLoop().run();
+  std::unique_ptr<stun::Client> client;
+  stun::ClientConfig config{networking::SocketAddress("adp.mit.edu", 2859),
+                            false,
+                            "lovely",
+                            0,
+                            std::chrono::seconds(0),
+                            "mbp",
+                            {},
+                            {}};
+  client.reset(new stun::Client(config));
+
+  event::EventLoop::getCurrentLoop().run();
 }
 
 - (void)setupStunEventLoop {
-    common::Logger::getDefault("").setLoggingThreshold(common::LogLevel::VERBOSE);
-    LOG_I("Loop") << "Setting up stun event loop." << std::endl;
-    
-    [self performSelectorInBackground:@selector(doStunEventLoop) withObject:nil];
+  common::Logger::getDefault("").setLoggingThreshold(common::LogLevel::VERBOSE);
+  LOG_I("Loop") << "Setting up stun event loop." << std::endl;
+
+  [self performSelectorInBackground:@selector(doStunEventLoop) withObject:nil];
 }
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+  self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
 
-    UIViewController *viewController =
-        [[AppViewController alloc] initWithHelloString:@"Hello!"];
+  UIViewController *viewController =
+      [[AppViewController alloc] initWithHelloString:@"Hello!"];
 
-    self.window.rootViewController = viewController;
-    [self.window makeKeyAndVisible];
-    
-    [self setupStunEventLoop];
-    
-    // Override point for customization after application launch.
-    return YES;
+  self.window.rootViewController = viewController;
+  [self.window makeKeyAndVisible];
+
+  [self setupStunEventLoop];
+
+  // Override point for customization after application launch.
+  return YES;
 }
 
 @end
