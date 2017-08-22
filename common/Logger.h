@@ -102,6 +102,7 @@ private:
 #else
   void flush() {
     out_ << buffer_.str();
+    out_.flush();
     buffer_.str("");
   }
 #endif
