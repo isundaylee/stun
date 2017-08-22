@@ -6,7 +6,7 @@ namespace stun {
 
 using networking::TunnelClosedException;
 
-Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
+Dispatcher::Dispatcher(std::unique_ptr<networking::Tunnel> tunnel)
     : tunnel_(std::move(tunnel)), canSend_(new event::ComputedCondition()),
       canReceive_(new event::ComputedCondition()),
       statTxBytes_("Connection", "tx_bytes"),
@@ -17,10 +17,10 @@ Dispatcher::Dispatcher(networking::Tunnel&& tunnel)
   canReceive_->expression
       .setMethod<Dispatcher, &Dispatcher::calculateCanReceive>(this);
 
-  sender_.reset(new event::Action({tunnel_.canRead(), canSend_.get()}));
+  sender_.reset(new event::Action({tunnel_->canRead(), canSend_.get()}));
   sender_->callback.setMethod<Dispatcher, &Dispatcher::doSend>(this);
 
-  receiver_.reset(new event::Action({canReceive_.get(), tunnel_.canWrite()}));
+  receiver_.reset(new event::Action({canReceive_.get(), tunnel_->canWrite()}));
   receiver_->callback.setMethod<Dispatcher, &Dispatcher::doReceive>(this);
 }
 
@@ -58,7 +58,7 @@ void Dispatcher::doSend() {
         TunnelPacket in;
 
         try {
-          auto ret = tunnel_.read(in);
+          auto ret = tunnel_->read(in);
           if (!ret) {
             break;
           }
@@ -94,7 +94,7 @@ void Dispatcher::doReceive() {
       bytesDispatched += in.size;
       statRxBytes_.accumulate(in.size);
 
-      if (!tunnel_.write(std::move(in))) {
+      if (!tunnel_->write(std::move(in))) {
         LOG_I("Dispatcher") << "Dropped an incoming packet." << std::endl;
         return;
       }

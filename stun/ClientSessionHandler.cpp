@@ -7,13 +7,13 @@
 
 namespace stun {
 
-const static size_t kClientSessionHandlerRouteChunkSize = 1;
-
 using namespace std::chrono_literals;
 
 ClientSessionHandler::ClientSessionHandler(
-    ClientConfig config, std::unique_ptr<TCPSocket> commandPipe)
-    : config_(config), messenger_(new Messenger(std::move(commandPipe))),
+    ClientConfig config, std::unique_ptr<TCPSocket> commandPipe,
+    TunnelFactory tunnelFactory)
+    : config_(config), tunnelFactory_(tunnelFactory),
+      messenger_(new Messenger(std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
 
   if (!config_.secret.empty()) {
@@ -44,14 +44,29 @@ void ClientSessionHandler::attachHandlers() {
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
 
-    dispatcher_.reset(new Dispatcher(createTunnel(
+    auto tunnelConfig = ClientTunnelConfig{
         IPAddress(body["client_tunnel_ip"].template get<std::string>()),
         IPAddress(body["server_tunnel_ip"].template get<std::string>()),
-        SubnetAddress(body["server_subnet"].template get<std::string>()))));
+        SubnetAddress(body["server_subnet"].template get<std::string>()),
+        kTunnelEthernetMTU,
+        config_.subnetsToForward,
+        config_.subnetsToExclude,
+    };
+
+    auto tunnelPromise = tunnelFactory_(tunnelConfig);
 
     LOG_I("Session") << "Received config from the server." << std::endl;
 
-    return Message("config_done", "");
+    event::Trigger::arm(
+        {tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
+        [this, tunnelPromise]() {
+          LOG_I("Session") << "Tunnel established." << std::endl;
+          dispatcher_.reset(new Dispatcher(tunnelPromise->consume()));
+
+          messenger_->outboundQ->push(Message("config_done", ""));
+        });
+
+    return Message::null();
   });
 
   messenger_->addHandler("new_data_pipe", [this](auto const& message) {
@@ -86,66 +101,5 @@ void ClientSessionHandler::attachHandlers() {
                      << std::endl;
     return Message::disconnect();
   });
-}
-
-/* static */ void
-ClientSessionHandler::createRoutes(std::vector<Route> routes) {
-  // Adding routes under OSX is slow if we have thousands of routes to add.
-  // We need to chunk them, as otherwise, doing it all at the same time would
-  // starve our Messenger heartbeats, and cause the connection to fail.
-  size_t left = kClientSessionHandlerRouteChunkSize;
-
-  while (!routes.empty()) {
-    InterfaceConfig::newRoute(routes.back());
-    routes.pop_back();
-    left--;
-
-    if (left == 0) {
-      LOG_V("Session") << "Added " << kClientSessionHandlerRouteChunkSize
-                       << " routes." << std::endl;
-
-      // We yield the remaining routes to the next event loop iteration
-      event::Trigger::perform([routes = std::move(routes)]() {
-        ClientSessionHandler::createRoutes(routes);
-      });
-
-      break;
-    }
-  }
-}
-
-Tunnel
-ClientSessionHandler::createTunnel(IPAddress const& myTunnelAddr,
-                                   IPAddress const& peerTunnelAddr,
-                                   SubnetAddress const& serverSubnetAddr) {
-  Tunnel tunnel;
-
-  // Configure the new interface
-  InterfaceConfig::newLink(tunnel.deviceName, kTunnelEthernetMTU);
-  InterfaceConfig::setLinkAddress(tunnel.deviceName, myTunnelAddr,
-                                  peerTunnelAddr);
-
-  auto routes = std::vector<Route>{};
-
-  // Create routing rules for subnets NOT to forward
-  auto excludedSubnets = config_.subnetsToExclude;
-  excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
-  RouteDestination originalRouteDest =
-      InterfaceConfig::getRoute(config_.serverAddr.getHost());
-  for (auto const& exclusion : excludedSubnets) {
-    routes.push_back(Route{exclusion, originalRouteDest});
-  }
-
-  // Create routing rules for subnets to forward
-  auto forwardSubnets = config_.subnetsToForward;
-  forwardSubnets.emplace_back(serverSubnetAddr);
-  for (auto const& subnet : forwardSubnets) {
-    RouteDestination routeDest(peerTunnelAddr);
-    routes.push_back(Route{subnet, routeDest});
-  }
-
-  ClientSessionHandler::createRoutes(std::move(routes));
-
-  return tunnel;
 }
 }

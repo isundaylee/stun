@@ -10,6 +10,9 @@ template <typename T> class Promise {
 public:
   Promise() : isReady_(new BaseCondition()) {}
 
+  Promise(Promise&& move) = default;
+  Promise& operator=(Promise&& move) = default;
+
   Condition* isReady() const { return isReady_.get(); }
 
   void fulfill(T value) {

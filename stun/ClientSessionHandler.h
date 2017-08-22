@@ -2,6 +2,7 @@
 
 #include <stun/Dispatcher.h>
 
+#include <event/Promise.h>
 #include <event/Timer.h>
 #include <networking/IPAddressPool.h>
 #include <networking/Messenger.h>
@@ -10,6 +11,16 @@
 namespace stun {
 
 using namespace networking;
+
+struct ClientTunnelConfig {
+public:
+  IPAddress myTunnelAddr;
+  IPAddress peerTunnelAddr;
+  SubnetAddress serverSubnetAddr;
+  size_t mtu;
+  std::vector<SubnetAddress> subnetsToForward;
+  std::vector<SubnetAddress> subnetsToExclude;
+};
 
 struct ClientConfig {
 public:
@@ -27,13 +38,18 @@ public:
 
 class ClientSessionHandler {
 public:
+  using TunnelFactory = std::function<std::shared_ptr<
+      event::Promise<std::unique_ptr<networking::Tunnel>>>(ClientTunnelConfig)>;
+
   ClientSessionHandler(ClientConfig config,
-                       std::unique_ptr<TCPSocket> commandPipe);
+                       std::unique_ptr<TCPSocket> commandPipe,
+                       TunnelFactory tunnelFactory);
 
   event::Condition* didEnd() const;
 
 private:
   ClientConfig config_;
+  TunnelFactory tunnelFactory_;
 
   std::unique_ptr<Messenger> messenger_;
   std::unique_ptr<Dispatcher> dispatcher_;
@@ -41,8 +57,5 @@ private:
   std::unique_ptr<event::BaseCondition> didEnd_;
 
   void attachHandlers();
-  static void createRoutes(std::vector<networking::Route> routes);
-  Tunnel createTunnel(IPAddress const& myAddr, IPAddress const& peerAddr,
-                      SubnetAddress const& serverSubnetAddr);
 };
 }

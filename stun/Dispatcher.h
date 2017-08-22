@@ -12,7 +12,7 @@ using networking::TunnelPacket;
 
 class Dispatcher {
 public:
-  Dispatcher(networking::Tunnel&& tunnel);
+  Dispatcher(std::unique_ptr<networking::Tunnel> tunnel);
 
   size_t bytesDispatched = 0;
 
@@ -25,7 +25,7 @@ private:
   Dispatcher(Dispatcher&& move) = delete;
   Dispatcher& operator=(Dispatcher&& move) = delete;
 
-  networking::Tunnel tunnel_;
+  std::unique_ptr<networking::Tunnel> tunnel_;
   std::vector<std::unique_ptr<DataPipe>> dataPipes_;
   size_t currentDataPipeIndex_;
 

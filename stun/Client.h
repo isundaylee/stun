@@ -24,6 +24,8 @@ private:
   std::unique_ptr<ClientSessionHandler> handler_;
   std::unique_ptr<event::Action> reconnector_;
 
+  static void createRoutes(std::vector<networking::Route> routes);
+  std::unique_ptr<Tunnel> createTunnel(ClientTunnelConfig config);
   void doReconnect();
 };
 }
