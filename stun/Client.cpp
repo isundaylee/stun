@@ -11,7 +11,23 @@ using namespace std::chrono_literals;
 const static event::Duration kReconnectDelayInterval = 5s;
 const static size_t kClientRouteChunkSize = 1;
 
-Client::Client(ClientConfig config) : config_(config) { connect(); }
+#if IOS
+Client::Client(ClientConfig config,
+               ClientSessionHandler::TunnelFactory tunnelFactory)
+    : config_(config), tunnelFactory_(tunnelFactory) {
+  connect();
+}
+#else
+Client::Client(ClientConfig config) : config_(config) {
+  tunnelFactory_ = [this](ClientTunnelConfig config) {
+    auto promise = std::make_shared<event::Promise<std::unique_ptr<Tunnel>>>();
+    promise->fulfill(createTunnel(config));
+    return promise;
+  };
+
+  connect();
+}
+#endif
 
 Client::~Client() = default;
 
@@ -77,13 +93,7 @@ void Client::connect() {
   socket.connect(config_.serverAddr);
 
   handler_.reset(new ClientSessionHandler(
-      config_, std::make_unique<TCPSocket>(std::move(socket)),
-      [this](ClientTunnelConfig config) {
-        auto promise =
-            std::make_shared<event::Promise<std::unique_ptr<Tunnel>>>();
-        promise->fulfill(createTunnel(config));
-        return promise;
-      }));
+      config_, std::make_unique<TCPSocket>(std::move(socket)), tunnelFactory_));
   reconnector_.reset(new event::Action({handler_->didEnd()}));
   reconnector_->callback.setMethod<Client, &Client::doReconnect>(this);
 }

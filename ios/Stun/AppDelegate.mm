@@ -33,16 +33,25 @@ using namespace std::chrono_literals;
 - (void)doStunEventLoop {
   LOG_I("Loop") << "Stun event loop thread spawned." << std::endl;
 
-  std::unique_ptr<stun::Client> client;
-  stun::ClientConfig config{networking::SocketAddress("adp.mit.edu", 2859),
-                            false,
-                            "lovely",
-                            0,
-                            std::chrono::seconds(0),
-                            "mbp",
-                            {},
-                            {}};
-  client.reset(new stun::Client(config));
+  auto client = std::move(std::unique_ptr<stun::Client>{});
+  auto config =
+      stun::ClientConfig{networking::SocketAddress("adp.mit.edu", 2859),
+                         false,
+                         "lovely",
+                         0,
+                         std::chrono::seconds(0),
+                         "mbp",
+                         {},
+                         {}};
+
+  auto tunnelFactory = [](stun::ClientTunnelConfig config) {
+    auto tunnelPromise =
+        std::make_shared<event::Promise<std::unique_ptr<networking::Tunnel>>>();
+    L() << "WE HAVE MADE A PROMISE!" << std::endl;
+    return tunnelPromise;
+  };
+
+  client.reset(new stun::Client(config, tunnelFactory));
 
   event::EventLoop::getCurrentLoop().run();
 }
