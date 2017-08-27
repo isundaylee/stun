@@ -41,6 +41,7 @@ apple_binary(
   frameworks = [
     '$SDKROOT/System/Library/Frameworks/UIKit.framework',
     '$SDKROOT/System/Library/Frameworks/Foundation.framework',
+    '$SDKROOT/System/Library/Frameworks/NetworkExtension.framework',
   ],
 )
 
