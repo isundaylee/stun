@@ -22,7 +22,7 @@
 		<string>Icon-Small@3x.png</string>
 	</array>
 	<key>CFBundleIdentifier</key>
-	<string>me.ljh.stun-cc</string>
+	<string>me.ljh.stunapp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

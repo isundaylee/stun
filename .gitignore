@@ -16,3 +16,4 @@ BUCKAROO_DEPS
 
 *.xcodeproj
 *.xcworkspace
+/certs
