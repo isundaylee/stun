@@ -10,9 +10,9 @@ apple_bundle(
   binary = ':StunBinary',
   extension = 'app',
   info_plist = 'Info.plist',
-  deps = [
-    ':StunPacketTunnel',
-  ],
+  # deps = [
+  #   ':StunPacketTunnel',
+  # ],
 )
 
 # Stun main app
@@ -27,7 +27,6 @@ apple_binary(
   name = 'StunBinary',
   deps = [
     ':StunResources',
-    '//stun:stun',
   ],
   preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
   headers = glob([

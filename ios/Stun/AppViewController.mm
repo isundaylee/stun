@@ -31,7 +31,7 @@
   NETunnelProviderProtocol *protocol = [[NETunnelProviderProtocol alloc] init];
   protocol.providerBundleIdentifier = @"me.ljh.stunapp.packet-tunnel";
   protocol.providerConfiguration = @{};
-  protocol.serverAddress = @"stun.ljh.me";
+  protocol.serverAddress = @"stun.ljh.me1";
   manager.protocolConfiguration = protocol;
   [manager saveToPreferencesWithCompletionHandler:^(NSError *_Nullable error) {
     if (error != NULL) {
