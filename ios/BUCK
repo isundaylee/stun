@@ -10,9 +10,9 @@ apple_bundle(
   binary = ':StunBinary',
   extension = 'app',
   info_plist = 'Info.plist',
-  # deps = [
-  #   ':StunPacketTunnel',
-  # ],
+  deps = [
+    ':StunPacketTunnel',
+  ],
 )
 
 # Stun main app
@@ -51,12 +51,13 @@ apple_binary(
   preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
   headers = glob([
     'StunPacketTunnel/*.h',
+    'StunPacketTunnel/*.hh',
   ]),
   srcs = glob([
     'StunPacketTunnel/*.m',
+    'StunPacketTunnel/*.mm',
   ]),
   frameworks = [
-    '$SDKROOT/System/Library/Frameworks/UIKit.framework',
     '$SDKROOT/System/Library/Frameworks/Foundation.framework',
     '$SDKROOT/System/Library/Frameworks/NetworkExtension.framework',
   ],
@@ -68,6 +69,7 @@ apple_bundle(
   binary = ':StunPacketTunnelBinary',
   extension = 'appex',
   info_plist = 'StunPacketTunnel/Info.plist',
+  xcode_product_type = 'com.apple.product-type.app-extension',
 )
 
 # Package

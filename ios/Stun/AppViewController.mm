@@ -15,33 +15,103 @@
 @property(nonatomic, strong) UILabel *statusLabel;
 @property(nonatomic, strong) UIButton *connectButton;
 
+@property(nonatomic, strong) NETunnelProviderManager *manager;
+
 @end
 
 @implementation AppViewController {
 }
 
-- (void)doConnect {
-  self.statusLabel.text = @"Connecting...";
+- (void)doCheckExistingProfiles {
+  [NETunnelProviderManager
+      loadAllFromPreferencesWithCompletionHandler:^(
+          NSArray<NETunnelProviderManager *> *_Nullable managers,
+          NSError *_Nullable error) {
+        if (error != NULL) {
+          NSLog(@"Cannot load existing profiles: %@", error);
+          self.statusLabel.text = @"Failed to load profiles";
+          return;
+        }
+
+        assert(managers != NULL);
+
+        if ([managers count] == 0) {
+          [self doCreateProfile];
+        } else {
+          assert([managers count] == 1);
+          self.manager = [managers objectAtIndex:0];
+
+          [self doConnect];
+        }
+      }];
 }
 
-- (void)doStartConnection {
-  self.statusLabel.text = @"Creating profile...";
+// - (void)doLoadProfile {
+//   self.statusLabel.text = @"Loading profile...";
+//
+//   NETunnelProviderManager *manager = [[NETunnelProviderManager alloc] init];
+//   [manager
+//       loadFromPreferencesWithCompletionHandler:^(NSError *_Nullable error) {
+//         if (error != NULL) {
+//           NSLog(@"Error while loading profile: %@", error);
+//           self.statusLabel.text = @"Failed to load profile";
+//           return;
+//         }
+//
+//         [self doCreateProfileWithManager:manager];
+//       }];
+// }
 
+- (void)doCreateProfile {
   NETunnelProviderManager *manager = [[NETunnelProviderManager alloc] init];
   NETunnelProviderProtocol *protocol = [[NETunnelProviderProtocol alloc] init];
   protocol.providerBundleIdentifier = @"me.ljh.stunapp.packet-tunnel";
   protocol.providerConfiguration = @{};
-  protocol.serverAddress = @"stun.ljh.me1";
+  protocol.serverAddress = @"stun.ljh.me";
   manager.protocolConfiguration = protocol;
+  manager.enabled = YES;
   [manager saveToPreferencesWithCompletionHandler:^(NSError *_Nullable error) {
     if (error != NULL) {
-      NSLog(@"%@", error);
+      NSLog(@"Error while creating profile: %@", error);
       self.statusLabel.text = @"Failed to create profile";
       return;
     }
 
+    self.manager = manager;
     [self doConnect];
   }];
+}
+
+- (void)doConnect {
+  assert(self.manager != NULL);
+
+  self.statusLabel.text = @"Connecting...";
+
+  [self.manager
+      loadFromPreferencesWithCompletionHandler:^(NSError *_Nullable error) {
+        assert(error == NULL);
+
+        NETunnelProviderSession *session =
+            (NETunnelProviderSession *)self.manager.connection;
+        NSDictionary *options = @{};
+        NSError *err = NULL;
+
+        NEVPNStatus status = self.manager.connection.status;
+        NSLog(@"STATUS IS ++++++++++++++++++++++++++++++++++++++++++++++ %ld",
+              status);
+
+        [session startVPNTunnelWithOptions:options andReturnError:&err];
+
+        if (err != NULL) {
+          NSLog(@"Error while connecting: %@", err);
+          self.statusLabel.text = @"Failed to connect";
+          return;
+        }
+      }];
+}
+
+- (void)doStartConnection {
+  [self doCheckExistingProfiles];
 }
 
 - (void)viewDidLoad {

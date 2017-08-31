@@ -29,7 +29,7 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.networkextension.packet-tunnel</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>Stun.PacketTunnelProvider</string>
+		<string>PacketTunnelProvider</string>
 	</dict>
 </dict>
 </plist>
