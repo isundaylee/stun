@@ -70,6 +70,8 @@ public:
 
   void setLoggingThreshold(LogLevel threshold) { threshold_ = threshold; }
 
+  std::function<void(std::string)> tee;
+
 private:
   const size_t kTimestampBufferSize = 64;
 
@@ -97,12 +99,22 @@ private:
     static os_log_t logObject = os_log_create("me.ljh.stun", "");
 
     os_log_error(logObject, "%s", buffer_.str().c_str());
+
+    if (!!tee) {
+      tee(buffer_.str());
+    }
+
     buffer_.str("");
   }
 #else
   void flush() {
     out_ << buffer_.str();
     out_.flush();
+
+    if (!!tee) {
+      tee(buffer_.str());
+    }
+
     buffer_.str("");
   }
 #endif

@@ -48,6 +48,7 @@ public:
   size_t prefixLen;
 
   std::string toString() const;
+  std::string subnetMask() const;
   bool contains(IPAddress const& addr) const;
   IPAddress firstHostAddress() const;
   IPAddress lastHostAddress() const;

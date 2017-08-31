@@ -85,6 +85,19 @@ std::string SubnetAddress::toString() const {
   return addr.toString() + "/" + std::to_string(prefixLen);
 }
 
+std::string SubnetAddress::subnetMask() const {
+  Byte maskOctets[4];
+
+  maskOctets[0] = (mask & 0xff000000) >> 24;
+  maskOctets[1] = (mask & 0x00ff0000) >> 16;
+  maskOctets[2] = (mask & 0x0000ff00) >> 8;
+  maskOctets[3] = (mask & 0x000000ff);
+
+  return std::to_string(maskOctets[0]) + "." + std::to_string(maskOctets[1]) +
+         "." + std::to_string(maskOctets[2]) + "." +
+         std::to_string(maskOctets[3]);
+}
+
 bool SubnetAddress::contains(IPAddress const& addr) const {
   return (this->addr.toNumerical() & mask) == (addr.toNumerical() & mask);
 }
