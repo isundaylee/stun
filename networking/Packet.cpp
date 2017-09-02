@@ -29,6 +29,8 @@ Packet::~Packet() {
 }
 
 void Packet::fill(Byte* buffer, size_t size) {
+  assertTrue(size < kPacketPoolBlockSize,
+             "Gigantic packet encountered, size: " + std::to_string(size));
   this->size = size;
   memcpy(data, buffer, size);
 }

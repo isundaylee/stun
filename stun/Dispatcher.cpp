@@ -67,6 +67,12 @@ void Dispatcher::doSend() {
           assertTrue(false, "Tunnel should never close.");
         }
 
+        assertTrue(
+            in.data[0] == 0x00 && in.data[1] == 0x00 && in.data[2] == 0x08 &&
+                in.data[3] == 0x00,
+            "Outgoing packets read from tunnel need to have header 0x00 0x00 "
+            "0x08 0x00");
+
         DataPacket out;
         bytesDispatched += in.size;
         statTxBytes_.accumulate(in.size);

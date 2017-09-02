@@ -106,14 +106,17 @@ bool Tunnel::read(TunnelPacket& packet) {
 
 bool Tunnel::write(TunnelPacket packet) {
 #if OSX
-  // OSX tunnel has header 0x00 0x00 0x00 0x02, whereas Linux tunnel has header
-  // 0x00 0x00 0x08 0x00. Here we do the translation.
-  assertTrue(packet.data[0] == 0x00, "header[0] != 0x00");
-  assertTrue(packet.data[1] == 0x00, "header[1] != 0x00");
-  assertTrue(packet.data[2] == 0x08, "header[2] != 0x08");
-  assertTrue(packet.data[3] == 0x00, "header[3] != 0x00");
+  packet.data[0] = 0x00;
+  packet.data[1] = 0x00;
   packet.data[2] = 0x00;
   packet.data[3] = 0x02;
+#elif LINUX
+  packet.data[0] = 0x00;
+  packet.data[1] = 0x00;
+  packet.data[2] = 0x08;
+  packet.data[3] = 0x00;
+#else
+#error "Unexpected OS"
 #endif
 
   return fd_.atomicWrite(packet.data, packet.size);

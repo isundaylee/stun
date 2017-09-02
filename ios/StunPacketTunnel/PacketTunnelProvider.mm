@@ -34,19 +34,20 @@ using namespace std::chrono_literals;
 }
 
 std::unique_ptr<stun::Client> client;
+static const int kServerPort = 2859;
 
 - (void)startTunnelWithOptions:(NSDictionary<NSString *, NSObject *> *)options
              completionHandler:(void (^)(NSError *error))completionHandler {
   [self startStunEventLoop];
 
   auto clientConfig = stun::ClientConfig{
-      networking::SocketAddress("adp.mit.edu", 2859),
+      networking::SocketAddress("adp.mit.edu", kServerPort),
       false,
       "lovely",
       0,
       0s,
       "ios",
-      {networking::SubnetAddress{networking::IPAddress("45.55.3.169"), 32}},
+      {},
       {},
   };
 
@@ -65,36 +66,11 @@ std::unique_ptr<stun::Client> client;
         initWithAddresses:@[ @(config.myTunnelAddr.toString().c_str()) ]
               subnetMasks:@[ @(config.serverSubnetAddr.subnetMask().c_str()) ]];
     settings.MTU = @(config.mtu);
+    settings.DNSSettings =
+        [[NEDNSSettings alloc] initWithServers:@[ @"8.8.8.8", @"8.8.4.4" ]];
 
-    // Setting up routes to forward/exclude
-    NSMutableArray *includedRoutes = [[NSMutableArray alloc] init];
-    for (auto const &subnetToForward : config.subnetsToForward) {
-      [includedRoutes
-          insertObject:[[NEIPv4Route alloc]
-                           initWithDestinationAddress:@(subnetToForward.addr
-                                                            .toString()
-                                                            .c_str())
-                                           subnetMask:@(subnetToForward
-                                                            .subnetMask()
-                                                            .c_str())]
-               atIndex:[includedRoutes count]];
-    }
-
-    NSMutableArray *excludedRoutes = [[NSMutableArray alloc] init];
-    for (auto const &subnetToExclude : config.subnetsToExclude) {
-      [excludedRoutes
-          insertObject:[[NEIPv4Route alloc]
-                           initWithDestinationAddress:@(subnetToExclude.addr
-                                                            .toString()
-                                                            .c_str())
-                                           subnetMask:@(subnetToExclude
-                                                            .subnetMask()
-                                                            .c_str())]
-               atIndex:[excludedRoutes count]];
-    }
-
-    settings.IPv4Settings.includedRoutes = [includedRoutes copy];
-    settings.IPv4Settings.excludedRoutes = [excludedRoutes copy];
+    settings.IPv4Settings.includedRoutes = @[ [NEIPv4Route defaultRoute] ];
+    settings.IPv4Settings.excludedRoutes = @[];
 
     // Setting up the tunnel
     [self
@@ -106,44 +82,60 @@ std::unique_ptr<stun::Client> client;
                    return;
                  }
 
-                 NSLog(@"Network tunnel set up");
+                 auto tunnelSender = ^(networking::TunnelPacket packet) {
+                   auto data = [NSData dataWithBytes:&packet.data[4]
+                                              length:packet.size - 4];
+                   [self.packetFlow writePackets:@[ data ]
+                                   withProtocols:@[ @(AF_INET) ]];
+                 };
+
+                 auto tunnelReceiver = ^std::shared_ptr<
+                     event::Promise<std::vector<networking::TunnelPacket>>>() {
+                   auto packetsPromise = std::make_shared<
+                       event::Promise<std::vector<networking::TunnelPacket>>>();
+                   [self.packetFlow
+                       readPacketsWithCompletionHandler:^(
+                           NSArray<NSData *> *_Nonnull packets,
+                           NSArray<NSNumber *> *_Nonnull protocols) {
+                         auto tunnelPackets =
+                             std::vector<networking::TunnelPacket>{};
+
+                         for (int i = 0; i < protocols.count; i++) {
+                           if ([[protocols objectAtIndex:i] intValue] !=
+                               AF_INET) {
+                             NSLog(@"Ignoring non-IPv4 packet of size "
+                                   @"%lu",
+                                   [[packets objectAtIndex:0] length]);
+                             continue;
+                           }
+
+                           // FIXME: Investigate a more sysmetic way of dealing
+                           // with headers.
+
+                           auto packet = [packets objectAtIndex:i];
+                           auto packetContent = new Byte[packet.length + 4];
+                           packetContent[0] = 0x00;
+                           packetContent[1] = 0x00;
+                           packetContent[2] = 0x08;
+                           packetContent[3] = 0x00;
+                           memcpy(&packetContent[4], packet.bytes,
+                                  packet.length);
+
+                           auto tunnelPacket = networking::TunnelPacket{};
+                           tunnelPacket.fill(packetContent, packet.length + 4);
+                           tunnelPackets.emplace_back(std::move(tunnelPacket));
+
+                           delete[] packetContent;
+                         }
+
+                         packetsPromise->fulfill(std::move(tunnelPackets));
+                       }];
+
+                   return packetsPromise;
+                 };
+
                  tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
-                     // Sender
-                     ^(networking::TunnelPacket packet) {
-                       L() << "SENDING PACKET OF SIZE " << packet.size
-                           << std::endl;
-                     },
-                     // Receiver
-                     ^std::shared_ptr<event::Promise<
-                         std::vector<networking::TunnelPacket>>>() {
-                       auto packetsPromise = std::make_shared<event::Promise<
-                           std::vector<networking::TunnelPacket>>>();
-
-                       [self.packetFlow
-                           readPacketsWithCompletionHandler:^(
-                               NSArray<NSData *> *_Nonnull packets,
-                               NSArray<NSNumber *> *_Nonnull protocols) {
-
-                             auto tunnelPackets =
-                                 std::vector<networking::TunnelPacket>{};
-
-                             for (int i = 0; i < [protocols count]; i++) {
-                               if ([[protocols objectAtIndex:i] intValue] !=
-                                   AF_INET) {
-                                 NSLog(@"Ignoring non-IPv4 packet of size "
-                                       @"%lu",
-                                       [[packets objectAtIndex:0] length]);
-                               }
-                             }
-
-                             NSLog(@"Delivering %lu packets.",
-                                   tunnelPackets.size());
-
-                             packetsPromise->fulfill(std::move(tunnelPackets));
-                           }];
-
-                       return packetsPromise;
-                     }));
+                     tunnelSender, tunnelReceiver));
 
                  completionHandler(nil);
                }];

@@ -37,14 +37,20 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
                         route.subnet.addr.toString() + "/" +
                         std::to_string(route.subnet.prefixLen);
 
-  assertTrue(!route.dest.gatewayAddr.empty(),
-             "Only gateway routes are currently supported on OSX.");
-  command += " " + route.dest.gatewayAddr.toString();
+  if (!route.dest.gatewayAddr.empty()) {
+    command += " " + route.dest.gatewayAddr.toString();
+  }
+
+  if (!route.dest.interfaceName.empty()) {
+    command += " -iface " + route.dest.interfaceName;
+  }
 
   runCommand(command);
 
   LOG_V("Interface") << "Added a route to " << route.subnet.toString()
-                     << " via " << route.dest.gatewayAddr << "." << std::endl;
+                     << " via " << route.dest.gatewayAddr
+                     << " (iface: " << route.dest.interfaceName << ")."
+                     << std::endl;
 }
 
 /* static */ RouteDestination

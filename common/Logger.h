@@ -6,6 +6,7 @@
 #include <os/log.h>
 #endif
 
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>

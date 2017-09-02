@@ -20,7 +20,7 @@ using TunnelClosedException = common::FileDescriptor::ClosedException;
 
 static const unsigned int kTunnelEthernetMTU = 1444;
 static const int kTunnelBufferSize = 2000;
-static const int kIOSTunnelPendingPacketQueueSize = 32;
+static const int kIOSTunnelPendingPacketQueueSize = 128;
 
 const size_t kTunnelPacketSize = 2048;
 
@@ -35,8 +35,8 @@ public:
 
 #if IOS
   using Sender = std::function<void(TunnelPacket packet)>;
-  using Receiver = std::function<
-      std::shared_ptr<event::Promise<std::vector<TunnelPacket>>>()>;
+  using PacketsPromise = event::Promise<std::vector<TunnelPacket>>;
+  using Receiver = std::function<std::shared_ptr<PacketsPromise>()>;
 
   Tunnel(Sender sender, Receiver receiver);
   Tunnel(Tunnel&& move);
@@ -63,19 +63,21 @@ private:
 #if IOS
   std::unique_ptr<event::ComputedCondition> canRead_;
   std::unique_ptr<event::ComputedCondition> canWrite_;
+  std::unique_ptr<event::ComputedCondition> canReceive_;
 
   Sender sender_;
   Receiver receiver_;
 
-  std::unique_ptr<event::Timer> receiveTimer_;
   std::unique_ptr<event::Action> receiveAction_;
   std::unique_ptr<event::FIFO<TunnelPacket>> pendingPackets_{
       new event::FIFO<TunnelPacket>(kIOSTunnelPendingPacketQueueSize)};
+  std::shared_ptr<PacketsPromise> packetsPromise_;
 
   void doReceive();
 
-  bool calculateCanRead() const;
-  bool calculateCanWrite() const;
+  bool calculateCanRead();
+  bool calculateCanWrite();
+  bool calculateCanReceive();
 #endif
 };
 };
