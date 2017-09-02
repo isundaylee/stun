@@ -14,6 +14,14 @@ Packet::Packet(Packet&& move) : capacity(move.capacity), size(move.size) {
   move.data = nullptr;
 }
 
+Packet& Packet::operator=(Packet&& move) {
+  std::swap(capacity, move.capacity);
+  std::swap(size, move.size);
+  std::swap(data, move.data);
+
+  return *this;
+}
+
 Packet::~Packet() {
   if (data != nullptr) {
     pool_.free(data);

@@ -20,6 +20,7 @@ struct Packet {
 
   Packet(size_t capacity);
   Packet(Packet&& move);
+  Packet& operator=(Packet&& move);
   ~Packet();
 
   void fill(Byte* buffer, size_t size);

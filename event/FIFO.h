@@ -15,9 +15,9 @@ public:
     updateConditions();
   }
 
-  Condition* canPush() { return canPush_.get(); }
+  Condition* canPush() const { return canPush_.get(); }
 
-  Condition* canPop() { return canPop_.get(); }
+  Condition* canPop() const { return canPop_.get(); }
 
   void push(T&& element) {
     if (queue_.size() >= capacity_) {

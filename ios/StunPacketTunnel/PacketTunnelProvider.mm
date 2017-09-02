@@ -53,8 +53,8 @@ std::unique_ptr<stun::Client> client;
   auto tunnelFactory =
       ^std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>(
           stun::ClientTunnelConfig config) {
-    std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>
-        tunnelPromise;
+    auto tunnelPromise =
+        std::make_shared<event::Promise<std::unique_ptr<networking::Tunnel>>>();
 
     // Setting up basic settings
     NEPacketTunnelNetworkSettings *settings =
@@ -97,13 +97,56 @@ std::unique_ptr<stun::Client> client;
     settings.IPv4Settings.excludedRoutes = [excludedRoutes copy];
 
     // Setting up the tunnel
-    [self setTunnelNetworkSettings:settings
-                 completionHandler:^(NSError *_Nullable error) {
-                   NSLog(@"Network tunnel set up");
-                   completionHandler(nil);
-                 }];
+    [self
+        setTunnelNetworkSettings:settings
+               completionHandler:^(NSError *_Nullable error) {
+                 if (error != NULL) {
+                   NSLog(@"Error while setting up network tunnel: %@", error);
+                   completionHandler(error);
+                   return;
+                 }
 
-    tunnelPromise->fulfill(std::make_unique<networking::Tunnel>());
+                 NSLog(@"Network tunnel set up");
+                 tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
+                     // Sender
+                     ^(networking::TunnelPacket packet) {
+                       L() << "SENDING PACKET OF SIZE " << packet.size
+                           << std::endl;
+                     },
+                     // Receiver
+                     ^std::shared_ptr<event::Promise<
+                         std::vector<networking::TunnelPacket>>>() {
+                       auto packetsPromise = std::make_shared<event::Promise<
+                           std::vector<networking::TunnelPacket>>>();
+
+                       [self.packetFlow
+                           readPacketsWithCompletionHandler:^(
+                               NSArray<NSData *> *_Nonnull packets,
+                               NSArray<NSNumber *> *_Nonnull protocols) {
+
+                             auto tunnelPackets =
+                                 std::vector<networking::TunnelPacket>{};
+
+                             for (int i = 0; i < [protocols count]; i++) {
+                               if ([[protocols objectAtIndex:i] intValue] !=
+                                   AF_INET) {
+                                 NSLog(@"Ignoring non-IPv4 packet of size "
+                                       @"%lu",
+                                       [[packets objectAtIndex:0] length]);
+                               }
+                             }
+
+                             NSLog(@"Delivering %lu packets.",
+                                   tunnelPackets.size());
+
+                             packetsPromise->fulfill(std::move(tunnelPackets));
+                           }];
+
+                       return packetsPromise;
+                     }));
+
+                 completionHandler(nil);
+               }];
 
     return tunnelPromise;
   };

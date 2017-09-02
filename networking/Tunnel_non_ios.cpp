@@ -1,6 +1,9 @@
+#include <common/Util.h>
+
+#if OSX || LINUX
+
 #include "networking/Tunnel.h"
 
-#include <common/Util.h>
 #include <event/IOCondition.h>
 
 #include <fcntl.h>
@@ -116,3 +119,5 @@ bool Tunnel::write(TunnelPacket packet) {
   return fd_.atomicWrite(packet.data, packet.size);
 }
 }
+
+#endif
