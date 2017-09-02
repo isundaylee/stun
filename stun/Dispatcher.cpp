@@ -71,7 +71,10 @@ void Dispatcher::doSend() {
             in.data[0] == 0x00 && in.data[1] == 0x00 && in.data[2] == 0x08 &&
                 in.data[3] == 0x00,
             "Outgoing packets read from tunnel need to have header 0x00 0x00 "
-            "0x08 0x00");
+            "0x08 0x00. Got instead: " +
+                std::to_string(in.data[0]) + " " + std::to_string(in.data[1]) +
+                " " + std::to_string(in.data[2]) + " " +
+                std::to_string(in.data[3]));
 
         DataPacket out;
         bytesDispatched += in.size;

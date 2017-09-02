@@ -25,7 +25,9 @@ public:
       LOG_V("MemoryPool") << "Allocating a new pool." << std::endl;
 
       Byte* newPool = static_cast<Byte*>(malloc(BlockSize * BlockCount));
+      assertTrue(newPool != nullptr, "Out of memory in MemoryPool.");
       pools_.push_back(newPool);
+
       for (size_t i = 0; i < BlockCount; i++) {
         this->free(newPool);
         newPool += BlockSize;

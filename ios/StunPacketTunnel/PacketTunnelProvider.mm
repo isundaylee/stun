@@ -113,7 +113,12 @@ static const int kServerPort = 2859;
                            // with headers.
 
                            auto packet = [packets objectAtIndex:i];
-                           auto packetContent = new Byte[packet.length + 4];
+                           Byte *packetContent =
+                               (Byte *)malloc(packet.length + 4);
+
+                           assertTrue(packetContent != NULL,
+                                      "Out of memory in tunnel receiver. ");
+
                            packetContent[0] = 0x00;
                            packetContent[1] = 0x00;
                            packetContent[2] = 0x08;
@@ -125,7 +130,7 @@ static const int kServerPort = 2859;
                            tunnelPacket.fill(packetContent, packet.length + 4);
                            tunnelPackets.emplace_back(std::move(tunnelPacket));
 
-                           delete[] packetContent;
+                           free(packetContent);
                          }
 
                          packetsPromise->fulfill(std::move(tunnelPackets));

@@ -9,7 +9,12 @@ namespace stun {
 using namespace std::chrono_literals;
 
 static const event::Duration kDataPipeProbeInterval = 1s;
+
+#if IOS
+static const size_t kDataPipeFIFOSize = 16;
+#else
 static const size_t kDataPipeFIFOSize = 256;
+#endif
 
 DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
                    std::string const& aesKey, size_t minPaddingTo,

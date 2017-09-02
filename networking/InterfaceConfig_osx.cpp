@@ -33,24 +33,19 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
 }
 
 /* static */ void InterfaceConfig::newRoute(Route const& route) {
+  if (route.dest.gatewayAddr.empty()) {
+    assertTrue(false, "Interface routes are not supported on macOS yet.");
+  }
+
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
                         route.subnet.addr.toString() + "/" +
-                        std::to_string(route.subnet.prefixLen);
-
-  if (!route.dest.gatewayAddr.empty()) {
-    command += " " + route.dest.gatewayAddr.toString();
-  }
-
-  if (!route.dest.interfaceName.empty()) {
-    command += " -iface " + route.dest.interfaceName;
-  }
+                        std::to_string(route.subnet.prefixLen) + " " +
+                        route.dest.gatewayAddr.toString();
 
   runCommand(command);
 
   LOG_V("Interface") << "Added a route to " << route.subnet.toString()
-                     << " via " << route.dest.gatewayAddr
-                     << " (iface: " << route.dest.interfaceName << ")."
-                     << std::endl;
+                     << " via " << route.dest.gatewayAddr << std::endl;
 }
 
 /* static */ RouteDestination
