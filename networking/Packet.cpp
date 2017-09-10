@@ -29,15 +29,13 @@ Packet::~Packet() {
 }
 
 void Packet::fill(Byte* buffer, size_t size) {
-  assertTrue(size <= kPacketPoolBlockSize,
-             "Gigantic packet encountered, size: " + std::to_string(size));
+  assertTrue(
+      size <= capacity,
+      "Over-capacity packet encountered, size = " + std::to_string(size) +
+          ", capacity = " + std::to_string(capacity));
   this->size = size;
   memcpy(data, buffer, size);
 }
 
-void Packet::fill(Packet packet) {
-  std::swap(this->size, packet.size);
-  std::swap(this->capacity, packet.capacity);
-  std::swap(this->data, packet.data);
-}
+void Packet::fill(Packet packet) { *this = std::move(packet); }
 }

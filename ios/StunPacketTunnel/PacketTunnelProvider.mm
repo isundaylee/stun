@@ -1,6 +1,7 @@
 #import "PacketTunnelProvider.h"
 
 #import "event/EventLoop.h"
+#import "event/Trigger.h"
 #import "stun/Client.h"
 
 @implementation PacketTunnelProvider
@@ -72,6 +73,8 @@ static const int kServerPort = 2859;
     settings.IPv4Settings.includedRoutes = @[ [NEIPv4Route defaultRoute] ];
     settings.IPv4Settings.excludedRoutes = @[];
 
+    __weak PacketTunnelProvider *weakSelf = self;
+
     // Setting up the tunnel
     [self
         setTunnelNetworkSettings:settings
@@ -83,57 +86,81 @@ static const int kServerPort = 2859;
                  }
 
                  auto tunnelSender = ^(networking::TunnelPacket packet) {
+                   if (weakSelf == nil) {
+                     NSLog(@"Trying to send packets when PacketTunnelProvider "
+                           @"is already gone. Ignoring.");
+                     return;
+                   }
+
                    auto data = [NSData dataWithBytes:&packet.data[4]
                                               length:packet.size - 4];
-                   [self.packetFlow writePackets:@[ data ]
-                                   withProtocols:@[ @(AF_INET) ]];
+                   [weakSelf.packetFlow writePackets:@[ data ]
+                                       withProtocols:@[ @(AF_INET) ]];
                  };
 
                  auto tunnelReceiver = ^std::shared_ptr<
                      event::Promise<std::vector<networking::TunnelPacket>>>() {
                    auto packetsPromise = std::make_shared<
                        event::Promise<std::vector<networking::TunnelPacket>>>();
-                   [self.packetFlow
+
+                   if (weakSelf == nil) {
+                     NSLog(
+                         @"Trying to receive packets when PacketTunnelProvider "
+                         @"is already gone. Ignoring.");
+                     packetsPromise->fulfill({});
+                     return packetsPromise;
+                   }
+
+                   [weakSelf.packetFlow
                        readPacketsWithCompletionHandler:^(
                            NSArray<NSData *> *_Nonnull packets,
                            NSArray<NSNumber *> *_Nonnull protocols) {
-                         auto tunnelPackets =
-                             std::vector<networking::TunnelPacket>{};
+                         // Stun is not yet thread-safe. We need to post this
+                         // block back to the stun event loop thread.
+                         event::Trigger::arm({}, [
+                           packets, protocols, packetsPromise
+                         ]() {
+                           auto tunnelPackets =
+                               std::vector<networking::TunnelPacket>{};
 
-                         for (int i = 0; i < protocols.count; i++) {
-                           if ([[protocols objectAtIndex:i] intValue] !=
-                               AF_INET) {
-                             NSLog(@"Ignoring non-IPv4 packet of size "
-                                   @"%lu",
-                                   [[packets objectAtIndex:0] length]);
-                             continue;
+                           for (int i = 0; i < protocols.count; i++) {
+                             if ([[protocols objectAtIndex:i] intValue] !=
+                                 AF_INET) {
+                               NSLog(@"Ignoring non-IPv4 packet of size "
+                                     @"%lu",
+                                     [[packets objectAtIndex:0] length]);
+                               continue;
+                             }
+
+                             // FIXME: Investigate a more sysmetic way of
+                             // dealing
+                             // with headers.
+
+                             auto packet = [packets objectAtIndex:i];
+                             Byte *packetContent =
+                                 (Byte *)malloc(packet.length + 4);
+
+                             assertTrue(packetContent != NULL,
+                                        "Out of memory in tunnel receiver. ");
+
+                             packetContent[0] = 0x00;
+                             packetContent[1] = 0x00;
+                             packetContent[2] = 0x08;
+                             packetContent[3] = 0x00;
+                             memcpy(&packetContent[4], packet.bytes,
+                                    packet.length);
+
+                             auto tunnelPacket = networking::TunnelPacket{};
+                             tunnelPacket.fill(packetContent,
+                                               packet.length + 4);
+                             tunnelPackets.emplace_back(
+                                 std::move(tunnelPacket));
+
+                             free(packetContent);
                            }
 
-                           // FIXME: Investigate a more sysmetic way of dealing
-                           // with headers.
-
-                           auto packet = [packets objectAtIndex:i];
-                           Byte *packetContent =
-                               (Byte *)malloc(packet.length + 4);
-
-                           assertTrue(packetContent != NULL,
-                                      "Out of memory in tunnel receiver. ");
-
-                           packetContent[0] = 0x00;
-                           packetContent[1] = 0x00;
-                           packetContent[2] = 0x08;
-                           packetContent[3] = 0x00;
-                           memcpy(&packetContent[4], packet.bytes,
-                                  packet.length);
-
-                           auto tunnelPacket = networking::TunnelPacket{};
-                           tunnelPacket.fill(packetContent, packet.length + 4);
-                           tunnelPackets.emplace_back(std::move(tunnelPacket));
-
-                           free(packetContent);
-                         }
-
-                         packetsPromise->fulfill(std::move(tunnelPackets));
+                           packetsPromise->fulfill(std::move(tunnelPackets));
+                         });
                        }];
 
                    return packetsPromise;
