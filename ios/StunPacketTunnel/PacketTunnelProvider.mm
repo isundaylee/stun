@@ -17,7 +17,11 @@ using namespace std::chrono_literals;
   LOG_I("Loop") << "Starting the stun event loop" << std::endl;
 
   try {
-    event::EventLoop::getCurrentLoop().run();
+    while (true) {
+      @autoreleasepool {
+        event::EventLoop::getCurrentLoop().runOnce();
+      }
+    }
   } catch (std::exception const &ex) {
     LOG_I("Loop") << "Uncaught exception: " << ex.what() << std::endl;
     throw ex;
