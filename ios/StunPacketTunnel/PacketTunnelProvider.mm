@@ -4,11 +4,32 @@
 #import "event/Trigger.h"
 #import "stun/Client.h"
 
+@interface PacketTunnelProvider ()
+
+@property BOOL stopped;
+
+@end
+
 @implementation PacketTunnelProvider
 
 using namespace std::chrono_literals;
 
+- (NSError *)errorFromCppException:(std::exception const &)ex {
+  return [NSError
+      errorWithDomain:@"StunPacketTunnel"
+                 code:100
+             userInfo:@{
+               NSLocalizedDescriptionKey : [NSString
+                   stringWithFormat:
+                       @"Uncaught exception: %@",
+                       [NSString stringWithCString:ex.what()
+                                          encoding:NSASCIIStringEncoding]]
+             }];
+}
+
 - (void)doStunEventLoop {
+  self.stopped = NO;
+
   common::Logger::getDefault("").tee = ^(std::string message) {
     NSLog(@"%@", @(message.c_str()));
   };
@@ -18,13 +39,18 @@ using namespace std::chrono_literals;
 
   try {
     while (true) {
+      if (self.stopped) {
+        return;
+      }
+
       @autoreleasepool {
         event::EventLoop::getCurrentLoop().runOnce();
       }
     }
   } catch (std::exception const &ex) {
     LOG_I("Loop") << "Uncaught exception: " << ex.what() << std::endl;
-    throw ex;
+
+    [self cancelTunnelWithError:[self errorFromCppException:ex]];
   }
 }
 
@@ -43,147 +69,179 @@ static const int kServerPort = 2859;
 
 - (void)startTunnelWithOptions:(NSDictionary<NSString *, NSObject *> *)options
              completionHandler:(void (^)(NSError *error))completionHandler {
-  [self startStunEventLoop];
+  try {
+    [self startStunEventLoop];
 
-  auto clientConfig = stun::ClientConfig{
-      networking::SocketAddress("adp.mit.edu", kServerPort),
-      false,
-      "lovely",
-      0,
-      0s,
-      "ios",
-      {},
-      {},
-  };
+    NSLog(@"Options for tunnel: %@", options);
 
-  auto tunnelFactory =
-      ^std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>(
-          stun::ClientTunnelConfig config) {
-    auto tunnelPromise =
-        std::make_shared<event::Promise<std::unique_ptr<networking::Tunnel>>>();
+    NSDictionary *vendorData =
+        (NSDictionary *)[options objectForKey:@"VendorData"];
+    NSString *server = (NSString *)[vendorData objectForKey:@"server"];
+    NSString *secret = (NSString *)[vendorData objectForKey:@"secret"];
+    NSString *username = (NSString *)[vendorData objectForKey:@"username"];
 
-    // Setting up basic settings
-    NEPacketTunnelNetworkSettings *settings =
-        [[NEPacketTunnelNetworkSettings alloc]
-            initWithTunnelRemoteAddress:@(config.peerTunnelAddr.toString()
-                                              .c_str())];
-    settings.IPv4Settings = [[NEIPv4Settings alloc]
-        initWithAddresses:@[ @(config.myTunnelAddr.toString().c_str()) ]
-              subnetMasks:@[ @(config.serverSubnetAddr.subnetMask().c_str()) ]];
-    settings.MTU = @(config.mtu);
-    settings.DNSSettings =
-        [[NEDNSSettings alloc] initWithServers:@[ @"8.8.8.8", @"8.8.4.4" ]];
+    if (server == NULL) {
+      server = @"";
+    }
 
-    settings.IPv4Settings.includedRoutes = @[ [NEIPv4Route defaultRoute] ];
-    settings.IPv4Settings.excludedRoutes = @[];
+    if (secret == NULL) {
+      secret = @"";
+    }
 
-    __weak PacketTunnelProvider *weakSelf = self;
+    if (username == NULL) {
+      username = @"";
+    }
 
-    // Setting up the tunnel
-    [self
-        setTunnelNetworkSettings:settings
-               completionHandler:^(NSError *_Nullable error) {
-                 if (error != NULL) {
-                   NSLog(@"Error while setting up network tunnel: %@", error);
-                   completionHandler(error);
-                   return;
-                 }
+    auto clientConfig = stun::ClientConfig{
+        networking::SocketAddress(
+            [server cStringUsingEncoding:NSASCIIStringEncoding], kServerPort),
+        false,
+        [secret cStringUsingEncoding:NSASCIIStringEncoding],
+        0,
+        0s,
+        [username cStringUsingEncoding:NSASCIIStringEncoding],
+        {},
+        {},
+    };
 
-                 auto tunnelSender = ^(networking::TunnelPacket packet) {
-                   if (weakSelf == nil) {
-                     NSLog(@"Trying to send packets when PacketTunnelProvider "
-                           @"is already gone. Ignoring.");
+    auto tunnelFactory =
+        ^std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>(
+            stun::ClientTunnelConfig config) {
+      auto tunnelPromise = std::make_shared<
+          event::Promise<std::unique_ptr<networking::Tunnel>>>();
+
+      // Setting up basic settings
+      NEPacketTunnelNetworkSettings *settings =
+          [[NEPacketTunnelNetworkSettings alloc]
+              initWithTunnelRemoteAddress:@(config.peerTunnelAddr.toString()
+                                                .c_str())];
+      settings.IPv4Settings = [[NEIPv4Settings alloc]
+          initWithAddresses:@[ @(config.myTunnelAddr.toString().c_str()) ]
+                subnetMasks:@[
+                  @(config.serverSubnetAddr.subnetMask().c_str())
+                ]];
+      settings.MTU = @(config.mtu);
+      settings.DNSSettings =
+          [[NEDNSSettings alloc] initWithServers:@[ @"8.8.8.8", @"8.8.4.4" ]];
+
+      settings.IPv4Settings.includedRoutes = @[ [NEIPv4Route defaultRoute] ];
+      settings.IPv4Settings.excludedRoutes = @[];
+
+      __weak PacketTunnelProvider *weakSelf = self;
+
+      // Setting up the tunnel
+      [self
+          setTunnelNetworkSettings:settings
+                 completionHandler:^(NSError *_Nullable error) {
+                   if (error != NULL) {
+                     NSLog(@"Error while setting up network tunnel: %@", error);
+                     completionHandler(error);
                      return;
                    }
 
-                   auto data = [NSData dataWithBytes:&packet.data[4]
-                                              length:packet.size - 4];
-                   [weakSelf.packetFlow writePackets:@[ data ]
-                                       withProtocols:@[ @(AF_INET) ]];
-                 };
+                   auto tunnelSender = ^(networking::TunnelPacket packet) {
+                     if (weakSelf == nil) {
+                       NSLog(
+                           @"Trying to send packets when PacketTunnelProvider "
+                           @"is already gone. Ignoring.");
+                       return;
+                     }
 
-                 auto tunnelReceiver = ^std::shared_ptr<
-                     event::Promise<std::vector<networking::TunnelPacket>>>() {
-                   auto packetsPromise = std::make_shared<
-                       event::Promise<std::vector<networking::TunnelPacket>>>();
+                     auto data = [NSData dataWithBytes:&packet.data[4]
+                                                length:packet.size - 4];
+                     [weakSelf.packetFlow writePackets:@[ data ]
+                                         withProtocols:@[ @(AF_INET) ]];
+                   };
 
-                   if (weakSelf == nil) {
-                     NSLog(
-                         @"Trying to receive packets when PacketTunnelProvider "
-                         @"is already gone. Ignoring.");
-                     packetsPromise->fulfill({});
-                     return packetsPromise;
-                   }
+                   auto tunnelReceiver = ^std::shared_ptr<event::Promise<
+                       std::vector<networking::TunnelPacket>>>() {
+                     auto packetsPromise = std::make_shared<event::Promise<
+                         std::vector<networking::TunnelPacket>>>();
 
-                   [weakSelf.packetFlow
-                       readPacketsWithCompletionHandler:^(
-                           NSArray<NSData *> *_Nonnull packets,
-                           NSArray<NSNumber *> *_Nonnull protocols) {
-                         // Stun is not yet thread-safe. We need to post this
-                         // block back to the stun event loop thread.
-                         event::Trigger::arm({}, [
-                           packets, protocols, packetsPromise
-                         ]() {
-                           auto tunnelPackets =
-                               std::vector<networking::TunnelPacket>{};
+                     if (weakSelf == nil) {
+                       NSLog(@"Trying to receive packets when "
+                             @"PacketTunnelProvider "
+                             @"is already gone. Ignoring.");
+                       packetsPromise->fulfill({});
+                       return packetsPromise;
+                     }
 
-                           for (int i = 0; i < protocols.count; i++) {
-                             if ([[protocols objectAtIndex:i] intValue] !=
-                                 AF_INET) {
-                               NSLog(@"Ignoring non-IPv4 packet of size "
-                                     @"%lu",
-                                     [[packets objectAtIndex:0] length]);
-                               continue;
+                     [weakSelf.packetFlow
+                         readPacketsWithCompletionHandler:^(
+                             NSArray<NSData *> *_Nonnull packets,
+                             NSArray<NSNumber *> *_Nonnull protocols) {
+                           // Stun is not yet thread-safe. We need to post this
+                           // block back to the stun event loop thread.
+                           event::Trigger::arm({}, [
+                             packets, protocols, packetsPromise
+                           ]() {
+                             auto tunnelPackets =
+                                 std::vector<networking::TunnelPacket>{};
+
+                             for (int i = 0; i < protocols.count; i++) {
+                               if ([[protocols objectAtIndex:i] intValue] !=
+                                   AF_INET) {
+                                 NSLog(@"Ignoring non-IPv4 packet of size "
+                                       @"%lu",
+                                       [[packets objectAtIndex:0] length]);
+                                 continue;
+                               }
+
+                               // FIXME: Investigate a more sysmetic way of
+                               // dealing
+                               // with headers.
+
+                               auto packet = [packets objectAtIndex:i];
+                               Byte *packetContent =
+                                   (Byte *)malloc(packet.length + 4);
+
+                               assertTrue(packetContent != NULL,
+                                          "Out of memory in tunnel receiver. ");
+
+                               packetContent[0] = 0x00;
+                               packetContent[1] = 0x00;
+                               packetContent[2] = 0x08;
+                               packetContent[3] = 0x00;
+                               memcpy(&packetContent[4], packet.bytes,
+                                      packet.length);
+
+                               auto tunnelPacket = networking::TunnelPacket{};
+                               tunnelPacket.fill(packetContent,
+                                                 packet.length + 4);
+                               tunnelPackets.emplace_back(
+                                   std::move(tunnelPacket));
+
+                               free(packetContent);
                              }
 
-                             // FIXME: Investigate a more sysmetic way of
-                             // dealing
-                             // with headers.
+                             packetsPromise->fulfill(std::move(tunnelPackets));
+                           });
+                         }];
 
-                             auto packet = [packets objectAtIndex:i];
-                             Byte *packetContent =
-                                 (Byte *)malloc(packet.length + 4);
+                     return packetsPromise;
+                   };
 
-                             assertTrue(packetContent != NULL,
-                                        "Out of memory in tunnel receiver. ");
+                   tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
+                       tunnelSender, tunnelReceiver));
 
-                             packetContent[0] = 0x00;
-                             packetContent[1] = 0x00;
-                             packetContent[2] = 0x08;
-                             packetContent[3] = 0x00;
-                             memcpy(&packetContent[4], packet.bytes,
-                                    packet.length);
+                   completionHandler(nil);
+                 }];
 
-                             auto tunnelPacket = networking::TunnelPacket{};
-                             tunnelPacket.fill(packetContent,
-                                               packet.length + 4);
-                             tunnelPackets.emplace_back(
-                                 std::move(tunnelPacket));
+      return tunnelPromise;
+    };
 
-                             free(packetContent);
-                           }
+    client.reset(new stun::Client(clientConfig, tunnelFactory));
+  } catch (std::exception const &ex) {
+    LOG_I("Loop") << "Uncaught exception while starting the tunnel: "
+                  << ex.what() << std::endl;
 
-                           packetsPromise->fulfill(std::move(tunnelPackets));
-                         });
-                       }];
-
-                   return packetsPromise;
-                 };
-
-                 tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
-                     tunnelSender, tunnelReceiver));
-
-                 completionHandler(nil);
-               }];
-
-    return tunnelPromise;
-  };
-
-  client.reset(new stun::Client(clientConfig, tunnelFactory));
+    completionHandler([self errorFromCppException:ex]);
+  }
 }
 
 - (void)stopTunnelWithReason:(NEProviderStopReason)reason
            completionHandler:(void (^)(void))completionHandler {
+  self.stopped = YES;
   completionHandler();
 }
 
