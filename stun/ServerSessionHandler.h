@@ -30,6 +30,7 @@ public:
   std::string user = "";
   size_t quota = 0;
   size_t priorQuotaUsed = 0;
+  bool addrAcquired = false;
   IPAddress myTunnelAddr;
   IPAddress peerTunnelAddr;
 };

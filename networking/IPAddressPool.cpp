@@ -130,6 +130,10 @@ IPAddress IPAddressPool::acquire() {
   if (!reusables_.empty()) {
     auto addr = reusables_.front();
     reusables_.pop();
+
+    LOG_V("Address") << "Reusing " << addr << " from the address pool"
+                     << std::endl;
+
     return addr;
   }
 
@@ -142,6 +146,9 @@ IPAddress IPAddressPool::acquire() {
 
   assertTrue(addr != subnet_.broadcastAddress(), "Ran out of addresses.");
 
+  LOG_V("Address") << "Using new address " << addr << " from the address pool"
+                   << std::endl;
+
   return addr;
 }
 
@@ -150,6 +157,9 @@ void IPAddressPool::release(IPAddress const& addr) {
   assertTrue(found == reserved_.end(),
              "Reserved address " + addr.toString() +
                  " released to IPAddressPool.");
+
+  LOG_V("Address") << "Releasing " << addr << " to the address pool"
+                   << std::endl;
 
   reusables_.push(addr);
 }

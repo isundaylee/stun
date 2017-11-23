@@ -133,12 +133,14 @@ ServerSessionHandler::~ServerSessionHandler() {
     savePriorQuota();
   }
 
-  server_->addrPool->release(config_.myTunnelAddr);
+  if (config_.addrAcquired) {
+    server_->addrPool->release(config_.myTunnelAddr);
 
-  if (!config_.authentication ||
-      server_->config_.staticHosts.count(config_.user) == 0) {
-    // We should only release non-static host addresses
-    server_->addrPool->release(config_.peerTunnelAddr);
+    if (!config_.authentication ||
+        server_->config_.staticHosts.count(config_.user) == 0) {
+      // We should only release non-static host addresses
+      server_->addrPool->release(config_.peerTunnelAddr);
+    }
   }
 }
 
@@ -201,6 +203,8 @@ void ServerSessionHandler::attachHandlers() {
     } else {
       config_.peerTunnelAddr = server_->addrPool->acquire();
     }
+
+    config_.addrAcquired = true;
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = std::make_unique<Tunnel>();
