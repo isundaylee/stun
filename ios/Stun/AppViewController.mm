@@ -265,13 +265,13 @@
   NEVPNStatus status = self.manager.connection.status;
 
   if (status == NEVPNStatusConnecting) {
-    title = @"Connecting";
+    title = @"Connecting...";
     enabled = NO;
   } else if (status == NEVPNStatusConnected) {
     title = @"Disconnect";
     enabled = YES;
   } else if (status == NEVPNStatusDisconnecting) {
-    title = @"Disconnecting";
+    title = @"Disconnecting...";
     enabled = NO;
   } else {
     title = @"Connect";
