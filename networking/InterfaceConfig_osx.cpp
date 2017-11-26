@@ -26,6 +26,10 @@ InterfaceConfig::~InterfaceConfig() {}
 InterfaceConfig::setLinkAddress(std::string const& deviceName,
                                 IPAddress const& localAddress,
                                 IPAddress const& peerAddress) {
+  assertTrue(localAddress.type == NetworkType::IPv4 &&
+                 peerAddress.type == NetworkType::IPv4,
+             "InterfaceConfig supports IPv4 addresses only on macOS.");
+
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " inet " + localAddress.toString() + " " +
                         peerAddress.toString();
@@ -36,6 +40,9 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
   if (route.dest.gatewayAddr.empty()) {
     assertTrue(false, "Interface routes are not supported on macOS yet.");
   }
+
+  assertTrue(route.dest.gatewayAddr.type == NetworkType::IPv4,
+             "InterfaceConfig supports IPv4 addresses only on macOS.");
 
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
                         route.subnet.addr.toString() + "/" +
@@ -50,6 +57,9 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
 
 /* static */ RouteDestination
 InterfaceConfig::getRoute(IPAddress const& destAddr) {
+  assertTrue(destAddr.type == NetworkType::IPv4,
+             "InterfaceConfig supports IPv4 addresses only on macOS.");
+
   std::string output =
       runCommand(kInterfaceConfigRoutePath + " -n get " + destAddr.toString());
   std::stringstream data(output);
@@ -87,7 +97,7 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
   if (gateway.empty()) {
     return RouteDestination(interface, IPAddress());
   } else {
-    return RouteDestination(interface, IPAddress(gateway));
+    return RouteDestination(interface, IPAddress(gateway, NetworkType::IPv4));
   }
 }
 

@@ -15,7 +15,7 @@ SocketAddress::SocketAddress(std::string const& host, int port /* = 0 */) {
   struct addrinfo* addr;
 
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_INET;
+  hints.ai_family = PF_UNSPEC;
 
   int err;
   if ((err = getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints,
@@ -25,32 +25,38 @@ SocketAddress::SocketAddress(std::string const& host, int port /* = 0 */) {
 
   memcpy(&storage_, addr->ai_addr, addr->ai_addrlen);
   freeaddrinfo(addr);
+
+  this->type = (addr->ai_family == AF_INET ? IPv4 : IPv6);
 }
 
 struct sockaddr* SocketAddress::asSocketAddress() const {
   return (struct sockaddr*)&storage_;
 }
 
-struct sockaddr_in* SocketAddress::asInetAddress() const {
-  assertTrue(storage_.ss_family == AF_INET,
-             "Unsupported sa_family: " + std::to_string(storage_.ss_family));
-  return (struct sockaddr_in*)&storage_;
-}
-
 IPAddress SocketAddress::getHost() const {
-  assertTrue(storage_.ss_family == AF_INET,
+  assertTrue(storage_.ss_family == AF_INET || storage_.ss_family == AF_INET6,
              "Unsupported sa_family: " + std::to_string(storage_.ss_family));
-  return IPAddress(std::string(inet_ntoa(asInetAddress()->sin_addr)));
+
+  if (storage_.ss_family == AF_INET) {
+    return IPAddress(((sockaddr_in*)&storage_)->sin_addr);
+  } else {
+    return IPAddress(((sockaddr_in6*)&storage_)->sin6_addr);
+  }
 }
 
 int SocketAddress::getPort() const {
-  assertTrue(storage_.ss_family == AF_INET,
+  assertTrue(storage_.ss_family == AF_INET || storage_.ss_family == AF_INET6,
              "Unsupported sa_family: " + std::to_string(storage_.ss_family));
-  return ntohs(asInetAddress()->sin_port);
+
+  if (storage_.ss_family == AF_INET) {
+    return ntohs(((sockaddr_in*)&storage_)->sin_port);
+  } else {
+    return ntohs(((sockaddr_in6*)&storage_)->sin6_port);
+  }
 }
 
 size_t SocketAddress::getLength() const {
-  assertTrue(storage_.ss_family == AF_INET,
+  assertTrue(storage_.ss_family == AF_INET || storage_.ss_family == AF_INET6,
              "Unsupported sa_family: " + std::to_string(storage_.ss_family));
   return sizeof(sockaddr_in);
 }

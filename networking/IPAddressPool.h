@@ -1,5 +1,7 @@
 #pragma once
 
+#include <networking/NetworkType.h>
+
 #include <json/json.hpp>
 
 #include <common/Util.h>
@@ -9,6 +11,7 @@
 #include <queue>
 #include <set>
 #include <string>
+#include <arpa/inet.h>
 
 namespace networking {
 
@@ -19,10 +22,13 @@ struct SubnetAddress;
 struct IPAddress {
 public:
   IPAddress();
-  explicit IPAddress(std::string const& addr);
-  explicit IPAddress(uint32_t numerical);
+  explicit IPAddress(in_addr addr);
+  explicit IPAddress(in6_addr addr);
+  IPAddress(std::string const& addr, NetworkType type);
+  IPAddress(uint32_t numerical, NetworkType type);
 
-  std::array<Byte, 4> octets;
+  NetworkType type;
+  std::array<Byte, 16> octets;
 
   std::string toString() const;
   uint32_t toNumerical() const;

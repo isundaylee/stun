@@ -207,6 +207,10 @@ typedef NetlinkRequest<struct ifaddrmsg> NetlinkChangeAddressRequest;
 InterfaceConfig::setLinkAddress(std::string const& deviceName,
                                 IPAddress const& localAddress,
                                 IPAddress const& peerAddress) {
+  assertTrue(localAddress.type == NetworkType::IPv4 &&
+                 peerAddress.type == NetworkType::IPv4,
+             "InterfaceConfig supports IPv4 addresses only on macOS.");
+
   LOG_V("Interface") << "Setting link " << deviceName << "'s address to "
                      << localAddress << " -> " << peerAddress << std::endl;
   int interfaceIndex = getInstance().getInterfaceIndex(deviceName);
@@ -251,6 +255,9 @@ typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
   req.addAttr(RTA_DST, sizeof(dest), &dest);
 
   if (!route.dest.gatewayAddr.empty()) {
+    assertTrue(route.dest.gatewayAddr.type == NetworkType::IPv4,
+               "InterfaceConfig supports IPv4 addresses only on macOS.");
+
     struct in_addr gateway;
     inet_pton(AF_INET, route.dest.gatewayAddr.toString().c_str(), &gateway);
     req.addAttr(RTA_GATEWAY, sizeof(gateway), &gateway);
@@ -271,6 +278,9 @@ typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
 
 /* static */ RouteDestination
 InterfaceConfig::getRoute(IPAddress const& destAddr) {
+  assertTrue(destAddr.type == NetworkType::IPv4,
+             "InterfaceConfig supports IPv4 addresses only on macOS.");
+
   NetlinkChangeRouteRequest req;
   req.fillHeader(RTM_GETROUTE, NLM_F_ACK);
   req.msg.rtm_family = AF_INET;
@@ -326,7 +336,7 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
   if (gateway.empty()) {
     return RouteDestination(interface, IPAddress());
   } else {
-    return RouteDestination(interface, IPAddress(gateway));
+    return RouteDestination(interface, IPAddress(gateway, NetworkType::IPv4));
   }
 }
 

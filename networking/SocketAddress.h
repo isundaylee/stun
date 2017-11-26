@@ -1,6 +1,7 @@
 #pragma once
 
 #include <networking/InterfaceConfig.h>
+#include <networking/NetworkType.h>
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -14,8 +15,9 @@ public:
   SocketAddress();
   SocketAddress(std::string const& host, int port = 0);
 
+  NetworkType type;
+
   struct sockaddr* asSocketAddress() const;
-  struct sockaddr_in* asInetAddress() const;
 
   IPAddress getHost() const;
   int getPort() const;

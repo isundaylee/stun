@@ -69,20 +69,27 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
   // Create routing rules for subnets NOT to forward
   auto excludedSubnets = config_.subnetsToExclude;
 
-  RouteDestination originalRouteDest =
-      InterfaceConfig::getRoute(config_.serverAddr.getHost());
-  if (!originalRouteDest.gatewayAddr.empty()) {
-    // If original route doesn't have a gateway, it *likely* means that the
-    // matching route is an ARP route. Thus we don't add the route explicitly
-    // again. FIXME: Revisit this.
-    excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
+  if (config_.serverAddr.type == IPv4) {
+    RouteDestination originalRouteDest =
+        InterfaceConfig::getRoute(config_.serverAddr.getHost());
+    if (!originalRouteDest.gatewayAddr.empty()) {
+      // If original route doesn't have a gateway, it *likely* means that the
+      // matching route is an ARP route. Thus we don't add the route explicitly
+      // again. FIXME: Revisit this.
+      excludedSubnets.emplace_back(config_.serverAddr.getHost(), 32);
+    } else {
+      LOG_I("Client")
+          << "Seems like server is on the same network as us. Won't "
+             "create explicit exclusion route to server. "
+          << std::endl;
+    }
+    for (auto const& exclusion : excludedSubnets) {
+      routes.push_back(Route{exclusion, originalRouteDest});
+    }
   } else {
-    LOG_I("Client") << "Seems like server is on the same network as us. Won't "
-                       "create explicit exclusion route to server. "
+    LOG_I("Client") << "Seems like we're on an 6-to-4 network. Won't create "
+                       "explicit exclusion route to server. "
                     << std::endl;
-  }
-  for (auto const& exclusion : excludedSubnets) {
-    routes.push_back(Route{exclusion, originalRouteDest});
   }
 
   // Create routing rules for subnets to forward

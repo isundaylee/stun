@@ -45,8 +45,10 @@ void ClientSessionHandler::attachHandlers() {
     auto body = message.getBody();
 
     auto tunnelConfig = ClientTunnelConfig{
-        IPAddress(body["client_tunnel_ip"].template get<std::string>()),
-        IPAddress(body["server_tunnel_ip"].template get<std::string>()),
+        IPAddress(body["client_tunnel_ip"].template get<std::string>(),
+                  NetworkType::IPv4),
+        IPAddress(body["server_tunnel_ip"].template get<std::string>(),
+                  NetworkType::IPv4),
         SubnetAddress(body["server_subnet"].template get<std::string>()),
         kTunnelEthernetMTU,
         config_.subnetsToForward,
