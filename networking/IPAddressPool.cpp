@@ -13,10 +13,12 @@ IPAddress::IPAddress() {
 /* explicit */ IPAddress::IPAddress(in_addr addr) {
   this->type = NetworkType::IPv4;
 
-  this->octets[0] = (addr.s_addr >> 24) & 0xff;
-  this->octets[1] = (addr.s_addr >> 16) & 0xff;
-  this->octets[2] = (addr.s_addr >> 8) & 0xff;
-  this->octets[3] = (addr.s_addr >> 0) & 0xff;
+  uint32_t haddr = ntohl(addr.s_addr);
+
+  this->octets[0] = (haddr >> 24) & 0xff;
+  this->octets[1] = (haddr >> 16) & 0xff;
+  this->octets[2] = (haddr >> 8) & 0xff;
+  this->octets[3] = (haddr >> 0) & 0xff;
 }
 
 /* explicit */ IPAddress::IPAddress(in6_addr addr) {

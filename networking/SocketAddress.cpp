@@ -24,9 +24,9 @@ SocketAddress::SocketAddress(std::string const& host, int port /* = 0 */) {
   }
 
   memcpy(&storage_, addr->ai_addr, addr->ai_addrlen);
-  freeaddrinfo(addr);
-
   this->type = (addr->ai_family == AF_INET ? IPv4 : IPv6);
+
+  freeaddrinfo(addr);
 }
 
 struct sockaddr* SocketAddress::asSocketAddress() const {
