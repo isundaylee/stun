@@ -61,7 +61,7 @@ private:
 };
 
 Server::Server(ServerConfig config) {
-  socket_.reset(new networking::TCPServer());
+  socket_.reset(new networking::TCPServer(networking::NetworkType::IPv4));
   socket_->bind(config.port);
 
   acceptor_.reset(new event::Action({socket_->canAccept()}));

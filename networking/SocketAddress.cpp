@@ -58,7 +58,9 @@ int SocketAddress::getPort() const {
 size_t SocketAddress::getLength() const {
   assertTrue(storage_.ss_family == AF_INET || storage_.ss_family == AF_INET6,
              "Unsupported sa_family: " + std::to_string(storage_.ss_family));
-  return sizeof(sockaddr_in);
+
+  return this->type == NetworkType::IPv4 ? sizeof(sockaddr_in)
+                                         : sizeof(sockaddr_in6);
 }
 
 size_t SocketAddress::getStorageLength() const { return sizeof(storage_); }

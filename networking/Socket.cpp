@@ -15,12 +15,13 @@ namespace networking {
 
 const int kSocketListenBacklog = 10;
 
-Socket::Socket(SocketType type)
-    : type_(type), bound_(false), connected_(false) {
+Socket::Socket(NetworkType networkType, SocketType type)
+    : networkType_(networkType), type_(type), bound_(false), connected_(false) {
   signal(SIGPIPE, SIG_IGN);
   LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
 
-  int fd = socket(PF_INET, type == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
+  int fd = socket(networkType == NetworkType::IPv4 ? PF_INET : PF_INET6,
+                  type == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
   checkUnixError(fd, "creating SocketPipe's socket");
   fd_ = common::FileDescriptor(fd);
 
@@ -31,9 +32,10 @@ Socket::Socket(SocketType type)
   checkUnixError(ret, "setting SO_REUSEADDR for SocketPipe");
 }
 
-Socket::Socket(SocketType type, int fd, SocketAddress peerAddr)
-    : type_(type), fd_(fd), bound_(false), connected_(true),
-      peerAddr_(new SocketAddress(peerAddr)) {
+Socket::Socket(NetworkType networkType, SocketType type, int fd,
+               SocketAddress peerAddr)
+    : networkType_(networkType), type_(type), fd_(fd), bound_(false),
+      connected_(true), peerAddr_(new SocketAddress(peerAddr)) {
   setNonblock();
 }
 

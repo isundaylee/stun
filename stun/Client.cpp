@@ -106,7 +106,7 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
 }
 
 void Client::connect() {
-  auto socket = TCPSocket{};
+  auto socket = TCPSocket{config_.serverAddr.type};
   socket.connect(config_.serverAddr);
 
   handler_.reset(new ClientSessionHandler(

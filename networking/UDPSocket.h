@@ -14,7 +14,7 @@ public:
 
 class UDPSocket : public Socket {
 public:
-  UDPSocket() : Socket(UDP) {}
+  UDPSocket(NetworkType networkType) : Socket(networkType, UDP) {}
 
   void write(UDPPacket packet);
   bool read(UDPPacket& packet);

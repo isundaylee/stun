@@ -242,7 +242,7 @@ void ServerSessionHandler::doRotateDataPipe() {
 }
 
 json ServerSessionHandler::createDataPipe() {
-  UDPSocket udpPipe;
+  UDPSocket udpPipe{networking::NetworkType::IPv4};
   int port = udpPipe.bind(0);
 
   LOG_V("Session") << "Creating a new data pipe." << std::endl;

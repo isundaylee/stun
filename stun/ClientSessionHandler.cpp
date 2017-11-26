@@ -74,9 +74,10 @@ void ClientSessionHandler::attachHandlers() {
   messenger_->addHandler("new_data_pipe", [this](auto const& message) {
     auto body = message.getBody();
 
-    UDPSocket udpPipe;
-    udpPipe.connect(
-        SocketAddress(config_.serverAddr.getHost().toString(), body["port"]));
+    auto socketAddress =
+        SocketAddress{config_.serverAddr.getHost().toString(), body["port"]};
+    auto udpPipe = UDPSocket{socketAddress.type};
+    udpPipe.connect(socketAddress);
 
     DataPipe* dataPipe = new DataPipe(
         std::make_unique<UDPSocket>(std::move(udpPipe)), body["aes_key"],

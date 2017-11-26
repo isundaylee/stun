@@ -8,12 +8,13 @@ namespace networking {
 
 class TCPSocket : public Socket {
 public:
-  TCPSocket() : Socket(TCP) {
+  TCPSocket(NetworkType networkType) : Socket(networkType, TCP) {
     int flag = 1;
     int ret = setsockopt(fd_.fd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
     checkUnixError(ret, "setting TCP_NODELAY option for TCP socket");
   }
 
-  TCPSocket(int fd, SocketAddress peerAddr) : Socket(TCP, fd, peerAddr) {}
+  TCPSocket(NetworkType networkType, int fd, SocketAddress peerAddr)
+      : Socket(networkType, TCP, fd, peerAddr) {}
 };
 }
