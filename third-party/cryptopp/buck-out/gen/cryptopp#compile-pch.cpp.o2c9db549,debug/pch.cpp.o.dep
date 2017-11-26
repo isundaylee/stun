@@ -1,0 +1,2 @@
+buck-out/gen/cryptopp\#compile-pch.cpp.o2c9db549,debug/pch.cpp.o: pch.cpp \
+  pch.h config.h

@@ -4,7 +4,7 @@ cxx_binary(
     deps = [
         '//stun:stun',
         '//flutter:flutter',
-        'jarro2783.cxxopts//:cxxopts',
+        '//third-party/cxxopts:cxxopts',
     ],
     visibility = ['PUBLIC'],
 )
