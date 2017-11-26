@@ -4,7 +4,6 @@
   ios = //ios:Stun#iphonesimulator-x86_64
 
 [apple]
-  provisioning_profile_search_path = certs
   device_helper_path = /usr/local/bin/fbsimctl
 
 [cxx]
