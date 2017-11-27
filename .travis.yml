@@ -24,7 +24,7 @@ before_install:
   - brew --version
   # Install Buck
   - brew tap facebook/fb
-  - HOMEBREW_CC=gcc-5 brew install buck
+  - HOMEBREW_CC=gcc-5 travis-wait 60 brew install buck
   - buck --version
 
 script:
