@@ -13,7 +13,6 @@
   cxxpp = /usr/bin/clang++
   ld = /usr/bin/clang++
   cxxflags = -std=c++1z
-  default_platform = iphoneos-arm64
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
