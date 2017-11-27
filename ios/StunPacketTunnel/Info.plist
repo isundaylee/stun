@@ -17,11 +17,11 @@
 	<key>CFBundlePackageType</key>
 	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>0.8.1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>0.8.1.1</string>
 	<key>LSRequireIPhoneOS</key>
 	<true/>
 	<key>NSExtension</key>
@@ -31,5 +31,10 @@
 		<key>NSExtensionPrincipalClass</key>
 		<string>PacketTunnelProvider</string>
 	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+		<string>arm64</string>
+	</array>
 </dict>
 </plist>
