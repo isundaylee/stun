@@ -17,7 +17,19 @@
 @implementation AppViewController {
 }
 
-- (void)didFinishConnectionWithError:(NSString *)error {
+- (NSString *)getErrorFromSharedUserDefaults {
+  NSUserDefaults *sharedDefaults =
+      [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
+  return [sharedDefaults objectForKey:@"error"];
+}
+
+- (void)clearErrorInSharedUserDefaults {
+  NSUserDefaults *sharedDefaults =
+      [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
+  [sharedDefaults removeObjectForKey:@"error"];
+}
+
+- (void)showAlert:(NSString *)error {
   if (error != NULL) {
     UIAlertController *alertController = [UIAlertController
         alertControllerWithTitle:@"Error"
@@ -51,8 +63,8 @@
   [self.manager saveToPreferencesWithCompletionHandler:^(
                     NSError *_Nullable error) {
     if (error != NULL) {
-      [self didFinishConnectionWithError:
-                [NSString stringWithFormat:@"Error while creating profile: %@",
+      [self showAlert:[NSString
+                          stringWithFormat:@"Error while creating profile: %@",
                                            error]];
       NSLog(@"Error while creating profile: %@", error);
 
@@ -66,31 +78,29 @@
 - (void)doConnect {
   assert(self.manager != NULL);
 
-  [self.manager
-      loadFromPreferencesWithCompletionHandler:^(NSError *_Nullable error) {
-        assert(error == NULL);
+  [self.manager loadFromPreferencesWithCompletionHandler:^(
+                    NSError *_Nullable error) {
+    assert(error == NULL);
 
-        NETunnelProviderSession *session =
-            (NETunnelProviderSession *)self.manager.connection;
-        NSDictionary *options = @{};
-        NSError *err = NULL;
+    NETunnelProviderSession *session =
+        (NETunnelProviderSession *)self.manager.connection;
+    NSDictionary *options = @{};
+    NSError *err = NULL;
 
-        NEVPNStatus status = self.manager.connection.status;
-        NSLog(@"Connection status is: %ld", status);
+    NEVPNStatus status = self.manager.connection.status;
+    NSLog(@"Connection status is: %ld", status);
 
-        [session startVPNTunnelWithOptions:options andReturnError:&err];
+    [self clearErrorInSharedUserDefaults];
+    [session startVPNTunnelWithOptions:options andReturnError:&err];
 
-        if (err != NULL) {
-          [self didFinishConnectionWithError:
-                    [NSString
-                        stringWithFormat:@"Error while connecting: %@", err]];
-          NSLog(@"Error while connecting: %@", err);
+    if (err != NULL) {
+      [self showAlert:[NSString
+                          stringWithFormat:@"Error while connecting: %@", err]];
+      NSLog(@"Error while connecting: %@", err);
 
-          return;
-        } else {
-          [self didFinishConnectionWithError:NULL];
-        }
-      }];
+      return;
+    }
+  }];
 }
 
 - (void)doStartConnection {
@@ -102,36 +112,34 @@
 }
 
 - (void)loadExistingProfile {
-  [NETunnelProviderManager
-      loadAllFromPreferencesWithCompletionHandler:^(
-          NSArray<NETunnelProviderManager *> *_Nullable managers,
-          NSError *_Nullable error) {
-        if (error != NULL) {
-          [self didFinishConnectionWithError:
-                    [NSString
-                        stringWithFormat:@"Cannot load existing profiles: %@",
-                                         error]];
-          NSLog(@"Cannot load existing profiles: %@", error);
+  [NETunnelProviderManager loadAllFromPreferencesWithCompletionHandler:^(
+                               NSArray<NETunnelProviderManager *>
+                                   *_Nullable managers,
+                               NSError *_Nullable error) {
+    if (error != NULL) {
+      [self showAlert:[NSString
+                          stringWithFormat:@"Cannot load existing profiles: %@",
+                                           error]];
+      NSLog(@"Cannot load existing profiles: %@", error);
 
-          return;
-        }
+      return;
+    }
 
-        assert(managers != NULL);
+    assert(managers != NULL);
 
-        if ([managers count] != 0) {
-          assert([managers count] == 1);
-          self.manager = [managers objectAtIndex:0];
+    if ([managers count] != 0) {
+      assert([managers count] == 1);
+      self.manager = [managers objectAtIndex:0];
 
-          NETunnelProviderProtocol *protocol =
-              (NETunnelProviderProtocol *)self.manager.protocolConfiguration;
-          NSDictionary *options = protocol.providerConfiguration;
+      NETunnelProviderProtocol *protocol =
+          (NETunnelProviderProtocol *)self.manager.protocolConfiguration;
+      NSDictionary *options = protocol.providerConfiguration;
 
-          self.addressField.text = (NSString *)[options objectForKey:@"server"];
-          self.secretField.text = (NSString *)[options objectForKey:@"secret"];
-          self.usernameField.text =
-              (NSString *)[options objectForKey:@"username"];
-        }
-      }];
+      self.addressField.text = (NSString *)[options objectForKey:@"server"];
+      self.secretField.text = (NSString *)[options objectForKey:@"secret"];
+      self.usernameField.text = (NSString *)[options objectForKey:@"username"];
+    }
+  }];
 }
 
 - (UITextField *)createTextFieldWithPlaceholder:(NSString *)placeholder
@@ -276,6 +284,11 @@
   } else {
     title = @"Connect";
     enabled = YES;
+  }
+
+  NSString *error = [self getErrorFromSharedUserDefaults];
+  if (error != NULL) {
+    [self showAlert:error];
   }
 
   [self.connectButton setTitle:title forState:UIControlStateNormal];

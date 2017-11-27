@@ -18,23 +18,17 @@ cp -r "$SOURCE_APP" "$TMP_APP"
 
 # Sign the extension
 rm -r $TMP_EXT/_CodeSignature
-cp certs/Stun_Packet_Tunnel_Distr.mobileprovision "$TMP_EXT/embedded.mobileprovision"
-security cms -D -i certs/Stun_Packet_Tunnel_Distr.mobileprovision > "$PROVISION_FILE"
+cp certs/Stun_Packet_Tunnel_Dev.mobileprovision "$TMP_EXT/embedded.mobileprovision"
+security cms -D -i certs/Stun_Packet_Tunnel_Dev.mobileprovision > "$PROVISION_FILE"
 /usr/libexec/PlistBuddy -x -c 'Print :Entitlements' "$PROVISION_FILE" > "$ENTITLEMENTS_FILE"
-/usr/bin/codesign -f -s 'iPhone Distribution: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_EXT"
+/usr/bin/codesign -f -s 'iPhone Developer: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_EXT"
 
 # Sign the app
 rm -r $TMP_APP/_CodeSignature
-cp certs/Stun_Distr.mobileprovision "$TMP_APP/embedded.mobileprovision"
-security cms -D -i certs/Stun_Distr.mobileprovision > "$PROVISION_FILE"
+cp certs/Stun_Dev.mobileprovision "$TMP_APP/embedded.mobileprovision"
+security cms -D -i certs/Stun_Dev.mobileprovision > "$PROVISION_FILE"
 /usr/libexec/PlistBuddy -x -c 'Print :Entitlements' "$PROVISION_FILE" > "$ENTITLEMENTS_FILE"
-/usr/bin/codesign -f -s 'iPhone Distribution: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_APP"
-
-rm -r $TMP_IPA
-mkdir -p $TMP_PAYLOAD
-cp -r $TMP_APP $TMP_PAYLOAD
-cd $TMP_IPA
-zip -r $TMP_IPA/Stun.resigned.ipa Payload
+/usr/bin/codesign -f -s 'iPhone Developer: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_APP"
 
 # Install
 echo "Please use XCode to deploy $TMP_APP to the device."

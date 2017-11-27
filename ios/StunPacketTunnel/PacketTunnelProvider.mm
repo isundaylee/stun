@@ -15,7 +15,7 @@
 using namespace std::chrono_literals;
 
 - (NSError *)errorFromCppException:(std::exception const &)ex {
-  return [NSError
+  NSError *error = [NSError
       errorWithDomain:@"StunPacketTunnel"
                  code:100
              userInfo:@{
@@ -25,6 +25,14 @@ using namespace std::chrono_literals;
                        [NSString stringWithCString:ex.what()
                                           encoding:NSASCIIStringEncoding]]
              }];
+
+  return error;
+}
+
+- (void)saveErrorToSharedUserDefaults:(NSError *)error {
+  NSUserDefaults *sharedDefaults =
+      [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
+  [sharedDefaults setObject:[error localizedDescription] forKey:@"error"];
 }
 
 - (void)doStunEventLoop {
@@ -50,7 +58,9 @@ using namespace std::chrono_literals;
   } catch (std::exception const &ex) {
     LOG_I("Loop") << "Uncaught exception: " << ex.what() << std::endl;
 
-    [self cancelTunnelWithError:[self errorFromCppException:ex]];
+    NSError *error = [self errorFromCppException:ex];
+    [self saveErrorToSharedUserDefaults:error];
+    [self cancelTunnelWithError:error];
   }
 }
 
@@ -135,6 +145,7 @@ static const int kServerPort = 2859;
                  completionHandler:^(NSError *_Nullable error) {
                    if (error != NULL) {
                      NSLog(@"Error while setting up network tunnel: %@", error);
+                     [self saveErrorToSharedUserDefaults:error];
                      completionHandler(error);
                      return;
                    }
@@ -223,7 +234,6 @@ static const int kServerPort = 2859;
 
                    tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
                        tunnelSender, tunnelReceiver));
-
                    completionHandler(nil);
                  }];
 
@@ -235,7 +245,9 @@ static const int kServerPort = 2859;
     LOG_I("Loop") << "Uncaught exception while starting the tunnel: "
                   << ex.what() << std::endl;
 
-    completionHandler([self errorFromCppException:ex]);
+    NSError *error = [self errorFromCppException:ex];
+    [self saveErrorToSharedUserDefaults:error];
+    completionHandler(error);
   }
 }
 
