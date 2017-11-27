@@ -17,6 +17,14 @@
 @implementation AppViewController {
 }
 
+- (NSUInteger)supportedInterfaceOrientations {
+  return UIInterfaceOrientationMaskPortrait;
+}
+
+- (BOOL)shouldAutorotate {
+  return NO;
+}
+
 - (NSString *)getErrorFromSharedUserDefaults {
   NSUserDefaults *sharedDefaults =
       [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
