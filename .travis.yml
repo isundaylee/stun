@@ -6,8 +6,8 @@ before_install:
   # Install gcc 5
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
   - sudo apt-get -qq update
-  - sudo apt-get install -qq g++-6
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 90
+  - sudo apt-get install -qq g++-5
+  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 90
   # Install clang 4.0
   - echo "" | sudo tee -a /etc/apt/sources.list
   - echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list
@@ -24,7 +24,7 @@ before_install:
   - brew --version
   # Install Buck
   - brew tap facebook/fb
-  - brew install buck
+  - HOMEBREW_CC=gcc-5 brew install buck
   - buck --version
 
 script:
