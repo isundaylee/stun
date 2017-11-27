@@ -28,6 +28,7 @@
 - (NSString *)getErrorFromSharedUserDefaults {
   NSUserDefaults *sharedDefaults =
       [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
+  [sharedDefaults synchronize];
   return [sharedDefaults objectForKey:@"error"];
 }
 
@@ -35,6 +36,7 @@
   NSUserDefaults *sharedDefaults =
       [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
   [sharedDefaults removeObjectForKey:@"error"];
+  [sharedDefaults synchronize];
 }
 
 - (void)showAlert:(NSString *)error {

@@ -15,16 +15,14 @@
 using namespace std::chrono_literals;
 
 - (NSError *)errorFromCppException:(std::exception const &)ex {
-  NSError *error = [NSError
-      errorWithDomain:@"StunPacketTunnel"
-                 code:100
-             userInfo:@{
-               NSLocalizedDescriptionKey : [NSString
-                   stringWithFormat:
-                       @"Uncaught exception: %@",
-                       [NSString stringWithCString:ex.what()
-                                          encoding:NSASCIIStringEncoding]]
-             }];
+  NSError *error =
+      [NSError errorWithDomain:@"StunPacketTunnel"
+                          code:100
+                      userInfo:@{
+                        NSLocalizedDescriptionKey :
+                            [NSString stringWithCString:ex.what()
+                                               encoding:NSASCIIStringEncoding]
+                      }];
 
   return error;
 }
@@ -33,6 +31,7 @@ using namespace std::chrono_literals;
   NSUserDefaults *sharedDefaults =
       [[NSUserDefaults alloc] initWithSuiteName:@"group.me.ljh.stunapp"];
   [sharedDefaults setObject:[error localizedDescription] forKey:@"error"];
+  [sharedDefaults synchronize];
 }
 
 - (void)doStunEventLoop {

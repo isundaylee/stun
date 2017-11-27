@@ -99,9 +99,10 @@ void ClientSessionHandler::attachHandlers() {
   });
 
   messenger_->addHandler("error", [](auto const& message) {
-    LOG_I("Session") << "Session ended with error: "
-                     << message.getBody().template get<std::string>()
+    std::string errorMessage = message.getBody().template get<std::string>();
+    LOG_I("Session") << "Session ended with error: " << errorMessage
                      << std::endl;
+    throw std::runtime_error("Error from server: " + errorMessage);
     return Message::disconnect();
   });
 }
