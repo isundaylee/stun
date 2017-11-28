@@ -167,6 +167,8 @@ void ServerSessionHandler::attachHandlers() {
       if (!config_.quotaTable.empty()) {
         auto it = config_.quotaTable.find(config_.user);
         if (it == config_.quotaTable.end()) {
+          LOG_I("Session") << "Unknown client " << config_.user
+                           << " disconnected." << std::endl;
           return Message(
               "error", "User " + config_.user + " not allowed on the server.");
         }
