@@ -72,7 +72,7 @@ class ServerSessionHandler::QuotaPolice {
 public:
   QuotaPolice(ServerSessionHandler* session) : session_(session) {
     assertTrue(session->config_.quota != 0,
-               "QuotaPolice running on a unlimited session.");
+               "QuotaPolice running on an unlimited session.");
 
     timer_.reset(new event::Timer(0s));
     police_.reset(new event::Action(
