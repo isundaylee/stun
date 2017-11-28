@@ -174,7 +174,7 @@ void ServerSessionHandler::attachHandlers() {
         }
 
         config_.quota = it->second;
-        LOG_V("Session") << "Client " << config_.user << " has a quota of "
+        LOG_I("Session") << "Client " << config_.user << " has a quota of "
                          << config_.quota << " bytes." << std::endl;
 
         // Retrieve the user's prior used quota
