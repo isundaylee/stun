@@ -18,9 +18,10 @@ AESKey::AESKey(std::string const& key) {
   memset(data, kAESKeyPaddingByte, sizeof(data));
   memcpy(data, key.c_str(), key.length());
 
-  this->key.Assign(data, key.length() <= CryptoPP::AES::MIN_KEYLENGTH
-                             ? CryptoPP::AES::MIN_KEYLENGTH
-                             : CryptoPP::AES::MAX_KEYLENGTH);
+  this->key.Assign(data,
+                   key.length() <= CryptoPP::AES::MIN_KEYLENGTH
+                       ? CryptoPP::AES::MIN_KEYLENGTH
+                       : CryptoPP::AES::MAX_KEYLENGTH);
 }
 
 /* static */ std::string AESKey::randomStringKey() {

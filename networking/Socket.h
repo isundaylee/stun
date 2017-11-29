@@ -3,8 +3,8 @@
 #include <common/FileDescriptor.h>
 #include <common/Util.h>
 #include <event/Condition.h>
-#include <networking/SocketAddress.h>
 #include <networking/NetworkType.h>
+#include <networking/SocketAddress.h>
 
 #include <memory>
 
@@ -21,7 +21,8 @@ enum SocketType { TCP, UDP };
 class Socket {
 public:
   Socket(NetworkType networkType, SocketType type);
-  Socket(NetworkType networkType, SocketType type, int fd, SocketAddress peerAddr);
+  Socket(NetworkType networkType, SocketType type, int fd,
+         SocketAddress peerAddr);
 
   Socket(Socket&& move) = default;
   Socket& operator=(Socket&& move) = default;

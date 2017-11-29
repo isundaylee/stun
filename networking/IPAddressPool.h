@@ -6,12 +6,12 @@
 
 #include <common/Util.h>
 
+#include <arpa/inet.h>
 #include <array>
 #include <iostream>
 #include <queue>
 #include <set>
 #include <string>
-#include <arpa/inet.h>
 
 namespace networking {
 
