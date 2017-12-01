@@ -36,6 +36,9 @@ struct Packet {
     return obj;
   }
 
+  void trimFront(size_t bytes);
+  void insertFront(size_t bytes);
+
 private:
   Packet(Packet const& copy) = delete;
   Packet& operator=(Packet const& copy) = delete;

@@ -18,7 +18,7 @@ static const size_t kIPTablesOutputBufferSize = 1024;
 class IPTables {
 public:
   static void masquerade(SubnetAddress const& sourceSubnet) {
-    runCommand("-t nat -A POSTROUTING -s " + sourceSubnet.toString() +
+    runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " + sourceSubnet.toString() +
                " -j MASQUERADE" + kIPTablesCommenClause);
 
     LOG_V("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
@@ -26,7 +26,7 @@ public:
   }
 
   static void clear() {
-    std::string rules = runCommand("-t nat -L POSTROUTING --line-numbers -n");
+    std::string rules = runCommandAndAssertSuccess("-t nat -L POSTROUTING --line-numbers -n");
     std::stringstream ss(rules);
     std::string line;
 
@@ -43,7 +43,7 @@ public:
     }
 
     for (auto it = rulesToDelete.rbegin(); it != rulesToDelete.rend(); it++) {
-      runCommand("-t nat -D POSTROUTING " + std::to_string(*it));
+      runCommandAndAssertSuccess("-t nat -D POSTROUTING " + std::to_string(*it));
     }
 
     LOG_V("IPTables") << "Removed " << rulesToDelete.size()
@@ -51,12 +51,12 @@ public:
   }
 
 private:
-  static std::string runCommand(std::string command) {
+  static std::string runCommandAndAssertSuccess(std::string command) {
 #if OSX
     throw std::runtime_error("IPTables does not support OSX.");
 #endif
 
-    return ::runCommand("/sbin/iptables " + command);
+    return ::runCommandAndAssertSuccess("/sbin/iptables " + command).stdout;
   }
 };
 }

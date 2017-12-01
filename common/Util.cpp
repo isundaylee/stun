@@ -24,6 +24,11 @@ void throwGetAddrInfoError(int err) {
 
 void assertTrue(bool condition, std::string const& reason) {
   if (!condition) {
+#if BSD
+    // C++ on BSD doesn't seem to print exception upon abort.
+    LOG_E("Util") << reason << std::endl;
+#endif
+
     throw std::runtime_error(reason);
   }
 }
@@ -58,7 +63,7 @@ bool checkRetryableError(int ret, std::string const& action,
   return true;
 }
 
-std::string runCommand(std::string command) {
+RunCommandResult runCommand(std::string command) {
   char buffer[kUtilRunCommandOutputBufferSize];
   std::stringstream result;
   FILE* pipe = popen((command + " 2>/dev/null").c_str(), "r");
@@ -72,11 +77,18 @@ std::string runCommand(std::string command) {
   }
 
   int ret = pclose(pipe);
-  assertTrue(ret == 0,
-             "Error code " + std::to_string(ret) +
+
+  return RunCommandResult{ret, result.str()};
+}
+
+RunCommandResult runCommandAndAssertSuccess(std::string command) {
+  auto result = runCommand(command);
+
+  assertTrue(result.exitCode == 0,
+             "Error code " + std::to_string(result.exitCode) +
                  " while executing: " + command);
 
-  return result.str();
+  return result;
 }
 
 std::vector<std::string> split(std::string const& string,

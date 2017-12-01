@@ -116,6 +116,14 @@ bool Tunnel::read(TunnelPacket& packet) {
   assertTrue(packet.data[3] == 0x02, "header[3] != 0x02");
   packet.data[2] = 0x08;
   packet.data[3] = 0x00;
+#elif BSD
+  // BSD tunnel has no header, whereas Linux tunnel has header 0x00 0x00 0x08
+  // 0x00. Here we add in the necessary header.
+  packet.insertFront(4);
+  packet.data[0] = 0x00;
+  packet.data[1] = 0x00;
+  packet.data[2] = 0x08;
+  packet.data[3] = 0x00;
 #endif
 
   return true;
@@ -127,11 +135,13 @@ bool Tunnel::write(TunnelPacket packet) {
   packet.data[1] = 0x00;
   packet.data[2] = 0x00;
   packet.data[3] = 0x02;
-#elif LINUX || BSD
+#elif LINUX
   packet.data[0] = 0x00;
   packet.data[1] = 0x00;
   packet.data[2] = 0x08;
   packet.data[3] = 0x00;
+#elif BSD
+  packet.trimFront(4);
 #else
 #error "Unexpected platform."
 #endif

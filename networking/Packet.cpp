@@ -38,4 +38,24 @@ void Packet::fill(Byte* buffer, size_t size) {
 }
 
 void Packet::fill(Packet packet) { *this = std::move(packet); }
+
+void Packet::trimFront(size_t bytes) {
+  assertTrue(bytes <= this->size,
+             "Trying to trim more bytes than there are in the packet.");
+
+  this->size -= bytes;
+  this->data += bytes;
+}
+
+void Packet::insertFront(size_t bytes) {
+  Byte* newData = this->data;
+
+  if (this->size + bytes > this->capacity) {
+    this->capacity = this->size + bytes;
+    newData = (Byte*)pool_.allocate(this->capacity);
+  }
+
+  memmove(newData + bytes, this->data, this->size);
+  this->size += bytes;
+}
 }

@@ -19,7 +19,7 @@ InterfaceConfig::~InterfaceConfig() {}
                                            unsigned int mtu) {
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " mtu " + std::to_string(mtu);
-  runCommand(command);
+  runCommandAndAssertSuccess(command);
 }
 
 /* static */ void
@@ -33,7 +33,7 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " inet " + localAddress.toString() + " " +
                         peerAddress.toString();
-  runCommand(command);
+  runCommandAndAssertSuccess(command);
 }
 
 /* static */ void InterfaceConfig::newRoute(Route const& route) {
@@ -49,7 +49,7 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
                         std::to_string(route.subnet.prefixLen) + " " +
                         route.dest.gatewayAddr.toString();
 
-  runCommand(command);
+  runCommandAndAssertSuccess(command);
 
   LOG_V("Interface") << "Added a route to " << route.subnet.toString()
                      << " via " << route.dest.gatewayAddr << std::endl;
@@ -61,7 +61,7 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
              "InterfaceConfig supports IPv4 addresses only on macOS.");
 
   std::string output =
-      runCommand(kInterfaceConfigRoutePath + " -n get " + destAddr.toString());
+      runCommandAndAssertSuccess(kInterfaceConfigRoutePath + " -n get " + destAddr.toString());
   std::stringstream data(output);
 
   // Sample output:
