@@ -7,6 +7,8 @@
 #include <common/Util.h>
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
+
 #include <array>
 #include <iostream>
 #include <queue>

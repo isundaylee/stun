@@ -3,6 +3,7 @@
 #include <common/Util.h>
 
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
 namespace networking {
 

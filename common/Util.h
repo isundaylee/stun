@@ -19,6 +19,15 @@
   #else
     #define OSX 1
   #endif
+#elif defined(__unix__)
+  #include <sys/param.h>
+  #if defined(BSD)
+    // FIXME: BSD is already defined.
+  #else
+    #error "Unsupported UNIX platform."
+  #endif
+#else
+  #error "Unsupported platform."
 #endif
 // clang-format on
 

@@ -1,6 +1,6 @@
 #include <common/Util.h>
 
-#if OSX || LINUX
+#if OSX || LINUX || BSD
 
 #include "networking/Tunnel.h"
 
@@ -20,11 +20,19 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 #include <stdio.h>
+#elif BSD
+#include <net/if.h>
+#include <net/if_tun.h>
+#include <stdio.h>
+#else
+#error "Unsupported platform."
 #endif
 
 namespace networking {
 
 Tunnel::Tunnel() {
+  int ret;
+
 #if OSX
   int fd = socket(PF_SYSTEM, SOCK_DGRAM, SYSPROTO_CONTROL);
   checkUnixError(fd, "opening utun");
@@ -32,7 +40,7 @@ Tunnel::Tunnel() {
   struct ctl_info info;
   memset(&info, 0, sizeof(info));
   strncpy(info.ctl_name, UTUN_CONTROL_NAME, MAX_KCTL_NAME);
-  int ret = ioctl(fd, CTLIOCGINFO, &info);
+  ret = ioctl(fd, CTLIOCGINFO, &info);
   checkUnixError(ret, "executing ioctl(.., CTLIOCGINFO, ...)");
 
   struct sockaddr_ctl addr;
@@ -56,21 +64,30 @@ Tunnel::Tunnel() {
   struct ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
   ifr.ifr_flags = IFF_TUN;
-  int ret = ioctl(fd, TUNSETIFF, (void*)&ifr);
+  ret = ioctl(fd, TUNSETIFF, (void*)&ifr);
   checkUnixError(ret, "doing TUNSETIFF");
 
   deviceName = ifr.ifr_ifrn.ifrn_name;
+#elif BSD
+  int fd = ::open("/dev/tun0", O_RDWR);
+  checkUnixError(fd, "opening /dev/tun0");
+
+  deviceName = "tun0";
 #elif IOS
   LOG_E("Tunnel") << "Tunnel is not yet supported on iOS" << std::endl;
   throw std::runtime_error("Tunnel is not yet supported on iOS");
+#else
+#error "Unsupported platform."
 #endif
 
-#if LINUX || OSX
+#if LINUX || OSX || BSD
   ret = fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_NONBLOCK, 0);
   checkUnixError(ret, "setting O_NONBLOCK for Tunnel");
 
   fd_ = common::FileDescriptor{fd};
   LOG_V("Tunnel") << "Opened successfully as " << deviceName << std::endl;
+#else
+#error "Unsupported platform."
 #endif
 }
 
@@ -110,13 +127,13 @@ bool Tunnel::write(TunnelPacket packet) {
   packet.data[1] = 0x00;
   packet.data[2] = 0x00;
   packet.data[3] = 0x02;
-#elif LINUX
+#elif LINUX || BSD
   packet.data[0] = 0x00;
   packet.data[1] = 0x00;
   packet.data[2] = 0x08;
   packet.data[3] = 0x00;
 #else
-#error "Unexpected OS"
+#error "Unexpected platform."
 #endif
 
   return fd_.atomicWrite(packet.data, packet.size);

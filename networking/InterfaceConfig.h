@@ -21,7 +21,7 @@ struct RouteDestination {
 public:
 #if LINUX
   int interfaceIndex;
-#elif OSX
+#elif OSX || BSD
   std::string interfaceName;
 #endif
   IPAddress gatewayAddr;
@@ -33,7 +33,7 @@ public:
       : interfaceIndex(-1), gatewayAddr(gatewayAddr) {}
 #endif
 
-#if OSX
+#if OSX || BSD
   RouteDestination(std::string const& interfaceName,
                    IPAddress const& gatewayAddr)
       : interfaceName(interfaceName), gatewayAddr(gatewayAddr) {}
