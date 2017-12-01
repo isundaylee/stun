@@ -57,5 +57,10 @@ void Packet::insertFront(size_t bytes) {
 
   memmove(newData + bytes, this->data, this->size);
   this->size += bytes;
+
+  if (newData != this->data) {
+    pool_.free(this->data);
+    this->data = newData;
+  }
 }
 }
