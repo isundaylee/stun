@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#if BSD
+#if OSX || BSD
 
 static const std::string kInterfaceConfigIfconfigPath = "/sbin/ifconfig";
 static const std::string kInterfaceConfigRoutePath = "/sbin/route";
@@ -28,7 +28,7 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
                                 IPAddress const& peerAddress) {
   assertTrue(localAddress.type == NetworkType::IPv4 &&
                  peerAddress.type == NetworkType::IPv4,
-             "InterfaceConfig supports IPv4 addresses only on BSD.");
+             "InterfaceConfig supports IPv4 addresses only.");
 
   std::string command = kInterfaceConfigIfconfigPath + " " + deviceName +
                         " inet " + localAddress.toString() + " " +
@@ -38,18 +38,22 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
 
 /* static */ void InterfaceConfig::newRoute(Route const& route) {
   if (route.dest.gatewayAddr.empty()) {
-    assertTrue(false, "Interface routes are not supported on BSD yet.");
+    assertTrue(false, "Interface routes are not supported on OSX/BSD yet.");
   }
 
   assertTrue(route.dest.gatewayAddr.type == NetworkType::IPv4,
-             "InterfaceConfig supports IPv4 addresses only on BSD.");
+             "InterfaceConfig supports IPv4 addresses only.");
 
   std::string command = kInterfaceConfigRoutePath + " -n add -net " +
                         route.subnet.addr.toString() + "/" +
                         std::to_string(route.subnet.prefixLen) + " " +
                         route.dest.gatewayAddr.toString();
 
+#ifdef OSX
+  runCommandAndAssertSuccess(command);
+#elif BSD
   runCommand(command);
+#endif
 
   LOG_V("Interface") << "Added a route to " << route.subnet.toString()
                      << " via " << route.dest.gatewayAddr << std::endl;
@@ -58,7 +62,7 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
 /* static */ RouteDestination
 InterfaceConfig::getRoute(IPAddress const& destAddr) {
   assertTrue(destAddr.type == NetworkType::IPv4,
-             "InterfaceConfig supports IPv4 addresses only on BSD.");
+             "InterfaceConfig supports IPv4 addresses only.");
 
   std::string output =
       runCommandAndAssertSuccess(kInterfaceConfigRoutePath + " -n get " +
