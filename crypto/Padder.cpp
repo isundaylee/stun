@@ -25,7 +25,7 @@ Padder::Padder(size_t minSize) : minSize_(minSize) {}
 /* virtual */ size_t Padder::decrypt(Byte* data, size_t size,
                                      size_t capacity) /* override */ {
   assertTrue(size >= sizeof(PadderSizeType),
-             "Padder encountered a impossibly short packet.");
+             "Padder encountered an impossibly short packet.");
   PadderSizeType* sizeFooter =
       (PadderSizeType*)(data + (size - sizeof(PadderSizeType)));
   return *sizeFooter;
