@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <array>
 #include <vector>
 
 namespace networking {
@@ -38,6 +39,28 @@ struct Packet {
 
   void trimFront(size_t bytes);
   void insertFront(size_t bytes);
+
+  template <size_t A, size_t B>
+  void replaceHeader(std::array<Byte, A> const& oldHeader,
+                     std::array<Byte, B> const& newHeader) {
+    for (size_t i = 0; i < oldHeader.size(); i++) {
+      assertTrue(this->data[i] == oldHeader[i],
+                 "header[" + std::to_string(i) +
+                     "] != " + std::to_string(oldHeader[i]));
+    }
+
+    if (newHeader.size() > oldHeader.size()) {
+      this->insertFront(newHeader.size() - oldHeader.size());
+    }
+
+    if (newHeader.size() < oldHeader.size()) {
+      this->trimFront(oldHeader.size() - newHeader.size());
+    }
+
+    for (size_t i = 0; i < newHeader.size(); i++) {
+      this->data[i] = newHeader[i];
+    }
+  }
 
 private:
   Packet(Packet const& copy) = delete;

@@ -6,6 +6,8 @@
 
 #include <event/IOCondition.h>
 
+#include <array>
+
 #include <fcntl.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -99,6 +101,20 @@ event::Condition* Tunnel::canWrite() const {
   return event::IOConditionManager::canWrite(fd_.fd);
 }
 
+#if OSX
+static std::array<Byte, 4> kTunnelPacketHeader = {{0x00, 0x00, 0x00, 0x02}};
+#elif LINUX
+static std::array<Byte, 4> kTunnelPacketHeader = {{0x00, 0x00, 0x08, 0x00}};
+#elif BSD
+static std::array<Byte, 0> kTunnelPacketHeader = {{}};
+#else
+#error "Unexpected platform."
+#endif
+
+// This is the packet header that should be handed out from and to Tunnel
+static std::array<Byte, 4> kTunnelCanonicalPacketHeader = {
+    {0x00, 0x00, 0x08, 0x00}};
+
 bool Tunnel::read(TunnelPacket& packet) {
   size_t read = fd_.atomicRead(packet.data, packet.capacity);
   if (read == 0) {
@@ -107,44 +123,13 @@ bool Tunnel::read(TunnelPacket& packet) {
     packet.size = read;
   }
 
-#if OSX
-  // OSX tunnel has header 0x00 0x00 0x00 0x02, whereas Linux tunnel has header
-  // 0x00 0x00 0x08 0x00. Here we do the translation.
-  assertTrue(packet.data[0] == 0x00, "header[0] != 0x00");
-  assertTrue(packet.data[1] == 0x00, "header[1] != 0x00");
-  assertTrue(packet.data[2] == 0x00, "header[2] != 0x00");
-  assertTrue(packet.data[3] == 0x02, "header[3] != 0x02");
-  packet.data[2] = 0x08;
-  packet.data[3] = 0x00;
-#elif BSD
-  // BSD tunnel has no header, whereas Linux tunnel has header 0x00 0x00 0x08
-  // 0x00. Here we add in the necessary header.
-  packet.insertFront(4);
-  packet.data[0] = 0x00;
-  packet.data[1] = 0x00;
-  packet.data[2] = 0x08;
-  packet.data[3] = 0x00;
-#endif
+  packet.replaceHeader(kTunnelPacketHeader, kTunnelCanonicalPacketHeader);
 
   return true;
 }
 
 bool Tunnel::write(TunnelPacket packet) {
-#if OSX
-  packet.data[0] = 0x00;
-  packet.data[1] = 0x00;
-  packet.data[2] = 0x00;
-  packet.data[3] = 0x02;
-#elif LINUX
-  packet.data[0] = 0x00;
-  packet.data[1] = 0x00;
-  packet.data[2] = 0x08;
-  packet.data[3] = 0x00;
-#elif BSD
-  packet.trimFront(4);
-#else
-#error "Unexpected platform."
-#endif
+  packet.replaceHeader(kTunnelCanonicalPacketHeader, kTunnelPacketHeader);
 
   return fd_.atomicWrite(packet.data, packet.size);
 }
