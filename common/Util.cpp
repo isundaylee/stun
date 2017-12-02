@@ -24,7 +24,7 @@ void throwGetAddrInfoError(int err) {
 
 void assertTrue(bool condition, std::string const& reason) {
   if (!condition) {
-#if BSD
+#if TARGET_BSD
     // C++ on BSD doesn't seem to print exception upon abort.
     LOG_E("Util") << reason << std::endl;
 #endif

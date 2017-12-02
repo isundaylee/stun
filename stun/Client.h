@@ -6,7 +6,7 @@ namespace stun {
 
 class Client {
 public:
-#if IOS
+#if TARGET_IOS
   Client(ClientConfig config,
          ClientSessionHandler::TunnelFactory tunnelFactory);
 #else

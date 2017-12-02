@@ -39,7 +39,7 @@ private:
   void fireUntilTarget();
 };
 
-#if LINUX
+#if TARGET_LINUX
 const int kTimerManagerSignal = SIGRTMIN;
 #endif
 

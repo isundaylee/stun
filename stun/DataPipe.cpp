@@ -10,7 +10,7 @@ using namespace std::chrono_literals;
 
 static const event::Duration kDataPipeProbeInterval = 1s;
 
-#if IOS
+#if TARGET_IOS
 static const size_t kDataPipeFIFOSize = 16;
 #else
 static const size_t kDataPipeFIFOSize = 256;

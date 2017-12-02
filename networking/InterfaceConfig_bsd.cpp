@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#if OSX || BSD
+#if TARGET_OSX || TARGET_BSD
 
 static const std::string kInterfaceConfigIfconfigPath = "/sbin/ifconfig";
 static const std::string kInterfaceConfigRoutePath = "/sbin/route";
@@ -49,9 +49,9 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
                         std::to_string(route.subnet.prefixLen) + " " +
                         route.dest.gatewayAddr.toString();
 
-#ifdef OSX
+#ifdef TARGET_OSX
   runCommandAndAssertSuccess(command);
-#elif BSD
+#elif TARGET_BSD
   runCommand(command);
 #endif
 

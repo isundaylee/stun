@@ -52,7 +52,7 @@ public:
 
 private:
   static std::string runCommandAndAssertSuccess(std::string command) {
-#if !LINUX
+#if !TARGET_LINUX
     throw std::runtime_error("IPTables only supports Linux platforms.");
 #endif
 

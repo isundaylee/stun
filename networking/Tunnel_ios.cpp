@@ -1,6 +1,6 @@
 #include <common/Util.h>
 
-#if IOS
+#if TARGET_IOS
 
 #include "event/Trigger.h"
 #include "networking/Tunnel.h"

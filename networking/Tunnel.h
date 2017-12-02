@@ -33,7 +33,7 @@ class Tunnel {
 public:
   Tunnel();
 
-#if IOS
+#if TARGET_IOS
   using Sender = std::function<void(TunnelPacket packet)>;
   using PacketsPromise = event::Promise<std::vector<TunnelPacket>>;
   using Receiver = std::function<std::shared_ptr<PacketsPromise>()>;
@@ -42,7 +42,7 @@ public:
   Tunnel(Tunnel&& move);
 #endif
 
-#if OSX || LINUX
+#if TARGET_OSX || TARGET_LINUX
   Tunnel(Tunnel&& move) = default;
 #endif
 
@@ -60,7 +60,7 @@ private:
 
   common::FileDescriptor fd_;
 
-#if IOS
+#if TARGET_IOS
   std::unique_ptr<event::ComputedCondition> canRead_;
   std::unique_ptr<event::ComputedCondition> canWrite_;
   std::unique_ptr<event::ComputedCondition> canReceive_;

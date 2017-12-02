@@ -8,21 +8,21 @@
 
 // clang-format off
 #if defined(__linux__)
-  #define LINUX 1
+  #define TARGET_LINUX 1
 #elif defined(__APPLE__)
   #include "TargetConditionals.h"
   #if TARGET_OS_IPHONE && TARGET_IPHONE_SIMULATOR
-    #define IOS 1
+    #define TARGET_IOS 1
     #define IOS_SIMULATOR 1
   #elif TARGET_OS_IPHONE
-    #define IOS 1
+    #define TARGET_IOS 1
   #else
-    #define OSX 1
+    #define TARGET_OSX 1
   #endif
 #elif defined(__unix__)
   #include <sys/param.h>
   #if defined(BSD)
-    // FIXME: BSD is already defined.
+    #define TARGET_BSD 1
   #else
     #error "Unsupported UNIX platform."
   #endif

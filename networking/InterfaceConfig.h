@@ -7,7 +7,7 @@
 #include <functional>
 #include <string>
 
-#if LINUX
+#if TARGET_LINUX
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #endif
@@ -19,21 +19,21 @@ const size_t kNetlinkRequestAttrBufferSize = (1U << 10);
 
 struct RouteDestination {
 public:
-#if LINUX
+#if TARGET_LINUX
   int interfaceIndex;
-#elif OSX || BSD
+#elif TARGET_OSX || TARGET_BSD
   std::string interfaceName;
 #endif
   IPAddress gatewayAddr;
 
-#if LINUX
+#if TARGET_LINUX
   RouteDestination(int interfaceIndex, IPAddress const& gatewayAddr)
       : interfaceIndex(interfaceIndex), gatewayAddr(gatewayAddr) {}
   explicit RouteDestination(IPAddress const& gatewayAddr)
       : interfaceIndex(-1), gatewayAddr(gatewayAddr) {}
 #endif
 
-#if OSX || BSD
+#if TARGET_OSX || TARGET_BSD
   RouteDestination(std::string const& interfaceName,
                    IPAddress const& gatewayAddr)
       : interfaceName(interfaceName), gatewayAddr(gatewayAddr) {}
@@ -41,7 +41,7 @@ public:
       : interfaceName(""), gatewayAddr(gatewayAddr) {}
 #endif
 
-#if IOS
+#if TARGET_IOS
   explicit RouteDestination(IPAddress const& gatewayAddr)
       : gatewayAddr(gatewayAddr) {}
 #endif
@@ -75,7 +75,7 @@ private:
 
   static InterfaceConfig& getInstance();
 
-#if LINUX
+#if TARGET_LINUX
   template <typename R> void sendRequest(R& req);
   void waitForReply(std::function<void(struct nlmsghdr*)> callback);
   int getInterfaceIndex(std::string const& deviceName);

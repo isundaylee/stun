@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#if IOS
+#if TARGET_IOS
 
 namespace networking {
 

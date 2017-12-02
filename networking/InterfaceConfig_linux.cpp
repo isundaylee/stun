@@ -2,7 +2,7 @@
 
 #include <common/Util.h>
 
-#if LINUX
+#if TARGET_LINUX
 
 #include <arpa/inet.h>
 #include <asm/types.h>

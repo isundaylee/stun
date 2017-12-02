@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 const static event::Duration kReconnectDelayInterval = 5s;
 const static size_t kClientRouteChunkSize = 1;
 
-#if IOS
+#if TARGET_IOS
 Client::Client(ClientConfig config,
                ClientSessionHandler::TunnelFactory tunnelFactory)
     : config_(config), tunnelFactory_(tunnelFactory) {

@@ -2,7 +2,7 @@
 
 #include <common/Util.h>
 
-#if IOS
+#if TARGET_IOS
 #include <os/log.h>
 #endif
 
@@ -95,7 +95,7 @@ private:
     return std::string(timestampBuffer);
   }
 
-#if IOS
+#if TARGET_IOS
   void flush() {
     static os_log_t logObject = os_log_create("me.ljh.stun", "");
 
