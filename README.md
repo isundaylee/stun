@@ -5,6 +5,15 @@
 
 `stun` (Simple TUNnel), as its name stands, is a simple layer-3 network tunnel written in C++. It allows you to easily establish a network tunnel between two computers, and route packets through them.
 
+Each `stun` tunnel consists of two ends: 1) the server, which listens for incoming tunneling requests, and 2) the client, which connects to a server to establish a tunnel. A `stun` server is also capable of serving as a router that provides Internet access for its clients via itself.
+
+Currently `stun` supports the following platforms:
+
+- Linux (client and server)
+- macOS (client only)
+- iOS (client only)
+- FreeBSD (client only)
+
 ## Installation
 
 ### macOS
@@ -15,7 +24,7 @@
 brew install isundaylee/repo/stun
 ```
 
-Note that currently `stun` can only be used as a client on macOS (see the Usage section for the distinction).
+Note that currently `stun` can only be used as a client on macOS (see the introduction paragraph for the distinction).
 
 ### Ubuntu
 
@@ -31,12 +40,14 @@ It will download `stun` and install the binary to `/usr/local/bin`. Note that it
 echo 0 | sudo tee /proc/sys/net/ipv4/ip_forward
 ```
 
+Also note that the install script only enables IP forwarding temporarily until the next reboot. To enable it permanently, edit `/etc/sysctl.conf` and set `net.ipv4.ip_foward` to `1`.
+
 ### Compile from source
 
-`stun` uses the [Buck](https://buckbuild.com) build system. Once you have Buck set up for your system, use the following command at the root directory of the repo to compile `stun`:
+`stun` uses the [Buck](https://buckbuild.com) build system. Once you have Buck set up for your system, use the following command at the root directory of the repo to compile a release version of `stun`:
 
 ```
-buck build :main
+buck build :main#release
 ```
 
 It is recommended to build `stun` with clang 4.0 or above. To point Buck to use a specific `clang++` binary, create a file named `.buckconfig.local` in the root directory of the repo with the following content:
@@ -44,13 +55,12 @@ It is recommended to build `stun` with clang 4.0 or above. To point Buck to use 
 ```
 [cxx]
   cxxpp = /path/to/clang++
+  cpp = /path/to/clang++
   cxx = /path/to/clang++
   ld = /path/to/clang++
 ```
 
 ## Usage
-
-Each tunnel has two ends: 1) the server, which listens for incoming tunneling requests, and 2) the client, which connects to a server to establish a tunnel. A `stun` server is also capable of serving as a router that provides Internet access for its clients via itself.
 
 To start `stun`, simply do
 
