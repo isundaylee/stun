@@ -12,14 +12,14 @@
 
 namespace networking {
 
-static const std::string kIPTablesCommenClause = " -m comment --comment stun";
+static const std::string kIPTablesCommonClause = " -m comment --comment stun";
 static const size_t kIPTablesOutputBufferSize = 1024;
 
 class IPTables {
 public:
   static void masquerade(SubnetAddress const& sourceSubnet) {
     runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " + sourceSubnet.toString() +
-               " -j MASQUERADE" + kIPTablesCommenClause);
+               " -j MASQUERADE" + kIPTablesCommonClause);
 
     LOG_V("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
                       << "." << std::endl;
