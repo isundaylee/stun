@@ -52,8 +52,8 @@ public:
 
 private:
   static std::string runCommandAndAssertSuccess(std::string command) {
-#if OSX
-    throw std::runtime_error("IPTables does not support OSX.");
+#if !LINUX
+    throw std::runtime_error("IPTables only supports Linux platforms.");
 #endif
 
     return ::runCommandAndAssertSuccess("/sbin/iptables " + command).stdout;
