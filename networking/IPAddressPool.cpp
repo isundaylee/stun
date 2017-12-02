@@ -47,6 +47,8 @@ IPAddress::IPAddress(uint32_t numerical, NetworkType type) {
       type == NetworkType::IPv4,
       "IPAddress::IPAddress(uint32_t) supported for IPv4 addresses only.");
 
+  this->type = type;
+
   octets[0] = (numerical & 0xff000000) >> 24;
   octets[1] = (numerical & 0x00ff0000) >> 16;
   octets[2] = (numerical & 0x0000ff00) >> 8;
