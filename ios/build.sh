@@ -2,33 +2,47 @@
 
 SOURCE_APP="buck-out/gen/ios/Stun#dwarf-and-dsym,iphoneos-arm64,no-include-frameworks/Stun.app"
 TMP_APP="/tmp/Stun.app"
-TMP_EXT="/tmp/Stun.app/PlugIns/StunPacketTunnel.appex"
+TMP_EXT="$TMP_APP/PlugIns/StunPacketTunnel.appex"
 TMP_IPA="/tmp/Stun.ipa"
 TMP_PAYLOAD="/tmp/Stun.ipa/Payload"
 
-PROVISION_FILE="/tmp/stun_provision.plist"
-ENTITLEMENTS_FILE="/tmp/stun_entitlements.plist"
+TMP_PROVISION_FILE="/tmp/stun_provision.plist"
+TMP_ENTITLEMENTS_FILE="/tmp/stun_entitlements.plist"
 
-pushd "$(buck root)"
+CERT='iPhone Developer: Jiahao Li'
+APP_PROVISION='certs/Stun_Dev.mobileprovision'
+EXT_PROVISION='certs/Stun_Packet_Tunnel_Dev.mobileprovision'
 
+function header {
+    echo "############################################################"
+    echo "#" $1
+    echo "############################################################"
+}
+
+function resign {
+    rm -r $1/_CodeSignature
+    cp "$2" "$1/embedded.mobileprovision"
+    security cms -D -i "$2" > "$TMP_PROVISION_FILE"
+    /usr/libexec/PlistBuddy -x -c 'Print :Entitlements' "$TMP_PROVISION_FILE" > "$TMP_ENTITLEMENTS_FILE"
+    /usr/bin/codesign -f -s "$3" -vv --entitlements "$TMP_ENTITLEMENTS_FILE" "$1"
+}
+
+pushd "$(buck root)" > /dev/null
+
+# Building the app
+header 'Building iOS app'
 buck build "//ios:Stun#iphoneos-arm64"
 
 rm -rf "$TMP_APP"
 cp -r "$SOURCE_APP" "$TMP_APP"
 
 # Sign the extension
-rm -r $TMP_EXT/_CodeSignature
-cp certs/Stun_Packet_Tunnel_Dev.mobileprovision "$TMP_EXT/embedded.mobileprovision"
-security cms -D -i certs/Stun_Packet_Tunnel_Dev.mobileprovision > "$PROVISION_FILE"
-/usr/libexec/PlistBuddy -x -c 'Print :Entitlements' "$PROVISION_FILE" > "$ENTITLEMENTS_FILE"
-/usr/bin/codesign -f -s 'iPhone Developer: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_EXT"
+header 'Re-signing the app extension'
+resign $TMP_EXT "$EXT_PROVISION" "$CERT"
 
 # Sign the app
-rm -r $TMP_APP/_CodeSignature
-cp certs/Stun_Dev.mobileprovision "$TMP_APP/embedded.mobileprovision"
-security cms -D -i certs/Stun_Dev.mobileprovision > "$PROVISION_FILE"
-/usr/libexec/PlistBuddy -x -c 'Print :Entitlements' "$PROVISION_FILE" > "$ENTITLEMENTS_FILE"
-/usr/bin/codesign -f -s 'iPhone Developer: Jiahao Li' -vv --entitlements "$ENTITLEMENTS_FILE" "$TMP_APP"
+header 'Re-signing the app'
+resign $TMP_APP "$APP_PROVISION" "$CERT"
 
 # Install
 echo "Please use XCode to deploy $TMP_APP to the device."
