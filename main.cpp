@@ -24,6 +24,7 @@
 using namespace stun;
 
 const int kServerPort = 2859;
+const std::string kVersion = "0.8.1";
 
 static const std::string serverConfigTemplate = R"(
 {
@@ -237,6 +238,8 @@ std::string generateNotebookPath(std::string const& configPath) {
 }
 
 int main(int argc, char* argv[]) {
+  LOG_I("Main") << "Running version " << kVersion << std::endl;
+
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
   if (options.count("wizard") || access(configPath.c_str(), F_OK) == -1) {
