@@ -1,3 +1,7 @@
+# v0.8.3 (2017-12-16)
+
+- [Core] Adds client/server-side MTU setting.
+
 # v0.8.2 (2017-12-01)
 
 - [Core] Better handling for non-recoverable errors.

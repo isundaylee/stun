@@ -24,7 +24,7 @@
 using namespace stun;
 
 const int kServerPort = 2859;
-const std::string kVersion = "0.8.2";
+const std::string kVersion = "0.8.3";
 
 static const std::string serverConfigTemplate = R"(
 {
