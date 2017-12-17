@@ -60,7 +60,7 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
   auto tunnel = std::make_unique<Tunnel>();
 
   // Configure the new interface
-  InterfaceConfig::newLink(tunnel->deviceName, kTunnelEthernetMTU);
+  InterfaceConfig::newLink(tunnel->deviceName, config.mtu);
   InterfaceConfig::setLinkAddress(tunnel->deviceName, config.myTunnelAddr,
                                   config.peerTunnelAddr);
 

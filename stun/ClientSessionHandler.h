@@ -31,6 +31,7 @@ public:
   size_t paddingTo;
   event::Duration dataPipeRotationInterval;
   std::string user;
+  size_t mtu;
 
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;

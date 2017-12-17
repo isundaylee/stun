@@ -26,6 +26,7 @@ public:
   event::Duration dataPipeRotationInterval;
   bool authentication;
   std::map<std::string, size_t> quotaTable;
+  size_t mtu;
 
   std::string user = "";
   size_t quota = 0;

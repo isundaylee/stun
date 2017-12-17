@@ -15,7 +15,7 @@ using namespace std::chrono_literals;
 
 using networking::Message;
 using networking::Tunnel;
-using networking::kTunnelEthernetMTU;
+using networking::kTunnelEthernetDefaultMTU;
 using networking::InterfaceConfig;
 
 static const event::Duration kSessionHandlerQuotaReportInterval = 30min;
@@ -152,9 +152,9 @@ void ServerSessionHandler::attachHandlers() {
                       [this]() { didEnd_->fire(); });
 
   messenger_->addHandler("hello", [this](auto const& message) {
-    if (config_.authentication) {
-      auto body = message.getBody();
+    auto body = message.getBody();
 
+    if (config_.authentication) {
       if (body.find("user") == body.end()) {
         return Message("error", "No user name provided.");
       }
@@ -195,6 +195,12 @@ void ServerSessionHandler::attachHandlers() {
       }
     }
 
+    // Figure out correct MTU
+    if (body.find("mtu") != body.end()) {
+      size_t clientMtu = body["mtu"].template get<size_t>();
+      config_.mtu = std::min(config_.mtu, clientMtu);
+    }
+
     // Acquire IP addresses
     config_.myTunnelAddr = server_->addrPool->acquire();
 
@@ -210,7 +216,7 @@ void ServerSessionHandler::attachHandlers() {
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = std::make_unique<Tunnel>();
-    InterfaceConfig::newLink(tunnel->deviceName, kTunnelEthernetMTU);
+    InterfaceConfig::newLink(tunnel->deviceName, config_.mtu);
     InterfaceConfig::setLinkAddress(tunnel->deviceName, config_.myTunnelAddr,
                                     config_.peerTunnelAddr);
 
@@ -230,7 +236,8 @@ void ServerSessionHandler::attachHandlers() {
     return Message("config",
                    json{{"server_tunnel_ip", config_.myTunnelAddr},
                         {"client_tunnel_ip", config_.peerTunnelAddr},
-                        {"server_subnet", server_->config_.addressPool}});
+                        {"server_subnet", server_->config_.addressPool},
+                        {"mtu", config_.mtu}});
   });
 
   messenger_->addHandler("config_done", [this](auto const& message) {

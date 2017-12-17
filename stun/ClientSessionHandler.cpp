@@ -26,6 +26,7 @@ ClientSessionHandler::ClientSessionHandler(
       "How can I not be able to send at the very start of a connection?");
 
   auto helloBody = json{};
+  helloBody["mtu"] = config_.mtu;
   if (!config_.user.empty()) {
     helloBody["user"] = config_.user;
   }
@@ -44,13 +45,18 @@ void ClientSessionHandler::attachHandlers() {
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
 
+    size_t mtu = config_.mtu;
+    if (body.find("mtu") != body.end()) {
+      mtu = body["mtu"].template get<size_t>();
+    }
+
     auto tunnelConfig = ClientTunnelConfig{
         IPAddress(body["client_tunnel_ip"].template get<std::string>(),
                   NetworkType::IPv4),
         IPAddress(body["server_tunnel_ip"].template get<std::string>(),
                   NetworkType::IPv4),
         SubnetAddress(body["server_subnet"].template get<std::string>()),
-        kTunnelEthernetMTU,
+        mtu,
         config_.subnetsToForward,
         config_.subnetsToExclude,
     };

@@ -187,19 +187,21 @@ std::map<std::string, size_t> parseQuotaTable() {
 }
 
 void setupServer() {
-  auto config =
-      ServerConfig{kServerPort,
-                   networking::SubnetAddress{
-                       common::Configerator::get<std::string>("address_pool")},
-                   common::Configerator::get<bool>("encryption", true),
-                   common::Configerator::get<std::string>("secret", ""),
-                   common::Configerator::get<size_t>("padding_to", 0),
-                   common::Configerator::get<bool>("compression", false),
-                   std::chrono::seconds(common::Configerator::get<size_t>(
-                       "data_pipe_rotate_interval", 0)),
-                   common::Configerator::get<bool>("authentication", false),
-                   parseQuotaTable(),
-                   parseStaticHosts()};
+  auto config = ServerConfig{
+      kServerPort,
+      networking::SubnetAddress{
+          common::Configerator::get<std::string>("address_pool")},
+      common::Configerator::get<bool>("encryption", true),
+      common::Configerator::get<std::string>("secret", ""),
+      common::Configerator::get<size_t>("padding_to", 0),
+      common::Configerator::get<bool>("compression", false),
+      std::chrono::seconds(
+          common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
+      common::Configerator::get<bool>("authentication", false),
+      common::Configerator::get<size_t>("mtu",
+                                        networking::kTunnelEthernetDefaultMTU),
+      parseQuotaTable(),
+      parseStaticHosts()};
 
   server = std::make_unique<stun::Server>(config);
 }
@@ -215,6 +217,8 @@ void setupClient() {
       std::chrono::seconds(
           common::Configerator::get<size_t>("data_pipe_rotate_interval", 0)),
       common::Configerator::get<std::string>("user", ""),
+      common::Configerator::get<size_t>("mtu",
+                                        networking::kTunnelEthernetDefaultMTU),
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 

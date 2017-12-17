@@ -43,7 +43,8 @@ void Server::doAccept() {
                                            config_.compression,
                                            config_.dataPipeRotationInterval,
                                            config_.authentication,
-                                           config_.quotaTable};
+                                           config_.quotaTable,
+                                           config_.mtu};
 
   auto handler = std::make_unique<ServerSessionHandler>(
       this, sessionConfig, std::make_unique<TCPSocket>(std::move(client)));

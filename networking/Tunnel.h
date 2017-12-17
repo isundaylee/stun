@@ -18,7 +18,7 @@ namespace networking {
 
 using TunnelClosedException = common::FileDescriptor::ClosedException;
 
-static const unsigned int kTunnelEthernetMTU = 1444;
+static const unsigned int kTunnelEthernetDefaultMTU = 1444;
 static const int kTunnelBufferSize = 2000;
 static const int kIOSTunnelPendingPacketQueueSize = 128;
 

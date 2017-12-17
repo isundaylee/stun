@@ -22,6 +22,7 @@ public:
   bool compression;
   event::Duration dataPipeRotationInterval;
   bool authentication;
+  size_t mtu;
   std::map<std::string, size_t> quotaTable;
   std::map<std::string, IPAddress> staticHosts;
 };
