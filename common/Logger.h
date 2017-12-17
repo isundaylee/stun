@@ -19,12 +19,14 @@
   ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::INFO)
 #define LOG_V(tag)                                                             \
   ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::VERBOSE)
+#define LOG_VV(tag)                                                             \
+  ::common::Logger::getDefault(tag).withLogLevel(common::LogLevel::VERY_VERBOSE)
 
 namespace common {
 
 static const size_t kLoggerTagPaddingTo = 9;
 
-enum LogLevel { VERBOSE, INFO, ERROR };
+enum LogLevel { VERY_VERBOSE, VERBOSE, INFO, ERROR };
 
 class Logger {
 public:

@@ -100,6 +100,8 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
 
   int ret, err;
 
+  LOG_VV("Socket") << "Reading with buffer capacity " << capacity << std::endl;
+
   if (!peerAddr_) {
     assertTrue(type_ == UDP, "Trying to read from an unconnected TCP socket.");
 
@@ -132,11 +134,15 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
     return 0;
   }
 
+  LOG_VV("Socket") << "Read a packet with size " << ret << std::endl;
+
   return ret;
 }
 
 size_t Socket::write(Byte* buffer, size_t size) {
   assertTrue(connected_, "Socket::write() called on a unconnected socket.");
+
+  LOG_VV("Socket") << "Writing a packet with size " << size << std::endl;
 
   int ret = send(fd_.fd, buffer, size, 0);
 

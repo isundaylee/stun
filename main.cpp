@@ -122,6 +122,8 @@ void setupAndParseOptions(int argc, char* argv[]) {
       cxxopts::value<int>()->implicit_value("1000")->default_value("1000"), "");
   options.add_option("", "v", "verbose", "Log more verbosely.",
                      cxxopts::value<bool>(), "");
+  options.add_option("", "", "very-verbose", "Log very verbosely.",
+                     cxxopts::value<bool>(), "");
   options.add_option("", "h", "help", "Print help and usage info.",
                      cxxopts::value<bool>(), "");
 
@@ -138,7 +140,10 @@ void setupAndParseOptions(int argc, char* argv[]) {
     exit(1);
   }
 
-  if (options.count("verbose")) {
+  if (options.count("very-verbose")) {
+    common::Logger::getDefault("").setLoggingThreshold(
+        common::LogLevel::VERY_VERBOSE);
+  } else if (options.count("verbose")) {
     common::Logger::getDefault("").setLoggingThreshold(
         common::LogLevel::VERBOSE);
   } else {
