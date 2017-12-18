@@ -3,6 +3,7 @@
 #include <event/Action.h>
 #include <event/Promise.h>
 #include <event/Trigger.h>
+#include <networking/InterfaceConfig.h>
 
 namespace stun {
 
@@ -106,6 +107,16 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
 }
 
 void Client::connect() {
+#if TARGET_OSX
+  // Workaround for a bug on macOS where exclusion route created by previous
+  // stun runs might stick around -- causing issues if the default interface has
+  // changed since the last stun run.
+  //
+  // https://newpush.com/2010/01/openvpn-write-udpv4-cant-assign-requested-address-code49/
+  networking::InterfaceConfig::deleteRoute(
+      SubnetAddress{config_.serverAddr.getHost(), 32});
+#endif
+
   auto socket = TCPSocket{config_.serverAddr.type};
   socket.connect(config_.serverAddr);
 

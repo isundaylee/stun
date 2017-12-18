@@ -59,6 +59,20 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
                      << " via " << route.dest.gatewayAddr << std::endl;
 }
 
+/* static */ void InterfaceConfig::deleteRoute(const SubnetAddress& dest) {
+  std::string command =
+      kInterfaceConfigRoutePath + " delete " + dest.toString();
+
+#ifdef TARGET_OSX
+  runCommandAndAssertSuccess(command);
+#elif TARGET_BSD
+  runCommand(command);
+#endif
+
+  LOG_V("Interface") << "Removed existing route to " << dest.toString()
+                     << std::endl;
+}
+
 /* static */ RouteDestination
 InterfaceConfig::getRoute(IPAddress const& destAddr) {
   assertTrue(destAddr.type == NetworkType::IPv4,

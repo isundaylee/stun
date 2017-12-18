@@ -28,6 +28,10 @@ InterfaceConfig::setLinkAddress(std::string const& deviceName,
   notImplemented("InterfaceConfig not supported on iOS.");
 }
 
+/* static */ void InterfaceConfig::deleteRoute(SubnetAddress const& dest) {
+  notImplemented("InterfaceConfig not supported on iOS.");
+}
+
 /* static */ RouteDestination
 InterfaceConfig::getRoute(IPAddress const& destAddr) {
   notImplemented("InterfaceConfig not supported on iOS.");

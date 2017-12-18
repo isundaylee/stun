@@ -274,6 +274,10 @@ typedef NetlinkRequest<struct rtmsg> NetlinkChangeRouteRequest;
   LOG_V("Interface") << "Successfully added a route" << std::endl;
 }
 
+/* static */ void InterfaceConfig::deleteRoute(SubnetAddress const& dest) {
+  notImplemented("InterfaceConfig::deleteRoute not supported on Linux.");
+}
+
 typedef NetlinkRequest<struct rtmsg> NetlinkListRouteRequest;
 
 /* static */ RouteDestination

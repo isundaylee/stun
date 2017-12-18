@@ -67,6 +67,7 @@ public:
                              IPAddress const& peerAddress);
 
   static void newRoute(Route const& route);
+  static void deleteRoute(SubnetAddress const& dest);
   static RouteDestination getRoute(IPAddress const& destAddr);
 
 private:

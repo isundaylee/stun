@@ -1,3 +1,9 @@
+# v0.8.4
+
+- [macOS] Automatically removes existing route to destination host to work
+  around the bug in macOS where stale routes from previous stun runs might
+  stick around.
+
 # v0.8.3 (2017-12-16)
 
 - [Core] Adds client/server-side MTU setting.
