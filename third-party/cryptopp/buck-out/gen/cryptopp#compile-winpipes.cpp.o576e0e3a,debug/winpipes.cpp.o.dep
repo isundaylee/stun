@@ -1,2 +1,0 @@
-buck-out/gen/cryptopp\#compile-winpipes.cpp.o576e0e3a,debug/winpipes.cpp.o: \
-  winpipes.cpp pch.h config.h

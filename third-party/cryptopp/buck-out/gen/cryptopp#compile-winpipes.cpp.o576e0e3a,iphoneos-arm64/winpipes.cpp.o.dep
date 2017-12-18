@@ -1,4 +1,0 @@
-buck-out/gen/cryptopp\#compile-winpipes.cpp.o576e0e3a,iphoneos-arm64/winpipes.cpp.o: \
-  winpipes.cpp \
-  /Users/jiahao/Programming/Git/stun/buckaroo/official/weidai11/cryptopp/pch.h \
-  /Users/jiahao/Programming/Git/stun/buckaroo/official/weidai11/cryptopp/config.h
