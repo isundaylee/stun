@@ -16,6 +16,6 @@ if [ $(uname) == "Linux" ]; then
     sudo mv stun.service /etc/systemd/system/
   fi
 else
-  echo "Please use homebrew to install stun: brew install isundaylee/repo/stun"
+  echo "Please use homebrew to install stun with: brew install isundaylee/repo/stun"
   exit 1
 fi
