@@ -1,4 +1,4 @@
-# v0.8.4
+# v0.8.4 (2018-07-14)
 
 - [macOS] Automatically removes existing route to destination host to work
   around the bug in macOS where stale routes from previous stun runs might
