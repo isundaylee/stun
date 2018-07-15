@@ -21,6 +21,8 @@
 		<string>Icon-Small@2x.png</string>
 		<string>Icon-Small@3x.png</string>
 	</array>
+	<key>CFBundleIconName</key>
+	<string>Icon</string>
 	<key>CFBundleIdentifier</key>
 	<string>me.ljh.stunapp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -34,7 +36,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>0.8.4</string>
+	<string>0.8.4.2</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchImages</key>
