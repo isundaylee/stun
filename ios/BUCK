@@ -17,6 +17,14 @@ apple_bundle(
 
 # Stun main app
 
+apple_asset_catalog(
+  name = 'StunAssetCatalog',
+  dirs = [
+    'Assets.xcassets',
+  ],
+  app_icon = 'AppIcon',
+)
+
 apple_resource(
   name = 'StunResources',
   files = glob(['Resources/*.png']),
@@ -27,6 +35,7 @@ apple_binary(
   name = 'StunBinary',
   deps = [
     ':StunResources',
+    ':StunAssetCatalog',
   ],
   preprocessor_flags = ['-fobjc-arc', '-Wno-objc-designated-initializers'],
   headers = glob([

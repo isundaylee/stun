@@ -8,21 +8,6 @@
 	<string>Simple Tunnel</string>
 	<key>CFBundleExecutable</key>
 	<string>Stun</string>
-	<key>CFBundleIconFiles</key>
-	<array>
-		<string>Icon-60@2x.png</string>
-		<string>Icon-60@3x.png</string>
-		<string>Icon-76.png</string>
-		<string>Icon-76@2x.png</string>
-		<string>Icon-Small-40.png</string>
-		<string>Icon-Small-40@2x.png</string>
-		<string>Icon-Small-40@3x.png</string>
-		<string>Icon-Small.png</string>
-		<string>Icon-Small@2x.png</string>
-		<string>Icon-Small@3x.png</string>
-	</array>
-	<key>CFBundleIconName</key>
-	<string>Icon</string>
 	<key>CFBundleIdentifier</key>
 	<string>me.ljh.stunapp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
