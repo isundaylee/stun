@@ -75,6 +75,7 @@ using namespace std::chrono_literals;
 
 std::unique_ptr<stun::Client> client;
 static const int kServerPort = 2859;
+static const size_t kDefaultMTU = 1400;
 
 - (void)startTunnelWithOptions:(NSDictionary<NSString *, NSObject *> *)options
              completionHandler:(void (^)(NSError *error))completionHandler {
@@ -109,6 +110,7 @@ static const int kServerPort = 2859;
         0,
         0s,
         [username cStringUsingEncoding:NSASCIIStringEncoding],
+        kDefaultMTU,
         {},
         {},
     };
