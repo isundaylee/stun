@@ -51,7 +51,7 @@ apple_binary(
     '$SDKROOT/System/Library/Frameworks/Foundation.framework',
     '$SDKROOT/System/Library/Frameworks/NetworkExtension.framework',
   ],
-  entitlements_file = 'Stun.entitlements',
+  entitlements_file = 'Stun-Distr.entitlements',
 )
 
 # Stun network extension
@@ -75,7 +75,7 @@ apple_binary(
     "//stun:stun",
   ],
   linker_flags = ['-e', '_NSExtensionMain'],
-  entitlements_file = 'StunPacketTunnel.entitlements',
+  entitlements_file = 'StunPacketTunnel-Distr.entitlements',
 )
 
 apple_bundle(
