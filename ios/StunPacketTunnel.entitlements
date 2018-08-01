@@ -3,9 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>application-identifier</key>
-	<string>HL7EF5H9XH.me.ljh.stunapp</string>
-	<key>aps-environment</key>
-	<string>development</string>
+	<string>HL7EF5H9XH.me.ljh.stunapp.packet-tunnel</string>
 	<key>com.apple.developer.networking.networkextension</key>
 	<array>
 		<string>app-proxy-provider</string>
