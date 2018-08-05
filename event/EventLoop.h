@@ -5,7 +5,7 @@
 
 namespace event {
 
-enum ConditionType {
+enum class ConditionType {
   Internal,
   IO,
   Signal,
