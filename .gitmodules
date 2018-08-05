@@ -1,3 +1,6 @@
 [submodule "third-party/cryptopp"]
 	path = third-party/cryptopp
 	url = https://github.com/weidai11/cryptopp.git
+[submodule "third-party/cxxopts"]
+	path = third-party/cxxopts
+	url = https://github.com/jarro2783/cxxopts

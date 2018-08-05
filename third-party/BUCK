@@ -14,3 +14,12 @@ cxx_library(
     'PUBLIC',
   ],
 )
+
+cxx_library(
+    name = 'cxxopts',
+    header_namespace = 'cxxopts',
+    exported_headers = {
+        'cxxopts.hpp': 'cxxopts/include/cxxopts.hpp',
+    },
+    visibility = ['PUBLIC'],
+)
