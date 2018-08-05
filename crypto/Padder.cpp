@@ -30,4 +30,4 @@ Padder::Padder(size_t minSize) : minSize_(minSize) {}
       (PadderSizeType*)(data + (size - sizeof(PadderSizeType)));
   return *sizeFooter;
 }
-}
+} // namespace crypto

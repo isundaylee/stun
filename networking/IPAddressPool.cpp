@@ -191,9 +191,8 @@ IPAddress IPAddressPool::acquire() {
 
 void IPAddressPool::release(IPAddress const& addr) {
   auto found = reserved_.find(addr);
-  assertTrue(found == reserved_.end(),
-             "Reserved address " + addr.toString() +
-                 " released to IPAddressPool.");
+  assertTrue(found == reserved_.end(), "Reserved address " + addr.toString() +
+                                           " released to IPAddressPool.");
 
   LOG_V("Address") << "Releasing " << addr << " to the address pool"
                    << std::endl;
@@ -208,4 +207,4 @@ void IPAddressPool::reserve(IPAddress const& addr) {
   auto inserted = reserved_.insert(addr).second;
   assertTrue(inserted, "Address reserved more than once: " + addr.toString());
 }
-}
+} // namespace networking

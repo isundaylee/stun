@@ -127,10 +127,9 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
 
   checkSocketException(ret, err);
 
-  if (!checkRetryableError(ret,
-                           "receiving a " +
-                               std::string(type_ == TCP ? "TCP" : "UDP") +
-                               " packet")) {
+  if (!checkRetryableError(ret, "receiving a " +
+                                    std::string(type_ == TCP ? "TCP" : "UDP") +
+                                    " packet")) {
     return 0;
   }
 
@@ -152,10 +151,9 @@ size_t Socket::write(Byte* buffer, size_t size) {
 
   checkSocketException(ret, errno);
 
-  if (!checkRetryableError(ret,
-                           "sending a " +
-                               std::string(type_ == TCP ? "TCP" : "UDP") +
-                               " packet")) {
+  if (!checkRetryableError(ret, "sending a " +
+                                    std::string(type_ == TCP ? "TCP" : "UDP") +
+                                    " packet")) {
     return 0;
   }
 
@@ -183,4 +181,4 @@ event::Condition* Socket::canRead() const {
 event::Condition* Socket::canWrite() const {
   return event::IOConditionManager::canWrite(fd_.fd);
 }
-}
+} // namespace networking

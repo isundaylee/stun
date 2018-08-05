@@ -19,4 +19,4 @@ private:
     return result;
   }
 };
-}
+} // namespace stats

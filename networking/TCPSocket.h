@@ -17,4 +17,4 @@ public:
   TCPSocket(NetworkType networkType, int fd, SocketAddress peerAddr)
       : Socket(networkType, TCP, fd, peerAddr) {}
 };
-}
+} // namespace networking

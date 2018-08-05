@@ -72,4 +72,4 @@ private:
   FileDescriptor(FileDescriptor const& copy) = delete;
   FileDescriptor& operator=(FileDescriptor const& copy) = delete;
 };
-}
+} // namespace common

@@ -29,4 +29,4 @@ private:
   std::string path_;
   json storage_;
 };
-}
+} // namespace common

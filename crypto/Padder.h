@@ -18,4 +18,4 @@ public:
 private:
   size_t minSize_;
 };
-}
+} // namespace crypto

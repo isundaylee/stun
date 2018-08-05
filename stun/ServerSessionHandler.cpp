@@ -13,10 +13,10 @@ namespace stun {
 
 using namespace std::chrono_literals;
 
+using networking::InterfaceConfig;
+using networking::kTunnelEthernetDefaultMTU;
 using networking::Message;
 using networking::Tunnel;
-using networking::kTunnelEthernetDefaultMTU;
-using networking::InterfaceConfig;
 
 static const event::Duration kSessionHandlerQuotaReportInterval = 30min;
 static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
@@ -169,8 +169,8 @@ void ServerSessionHandler::attachHandlers() {
         if (it == config_.quotaTable.end()) {
           LOG_I("Session") << "Unknown client " << config_.user
                            << " disconnected." << std::endl;
-          return Message(
-              "error", "User " + config_.user + " not allowed on the server.");
+          return Message("error", "User " + config_.user +
+                                      " not allowed on the server.");
         }
 
         config_.quota = it->second;
@@ -279,4 +279,4 @@ json ServerSessionHandler::createDataPipe() {
               {"padding_to_size", config_.paddingTo},
               {"compression", config_.compression}};
 }
-}
+} // namespace stun

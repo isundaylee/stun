@@ -27,4 +27,4 @@ public:
 private:
   struct sockaddr_storage storage_;
 };
-}
+} // namespace networking

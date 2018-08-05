@@ -86,4 +86,4 @@ private:
   std::queue<IPAddress> reusables_;
   std::set<IPAddress> reserved_;
 };
-}
+} // namespace networking

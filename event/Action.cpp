@@ -32,4 +32,4 @@ bool Action::isDead() const {
 
   return false;
 }
-}
+} // namespace event

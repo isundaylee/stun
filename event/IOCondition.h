@@ -48,4 +48,4 @@ private:
   IOCondition* canDo(int fd, IOType type);
   void removeCondition(int fd, IOType type);
 };
-}
+} // namespace event

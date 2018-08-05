@@ -118,4 +118,4 @@ private:
 
   static StatsManager& getInstance();
 };
-}
+} // namespace stats

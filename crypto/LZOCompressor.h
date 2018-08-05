@@ -21,4 +21,4 @@ private:
   std::vector<Byte> workMem_;
   std::vector<Byte> buffer_;
 };
-}
+} // namespace crypto

@@ -45,4 +45,4 @@ private:
   bool calculateCanReceive();
   bool calculateCanSend();
 };
-}
+} // namespace stun

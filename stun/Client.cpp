@@ -48,9 +48,8 @@ Client::~Client() = default;
                        << std::endl;
 
       // We yield the remaining routes to the next event loop iteration
-      event::Trigger::perform([routes = std::move(routes)]() {
-        Client::createRoutes(routes);
-      });
+      event::Trigger::perform(
+          [routes = std::move(routes)]() { Client::createRoutes(routes); });
 
       break;
     }
@@ -141,4 +140,4 @@ void Client::doReconnect() {
     connect();
   });
 }
-}
+} // namespace stun

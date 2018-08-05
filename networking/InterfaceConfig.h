@@ -88,4 +88,4 @@ private:
   struct sockaddr_nl kernelAddress_;
 #endif
 };
-}
+} // namespace networking

@@ -21,4 +21,4 @@ private:
     return count_ == 0 ? sum_ : sum_ / count_;
   }
 };
-}
+} // namespace stats

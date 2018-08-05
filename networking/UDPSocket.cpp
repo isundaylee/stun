@@ -17,4 +17,4 @@ bool UDPSocket::read(UDPPacket& packet) {
 
   return (read > 0);
 }
-}
+} // namespace networking

@@ -44,4 +44,4 @@ private:
 
   static void assertHasKey(std::string const& key);
 };
-}
+} // namespace common

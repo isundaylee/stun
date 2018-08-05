@@ -181,4 +181,4 @@ void Timer::extend(Duration timeout) {
   target_ += timeout;
   TimerManager::setTimeout(target_, didFire_.get());
 }
-}
+} // namespace event

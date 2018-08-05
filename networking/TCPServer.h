@@ -13,4 +13,4 @@ public:
   TCPSocket accept();
   event::Condition* canAccept() const;
 };
-}
+} // namespace networking

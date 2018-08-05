@@ -54,4 +54,4 @@ private:
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
   std::vector<EventLoopPreparer*> preparers_;
 };
-}
+} // namespace event

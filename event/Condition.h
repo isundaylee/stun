@@ -62,4 +62,4 @@ private:
   ComputedCondition(ComputedCondition const&& move) = delete;
   ComputedCondition& operator=(ComputedCondition const&& move) = delete;
 };
-}
+} // namespace event

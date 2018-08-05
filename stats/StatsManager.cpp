@@ -27,4 +27,4 @@ StatBase::~StatBase() { StatsManager::removeStat(this); }
 /* static */ void StatsManager::removeStat(StatBase* stat) {
   getInstance().stats_.erase(stat);
 }
-}
+} // namespace stats

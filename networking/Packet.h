@@ -68,4 +68,4 @@ private:
 
   static common::MemoryPool<kPacketPoolBlockSize, kPacketPoolBlockCount> pool_;
 };
-}
+} // namespace networking

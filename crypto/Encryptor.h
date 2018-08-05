@@ -16,4 +16,4 @@ public:
 protected:
   CryptoPP::AutoSeededRandomPool random_;
 };
-};
+}; // namespace crypto

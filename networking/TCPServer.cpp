@@ -16,4 +16,4 @@ TCPSocket TCPServer::accept() {
 }
 
 event::Condition* TCPServer::canAccept() const { return canRead(); }
-}
+} // namespace networking

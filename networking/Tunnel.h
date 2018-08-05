@@ -80,4 +80,4 @@ private:
   bool calculateCanReceive();
 #endif
 };
-};
+}; // namespace networking

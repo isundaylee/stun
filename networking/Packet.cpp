@@ -29,10 +29,9 @@ Packet::~Packet() {
 }
 
 void Packet::fill(Byte* buffer, size_t size) {
-  assertTrue(
-      size <= capacity,
-      "Over-capacity packet encountered, size = " + std::to_string(size) +
-          ", capacity = " + std::to_string(capacity));
+  assertTrue(size <= capacity, "Over-capacity packet encountered, size = " +
+                                   std::to_string(size) +
+                                   ", capacity = " + std::to_string(capacity));
   this->size = size;
   memcpy(data, buffer, size);
 }
@@ -63,4 +62,4 @@ void Packet::insertFront(size_t bytes) {
     this->data = newData;
   }
 }
-}
+} // namespace networking

@@ -84,8 +84,7 @@ void Server::doAccept() {
   sessions_.emplace_back(new Session(std::move(client)));
 
   event::Trigger::arm(
-      {sessions_.back()->didEnd()},
-      [ session = sessions_.back().get(), this ]() {
+      {sessions_.back()->didEnd()}, [session = sessions_.back().get(), this]() {
         auto it = std::find_if(
             sessions_.begin(), sessions_.end(),
             [session](auto const& ptr) { return ptr.get() == session; });
@@ -95,4 +94,4 @@ void Server::doAccept() {
         sessions_.erase(it);
       });
 }
-}
+} // namespace flutter

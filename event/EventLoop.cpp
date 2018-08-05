@@ -159,4 +159,4 @@ void EventLoop::runOnce() {
   static EventLoop instance;
   return instance;
 }
-}
+} // namespace event

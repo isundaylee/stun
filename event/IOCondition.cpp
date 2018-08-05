@@ -107,4 +107,4 @@ void IOConditionManager::removeCondition(int fd, IOType type) {
     conditions_.erase(existing);
   }
 }
-}
+} // namespace event

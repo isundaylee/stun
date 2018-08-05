@@ -35,4 +35,4 @@ private:
   std::unique_ptr<Tunnel> createTunnel(ClientTunnelConfig config);
   void doReconnect();
 };
-}
+} // namespace stun

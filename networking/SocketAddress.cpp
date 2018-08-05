@@ -64,4 +64,4 @@ size_t SocketAddress::getLength() const {
 }
 
 size_t SocketAddress::getStorageLength() const { return sizeof(storage_); }
-}
+} // namespace networking

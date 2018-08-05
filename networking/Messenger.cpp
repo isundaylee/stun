@@ -215,4 +215,4 @@ void Messenger::addHandler(std::string messageType,
 event::Condition* Messenger::didDisconnect() const {
   return didDisconnect_.get();
 }
-}
+} // namespace networking

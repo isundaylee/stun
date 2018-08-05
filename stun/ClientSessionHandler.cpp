@@ -112,4 +112,4 @@ void ClientSessionHandler::attachHandlers() {
     return Message::disconnect();
   });
 }
-}
+} // namespace stun

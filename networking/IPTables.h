@@ -18,15 +18,17 @@ static const size_t kIPTablesOutputBufferSize = 1024;
 class IPTables {
 public:
   static void masquerade(SubnetAddress const& sourceSubnet) {
-    runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " + sourceSubnet.toString() +
-               " -j MASQUERADE" + kIPTablesCommonClause);
+    runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " +
+                               sourceSubnet.toString() + " -j MASQUERADE" +
+                               kIPTablesCommonClause);
 
     LOG_V("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
                       << "." << std::endl;
   }
 
   static void clear() {
-    std::string rules = runCommandAndAssertSuccess("-t nat -L POSTROUTING --line-numbers -n");
+    std::string rules =
+        runCommandAndAssertSuccess("-t nat -L POSTROUTING --line-numbers -n");
     std::stringstream ss(rules);
     std::string line;
 
@@ -43,7 +45,8 @@ public:
     }
 
     for (auto it = rulesToDelete.rbegin(); it != rulesToDelete.rend(); it++) {
-      runCommandAndAssertSuccess("-t nat -D POSTROUTING " + std::to_string(*it));
+      runCommandAndAssertSuccess("-t nat -D POSTROUTING " +
+                                 std::to_string(*it));
     }
 
     LOG_V("IPTables") << "Removed " << rulesToDelete.size()
@@ -59,4 +62,4 @@ private:
     return ::runCommandAndAssertSuccess("/sbin/iptables " + command).stdout;
   }
 };
-}
+} // namespace networking

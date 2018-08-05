@@ -132,4 +132,4 @@ void Dispatcher::addDataPipe(std::unique_ptr<DataPipe> dataPipe) {
     dataPipes_.erase(it);
   });
 }
-}
+} // namespace stun

@@ -32,4 +32,4 @@ private:
 
   std::vector<std::unique_ptr<Action>> triggerActions_;
 };
-}
+} // namespace event

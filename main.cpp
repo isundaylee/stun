@@ -116,9 +116,10 @@ void setupAndParseOptions(int argc, char* argv[]) {
                      "Starts a flutter server on given port to export stats.",
                      cxxopts::value<int>()->implicit_value("4999"), "");
   options.add_option(
-      "", "s", "stats", "Enable connection stats logging. You "
-                        "can also give a numeric frequency in "
-                        "milliseconds.",
+      "", "s", "stats",
+      "Enable connection stats logging. You "
+      "can also give a numeric frequency in "
+      "milliseconds.",
       cxxopts::value<int>()->implicit_value("1000")->default_value("1000"), "");
   options.add_option("", "v", "verbose", "Log more verbosely.",
                      cxxopts::value<bool>(), "");

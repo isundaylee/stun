@@ -33,7 +33,8 @@ struct Message : public Packet {
 
   Message(std::string const& type, json const& body) : Packet(kMessageSize) {
     json payload = {
-        {"type", type}, {"body", body},
+        {"type", type},
+        {"body", body},
     };
     std::string content = payload.dump();
     memcpy(data, content.c_str(), content.length());
@@ -94,4 +95,4 @@ private:
 
   void disconnect();
 };
-}
+} // namespace networking

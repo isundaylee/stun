@@ -84,9 +84,9 @@ RunCommandResult runCommand(std::string command) {
 RunCommandResult runCommandAndAssertSuccess(std::string command) {
   auto result = runCommand(command);
 
-  assertTrue(result.exitCode == 0,
-             "Error code " + std::to_string(result.exitCode) +
-                 " while executing: " + command);
+  assertTrue(result.exitCode == 0, "Error code " +
+                                       std::to_string(result.exitCode) +
+                                       " while executing: " + command);
 
   return result;
 }

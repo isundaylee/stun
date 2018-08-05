@@ -39,4 +39,4 @@ private:
   Promise(Promise const& copy) = delete;
   Promise& operator=(Promise const& copy) = delete;
 };
-}
+} // namespace event

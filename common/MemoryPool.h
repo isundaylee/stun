@@ -55,4 +55,4 @@ private:
   FreeList* freeList_ = nullptr;
   std::vector<void*> pools_;
 };
-}
+} // namespace common

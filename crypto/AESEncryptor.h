@@ -26,4 +26,4 @@ public:
 private:
   AESKey key_;
 };
-}
+} // namespace crypto

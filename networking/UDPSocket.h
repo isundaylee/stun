@@ -19,4 +19,4 @@ public:
   void write(UDPPacket packet);
   bool read(UDPPacket& packet);
 };
-}
+} // namespace networking

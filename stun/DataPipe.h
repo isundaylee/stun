@@ -76,4 +76,4 @@ private:
   void doSend();
   void doReceive();
 };
-}
+} // namespace stun

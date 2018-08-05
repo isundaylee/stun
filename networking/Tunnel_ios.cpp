@@ -89,6 +89,6 @@ bool Tunnel::calculateCanWrite() { return true; }
 bool Tunnel::calculateCanReceive() {
   return (!packetsPromise_) || packetsPromise_->isReady()->eval();
 }
-}
+} // namespace networking
 
 #endif

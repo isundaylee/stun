@@ -8,9 +8,9 @@
 
 namespace stun {
 
+using networking::IPAddressPool;
 using networking::SubnetAddress;
 using networking::TCPServer;
-using networking::IPAddressPool;
 
 struct ServerConfig {
 public:
@@ -45,4 +45,4 @@ private:
   // FIXME: This should really be a inner class instead;
   friend ServerSessionHandler;
 };
-}
+} // namespace stun

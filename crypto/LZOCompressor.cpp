@@ -37,4 +37,4 @@ LZOCompressor::LZOCompressor() { workMem_.resize(LZO1X_1_MEM_COMPRESS); }
 
   return decompressedSize;
 }
-}
+} // namespace crypto

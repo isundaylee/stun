@@ -34,4 +34,4 @@ private:
   Time target_;
   std::unique_ptr<BaseCondition> didFire_;
 };
-}
+} // namespace event

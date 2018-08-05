@@ -348,6 +348,6 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
   static InterfaceConfig instance;
   return instance;
 }
-}
+} // namespace networking
 
 #endif

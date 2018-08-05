@@ -19,4 +19,4 @@ private:
 
   virtual double collect() override { return numerator_ / denominator_; }
 };
-}
+} // namespace stats

@@ -167,4 +167,4 @@ void DataPipe::doReceive() {
 
   isPrimed_->fire();
 }
-}
+} // namespace stun

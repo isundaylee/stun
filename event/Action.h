@@ -31,4 +31,4 @@ private:
 
   std::vector<Condition*> conditions_;
 };
-}
+} // namespace event

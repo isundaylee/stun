@@ -59,4 +59,4 @@ private:
 
   void attachHandlers();
 };
-}
+} // namespace stun

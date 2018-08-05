@@ -55,4 +55,4 @@ private:
   std::function<R()> func_;
   std::function<R(void*)> method_;
 };
-}
+} // namespace event

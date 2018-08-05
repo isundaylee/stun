@@ -12,10 +12,10 @@ namespace stun {
 
 using json = nlohmann::json;
 
-using networking::TCPSocket;
+using networking::IPAddress;
 using networking::Messenger;
 using networking::SubnetAddress;
-using networking::IPAddress;
+using networking::TCPSocket;
 
 struct ServerSessionConfig {
 public:
@@ -69,4 +69,4 @@ private:
   void doRotateDataPipe();
   void savePriorQuota();
 };
-}
+} // namespace stun

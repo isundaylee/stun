@@ -52,4 +52,4 @@ private:
   void setNonblock();
   void checkSocketException(int ret, int err);
 };
-}
+} // namespace networking

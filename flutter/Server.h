@@ -31,4 +31,4 @@ private:
   Server(Server&& move) = delete;
   Server& operator=(Server&& move) = delete;
 };
-}
+} // namespace flutter

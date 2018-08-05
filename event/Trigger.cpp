@@ -56,4 +56,4 @@ Trigger::Trigger() { EventLoop::getCurrentLoop().addPreparer(this); }
   static Trigger instance;
   return instance;
 }
-};
+}; // namespace event

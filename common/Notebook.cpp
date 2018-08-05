@@ -34,4 +34,4 @@ void Notebook::save() {
 }
 
 json& Notebook::operator[](std::string key) { return storage_[key]; }
-}
+} // namespace common

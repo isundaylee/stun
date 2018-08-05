@@ -38,4 +38,4 @@ Configerator::getStringArray(std::string const& key) {
 /* static */ void Configerator::assertHasKey(std::string const& key) {
   assertTrue(hasKey(key), "Cannot find config entry '" + key + "'.");
 }
-}
+} // namespace common

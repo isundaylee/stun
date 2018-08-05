@@ -65,4 +65,4 @@ private:
     canPop_->set(queue_.size() > 0);
   }
 };
-}
+} // namespace event

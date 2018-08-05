@@ -133,6 +133,6 @@ bool Tunnel::write(TunnelPacket packet) {
 
   return fd_.atomicWrite(packet.data, packet.size);
 }
-}
+} // namespace networking
 
 #endif
