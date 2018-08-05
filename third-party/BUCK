@@ -2,25 +2,15 @@ cxx_library(
   name = 'cryptopp',
   header_namespace = 'cryptopp',
   exported_headers = subdir_glob([
-    ('', '*.h'),
+    ('cryptopp', '*.h'),
   ]),
   srcs = glob([
-    '*.cpp',
+    'cryptopp/*.cpp',
   ],
   excludes = [
-    'test.cpp',
+    'cryptopp/test.cpp',
   ]),
   visibility = [
     'PUBLIC',
-  ],
-)
-
-cxx_binary(
-  name = 'test',
-  srcs = [
-    'test.cpp',
-  ],
-  deps = [
-    ':cryptopp',
   ],
 )
