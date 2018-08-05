@@ -12,16 +12,16 @@
   cxx = /usr/bin/clang++
   cxxpp = /usr/bin/clang++
   ld = /usr/bin/clang++
-  cxxflags = -std=c++1z
+  cxxflags = -std=c++14
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
-  cxxflags = -Wall -O0 -g -std=c++1z -fno-omit-frame-pointer -fsanitize=address
+  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fsanitize=address
 
 [cxx#debug]
   ldflags = -static-libstdc++
-  cxxflags = -Wall -O0 -g -std=c++1z -fno-omit-frame-pointer -fstandalone-debug
+  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fstandalone-debug
 
 [cxx#release]
   ldflags = -static-libstdc++
-  cxxflags = -Wall -O3 -g -std=c++1z -fno-omit-frame-pointer
+  cxxflags = -Wall -O3 -g -std=c++14 -fno-omit-frame-pointer
