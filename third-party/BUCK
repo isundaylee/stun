@@ -23,3 +23,12 @@ cxx_library(
     },
     visibility = ['PUBLIC'],
 )
+
+cxx_library(
+    name = 'json',
+    header_namespace = 'json',
+    exported_headers = {
+        'json.hpp': 'json/single_include/nlohmann/json.hpp',
+    },
+    visibility = ['PUBLIC'],
+)
