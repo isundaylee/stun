@@ -1,5 +1,6 @@
 #include "stun/ClientSessionHandler.h"
 
+#include <event/SignalCondition.h>
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
 
@@ -14,7 +15,13 @@ ClientSessionHandler::ClientSessionHandler(
     TunnelFactory tunnelFactory)
     : config_(config), tunnelFactory_(tunnelFactory),
       messenger_(new Messenger(std::move(commandPipe))),
+      cleanerDidFinish_(new event::BaseCondition()),
+      cleaner_(new event::Action(
+          {event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())})),
       didEnd_(new event::BaseCondition()) {
+
+  // TODO: Change this to actual cleanup.
+  cleaner_->callback = [this]() { cleanerDidFinish_->fire(); };
 
   if (!config_.secret.empty()) {
     messenger_->addEncryptor(

@@ -49,7 +49,8 @@ TimerManager::TimerManager() {
   sa.sa_sigaction = &TimerManager::handleSignal;
   sigemptyset(&sa.sa_mask);
 
-  EventLoop::getCurrentLoop().addConditionManager(this, ConditionType::Signal);
+  EventLoop::getCurrentLoop().addConditionManager(this,
+                                                  ConditionType::TimerSignal);
 
   // Bind the timer singal handler
   if (sigaction(SIGALRM, &sa, NULL) < 0) {
@@ -159,7 +160,7 @@ void TimerManager::updateTimer(Time now) {
 Timer::Timer() : didFire_(new BaseCondition()) {}
 
 Timer::Timer(Duration timeout)
-    : didFire_(new BaseCondition(ConditionType::Signal)) {
+    : didFire_(new BaseCondition(ConditionType::TimerSignal)) {
   reset(timeout);
 }
 

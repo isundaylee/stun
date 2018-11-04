@@ -5,9 +5,14 @@
 
 namespace event {
 
+struct NormalTerminationException : public std::exception {
+  const char* what() const throw() { return "Normal termination."; }
+};
+
 enum class ConditionType {
   Internal,
   IO,
+  TimerSignal,
   Signal,
 };
 

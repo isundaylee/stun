@@ -44,8 +44,12 @@ void EventLoop::run() {
   // usage is going to skyrocket.
   static Condition* dummy = IOConditionManager::canRead(0);
 
-  while (true) {
-    runOnce();
+  try {
+    while (true) {
+      runOnce();
+    }
+  } catch (NormalTerminationException) {
+    // Nothing
   }
 }
 
