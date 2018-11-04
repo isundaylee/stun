@@ -20,6 +20,7 @@ public:
   size_t mtu;
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;
+  std::vector<IPAddress> dnsPushes;
 };
 
 struct ClientConfig {

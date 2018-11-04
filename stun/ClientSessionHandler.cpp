@@ -50,6 +50,14 @@ void ClientSessionHandler::attachHandlers() {
       mtu = body["mtu"].template get<size_t>();
     }
 
+    std::vector<IPAddress> dnsPushes;
+    if (body.find("dns_pushes") != body.end()) {
+      for (auto const& dns : body["dns_pushes"]) {
+        dnsPushes.emplace_back(dns.template get<std::string>(),
+                               NetworkType::IPv4);
+      }
+    }
+
     auto tunnelConfig = ClientTunnelConfig{
         IPAddress(body["client_tunnel_ip"].template get<std::string>(),
                   NetworkType::IPv4),
@@ -59,17 +67,25 @@ void ClientSessionHandler::attachHandlers() {
         mtu,
         config_.subnetsToForward,
         config_.subnetsToExclude,
+        dnsPushes,
     };
 
     auto tunnelPromise = tunnelFactory_(tunnelConfig);
 
     LOG_I("Session") << "Received config from the server." << std::endl;
 
+    for (auto const& dns : dnsPushes) {
+      LOG_I("Session") << "Received DNS server entry: " << dns.toString()
+                       << std::endl;
+    }
+
     event::Trigger::arm(
         {tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
         [this, tunnelPromise]() {
           LOG_I("Session") << "Tunnel established." << std::endl;
           dispatcher_.reset(new Dispatcher(tunnelPromise->consume()));
+
+          // TODO: Set up DNS servers
 
           messenger_->outboundQ->push(Message("config_done", ""));
         });

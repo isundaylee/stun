@@ -25,6 +25,7 @@ public:
   size_t mtu;
   std::map<std::string, size_t> quotaTable;
   std::map<std::string, IPAddress> staticHosts;
+  std::vector<networking::IPAddress> dnsPushes;
 };
 
 class Server {

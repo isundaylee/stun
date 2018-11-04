@@ -202,7 +202,10 @@ void setupServer() {
       common::Configerator::get<size_t>("mtu",
                                         networking::kTunnelEthernetDefaultMTU),
       parseQuotaTable(),
-      parseStaticHosts()};
+      parseStaticHosts(),
+      common::Configerator::get<std::vector<networking::IPAddress>>(
+          "dns_pushes", {}),
+  };
 
   server = std::make_unique<stun::Server>(config);
 }

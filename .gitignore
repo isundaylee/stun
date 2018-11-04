@@ -6,6 +6,7 @@
 perf.data
 perf.data.old
 .buckconfig.local
+.stunrc.test
 
 dist/stun.zip
 dist/stun-*.zip
