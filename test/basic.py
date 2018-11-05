@@ -71,8 +71,11 @@ class Host():
         return self
 
     def __exit__(self, *args):
-        docker(["kill", self.id])
+        docker(["kill", self.id], assert_on_failure=False)
         docker(["rm", self.id])
+
+    def logs(self):
+        return docker(["logs", self.id])[0]
 
     def exec(self, cmd, assert_on_failure=False):
         return docker(["exec", self.id] + cmd, assert_on_failure=assert_on_failure)
@@ -110,7 +113,7 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "failed to ping from client to server."
+                "Failed to ping from client to server."
             )
 
     def test_static_hosts(self):
@@ -129,11 +132,27 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "failed to ping from client to server."
+                "Failed to ping from client to server."
             )
 
             self.assertEqual(
                 client.get_client_tunnel_ip(),
                 "10.179.0.152",
                 "Unexpected IP assigned to client."
+            )
+
+    def test_authentication_without_username(self):
+        with Host("server", get_server_config(authentication=True)) as server, \
+            Host("client", get_client_config()) as client:
+
+            self.assertIn(
+                "Session ended with error: No user name provided.",
+                client.logs(),
+                "Client should have received the disconnect reason."
+            )
+
+            self.assertEqual(
+                client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
+                1,
+                "Should not be able to ping from client to server."
             )
