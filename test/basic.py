@@ -26,7 +26,8 @@ def get_server_config(**kwargs):
         "secret": "lovely",
         "address_pool": "10.179.0.0/24",
         "padding_to": 1000,
-        "data_pipe_rotate_interval": 60
+        "data_pipe_rotate_interval": 60,
+        **kwargs
     }
 
 def get_client_config(**kwargs):
@@ -37,7 +38,8 @@ def get_client_config(**kwargs):
         "forward_subnets": [
         ],
         "excluded_subnets": [
-        ]
+        ],
+        **kwargs
     }
 
 DOCKER_NETWORK_NAME = 'stun_test'
@@ -72,8 +74,20 @@ class Host():
         docker(["kill", self.id])
         docker(["rm", self.id])
 
-    def exec(self, cmd):
-        return docker(["exec", self.id] + cmd, assert_on_failure=False)
+    def exec(self, cmd, assert_on_failure=False):
+        return docker(["exec", self.id] + cmd, assert_on_failure=assert_on_failure)
+
+    def get_client_tunnel_ip(self):
+        lines = self.exec(["ifconfig"], assert_on_failure=True)[0].split('\n')
+
+        for i in range(len(lines) - 1):
+            if lines[i].startswith('tun0: '):
+                match = re.search(r'inet ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', lines[i + 1])
+                if match is None:
+                    raise RuntimeError("Unable to find client tunnel IP address.")
+                return match[1]
+
+        return None
 
 class TestBasic(unittest.TestCase):
     @classmethod
@@ -97,4 +111,29 @@ class TestBasic(unittest.TestCase):
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
                 "failed to ping from client to server."
+            )
+
+    def test_static_hosts(self):
+        server_config = get_server_config(
+            authentication = True,
+            static_hosts = {'nice_guy': '10.179.0.152'},
+        )
+
+        client_config = get_client_config(
+            user = 'nice_guy',
+        )
+
+        with Host("server", server_config) as server, \
+            Host("client", client_config) as client:
+
+            self.assertEqual(
+                client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
+                0,
+                "failed to ping from client to server."
+            )
+
+            self.assertEqual(
+                client.get_client_tunnel_ip(),
+                "10.179.0.152",
+                "Unexpected IP assigned to client."
             )
