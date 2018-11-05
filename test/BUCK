@@ -1,0 +1,14 @@
+export_file(
+    name = 'dockerfile',
+    src = 'Dockerfile',
+
+)
+python_test(
+    name = 'basic',
+    platform = 'py3',
+    srcs = ['basic.py'],
+    env = {
+        "DOCKERFILE_PATH": "$(location :dockerfile)",
+        "BINARY_PATH": "$(location //:main#release)",
+    },
+)
