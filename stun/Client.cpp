@@ -2,6 +2,7 @@
 
 #include <event/Action.h>
 #include <event/Promise.h>
+#include <event/SignalCondition.h>
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
 
@@ -68,10 +69,10 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
 
   // Create routing rules for subnets NOT to forward
   auto excludedSubnets = config_.subnetsToExclude;
+  auto originalRouteDest =
+      InterfaceConfig::getRoute(config_.serverAddr.getHost());
 
   if (config_.serverAddr.type == IPv4) {
-    RouteDestination originalRouteDest =
-        InterfaceConfig::getRoute(config_.serverAddr.getHost());
     if (!originalRouteDest.gatewayAddr.empty()) {
       // If original route doesn't have a gateway, it *likely* means that the
       // matching route is an ARP route. Thus we don't add the route explicitly
@@ -98,6 +99,34 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
   for (auto const& subnet : forwardSubnets) {
     RouteDestination routeDest(config.peerTunnelAddr);
     routes.push_back(Route{subnet, routeDest});
+  }
+
+  // Appplying DNS settings (if any)
+  if (!config.dnsPushes.empty()) {
+#if TARGET_OSX
+    auto defaultInterfaceName = originalRouteDest.interfaceName;
+    auto originalDNS =
+        InterfaceConfig::getDNSServers(originalRouteDest.interfaceName);
+
+    InterfaceConfig::setDNSServers(originalRouteDest.interfaceName,
+                                   config.dnsPushes);
+    LOG_I("Client") << "Applied DNS server settings." << std::endl;
+
+    cleanerDidFinish_ = std::make_unique<event::BaseCondition>();
+    cleaner_ = std::make_unique<event::Action>(std::vector<event::Condition*>{
+        event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())});
+
+    cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
+      InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);
+      LOG_I("Client") << "Restored DNS server settings." << std::endl;
+
+      this->cleanerDidFinish_->fire();
+    };
+#else
+    LOG_E("Client") << "Server offered DNS settings but automatically applying "
+                       "DNS settings is not yet supported on this platform."
+                    << std::endl;
+#endif
   }
 
   Client::createRoutes(std::move(routes));

@@ -55,8 +55,6 @@ private:
 
   std::unique_ptr<Messenger> messenger_;
   std::unique_ptr<Dispatcher> dispatcher_;
-  std::unique_ptr<event::BaseCondition>  cleanerDidFinish_;
-  std::unique_ptr<event::Action> cleaner_;
 
   std::unique_ptr<event::BaseCondition> didEnd_;
 

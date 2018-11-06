@@ -2,12 +2,15 @@
 
 #include <common/Util.h>
 
+#include <regex>
 #include <sstream>
 
 #if TARGET_OSX || TARGET_BSD
 
 static const std::string kInterfaceConfigIfconfigPath = "/sbin/ifconfig";
 static const std::string kInterfaceConfigRoutePath = "/sbin/route";
+static const std::string kInterfaceConfigNetworkSetupPath =
+    "/usr/sbin/networksetup";
 
 namespace networking {
 
@@ -125,6 +128,80 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
   static InterfaceConfig instance;
   return instance;
 }
+
+#if TARGET_OSX
+
+static std::string getFullInterfaceName(std::string const& interfaceName) {
+  // First find the full interface name matching the given interfaceName
+  std::string out =
+      runCommandAndAssertSuccess(kInterfaceConfigNetworkSetupPath +
+                                 " -listnetworkserviceorder")
+          .stdout;
+
+  std::regex lineRegex("Hardware Port: (.+), Device: " + interfaceName);
+  std::smatch match;
+  if (!std::regex_search(out, match, lineRegex)) {
+    assertTrue(false, "Cannot find full name of interface " + interfaceName);
+  }
+
+  return match[1].str();
+}
+
+/* static */ std::vector<networking::IPAddress>
+InterfaceConfig::getDNSServers(std::string const& interfaceName) {
+  auto fullInterfaceName = getFullInterfaceName(interfaceName);
+
+  // Find DNS servers
+  auto out = runCommandAndAssertSuccess(kInterfaceConfigNetworkSetupPath +
+                                        " -getdnsservers " + "\"" +
+                                        fullInterfaceName + "\"")
+                 .stdout;
+
+  if (out ==
+      "There aren't any DNS Servers set on " + fullInterfaceName + ".\n") {
+    return {};
+  } else {
+    auto servers = std::vector<networking::IPAddress>{};
+
+    size_t index = 0;
+    while (true) {
+      auto next = out.find('\n', index);
+
+      if (next == std::string::npos) {
+        break;
+      }
+
+      servers.push_back(
+          IPAddress{out.substr(index, next - index), NetworkType::IPv4});
+
+      index = next + 1;
+    }
+
+    return servers;
+  }
+}
+
+/* static */ void
+InterfaceConfig::setDNSServers(std::string const& interfaceName,
+                               std::vector<networking::IPAddress> servers) {
+  auto fullInterfaceName = getFullInterfaceName(interfaceName);
+
+  auto command = kInterfaceConfigNetworkSetupPath + " -setdnsservers " + "\"" +
+                 fullInterfaceName + "\"";
+
+  for (auto const& server : servers) {
+    command += " " + server.toString();
+  }
+
+  if (servers.empty()) {
+    command += " empty";
+  }
+
+  runCommandAndAssertSuccess(command);
+}
+
+#endif
+
 } // namespace networking
 
 #endif

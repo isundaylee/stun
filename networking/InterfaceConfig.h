@@ -70,6 +70,14 @@ public:
   static void deleteRoute(SubnetAddress const& dest);
   static RouteDestination getRoute(IPAddress const& destAddr);
 
+#if TARGET_OSX
+  static std::vector<networking::IPAddress>
+  getDNSServers(std::string const& interfaceName);
+
+  static void setDNSServers(std::string const& interfaceName,
+                            std::vector<networking::IPAddress> servers);
+#endif
+
 private:
   InterfaceConfig(InterfaceConfig const&) = delete;
   InterfaceConfig& operator=(InterfaceConfig const&) = delete;
