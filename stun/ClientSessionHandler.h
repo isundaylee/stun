@@ -21,6 +21,7 @@ public:
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;
   std::vector<IPAddress> dnsPushes;
+  bool acceptDNSPushes;
 };
 
 struct ClientConfig {
@@ -33,6 +34,7 @@ public:
   event::Duration dataPipeRotationInterval;
   std::string user;
   size_t mtu;
+  bool acceptDNSPushes;
 
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;

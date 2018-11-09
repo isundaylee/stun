@@ -68,6 +68,7 @@ void ClientSessionHandler::attachHandlers() {
         config_.subnetsToForward,
         config_.subnetsToExclude,
         dnsPushes,
+        config_.acceptDNSPushes,
     };
 
     auto tunnelPromise = tunnelFactory_(tunnelConfig);

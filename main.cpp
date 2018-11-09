@@ -223,6 +223,7 @@ void setupClient() {
       common::Configerator::get<std::string>("user", ""),
       common::Configerator::get<size_t>("mtu",
                                         networking::kTunnelEthernetDefaultMTU),
+      common::Configerator::get<bool>("accept_dns_pushes", false),
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 

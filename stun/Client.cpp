@@ -103,30 +103,37 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
 
   // Appplying DNS settings (if any)
   if (!config.dnsPushes.empty()) {
+    if (!config.acceptDNSPushes) {
+      LOG_I("Client") << "Client configured to not accept server DNS pushes. "
+                         "Skipping setting DNS servers."
+                      << std::endl;
+    } else {
 #if TARGET_OSX
-    auto defaultInterfaceName = originalRouteDest.interfaceName;
-    auto originalDNS =
-        InterfaceConfig::getDNSServers(originalRouteDest.interfaceName);
+      auto defaultInterfaceName = originalRouteDest.interfaceName;
+      auto originalDNS =
+          InterfaceConfig::getDNSServers(originalRouteDest.interfaceName);
 
-    InterfaceConfig::setDNSServers(originalRouteDest.interfaceName,
-                                   config.dnsPushes);
-    LOG_I("Client") << "Applied DNS server settings." << std::endl;
+      InterfaceConfig::setDNSServers(originalRouteDest.interfaceName,
+                                     config.dnsPushes);
+      LOG_I("Client") << "Applied DNS server settings." << std::endl;
 
-    cleanerDidFinish_ = std::make_unique<event::BaseCondition>();
-    cleaner_ = std::make_unique<event::Action>(std::vector<event::Condition*>{
-        event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())});
+      cleanerDidFinish_ = std::make_unique<event::BaseCondition>();
+      cleaner_ = std::make_unique<event::Action>(std::vector<event::Condition*>{
+          event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())});
 
-    cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
-      InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);
-      LOG_I("Client") << "Restored DNS server settings." << std::endl;
+      cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
+        InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);
+        LOG_I("Client") << "Restored DNS server settings." << std::endl;
 
-      this->cleanerDidFinish_->fire();
-    };
+        this->cleanerDidFinish_->fire();
+      };
 #else
-    LOG_E("Client") << "Server offered DNS settings but automatically applying "
-                       "DNS settings is not yet supported on this platform."
-                    << std::endl;
+      LOG_E("Client")
+          << "Server offered DNS settings but automatically applying "
+             "DNS settings is not yet supported on this platform."
+          << std::endl;
 #endif
+    }
   }
 
   Client::createRoutes(std::move(routes));
