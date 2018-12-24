@@ -1,3 +1,5 @@
+# v0.9.1 (2018-12-24)
+
 - [macOS] Adds `accept_dns_pushes` option to the client config wizard.
 
 # v0.9.0 (2018-12-24)
