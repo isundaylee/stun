@@ -1,3 +1,8 @@
+# v0.9.0 (2018-12-24)
+
+- [macOS] Adds the ability to automatically configure and restore DNS settings
+  based on the server's pushed configuration.
+
 # v0.8.4 (2018-07-14)
 
 - [macOS] Automatically removes existing route to destination host to work
