@@ -47,7 +47,8 @@ static const std::string clientConfigTemplate = R"(
     "128.0.0.0/1"
   ],
   "excluded_subnets": [
-  ]
+  ],
+  "accept_dns_pushes": ACCEPT_DNS_PUSHES
 }
 )";
 
@@ -66,7 +67,7 @@ std::string getConfigPath() {
 }
 
 void generateConfig(std::string path) {
-  std::string role, serverAddr, user, secret;
+  std::string role, serverAddr, user, acceptDNSPushes, secret;
 
   std::cout << "I will help you create a stun config file at " << path << "."
             << std::endl;
@@ -87,6 +88,12 @@ void generateConfig(std::string path) {
     std::cout << "What is your assigned user name? (May be left empty for an "
                  "unauthenticated server) ";
     std::getline(std::cin, user);
+
+    while (acceptDNSPushes != "yes" && acceptDNSPushes != "no") {
+      std::cout << "Do you want to automatically apply DNS settings that the "
+                   "server sends if available? (yes or no) ";
+      std::getline(std::cin, acceptDNSPushes);
+    }
   }
 
   // Prompt the user for the secret
@@ -98,6 +105,8 @@ void generateConfig(std::string path) {
   std::string content =
       (role == "server" ? serverConfigTemplate : clientConfigTemplate);
   content = std::regex_replace(content, std::regex("SERVER_IP"), serverAddr);
+  content = std::regex_replace(content, std::regex("ACCEPT_DNS_PUSHES"),
+                               acceptDNSPushes == "yes" ? "true" : "false");
   content = std::regex_replace(content, std::regex("SECRET"), secret);
   content = std::regex_replace(content, std::regex("USER"), user);
 

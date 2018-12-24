@@ -1,3 +1,5 @@
+- [macOS] Adds `accept_dns_pushes` option to the client config wizard.
+
 # v0.9.0 (2018-12-24)
 
 - [macOS] Adds the ability to automatically configure and restore DNS settings
