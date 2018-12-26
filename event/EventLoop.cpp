@@ -37,6 +37,11 @@ void EventLoop::addPreparer(EventLoopPreparer* preparer) {
   preparers_.push_back(preparer);
 }
 
+std::unique_ptr<Action>
+EventLoop::createAction(std::vector<Condition*> conditions) {
+  return std::make_unique<Action>(*this, conditions);
+}
+
 void EventLoop::run() {
   // This is needed to force IOConditionManager to initialize and attach its
   // preparer, even in the case that the program doesn't actually use IO.

@@ -7,7 +7,8 @@ namespace stun {
 
 using networking::IPTables;
 
-Server::Server(ServerConfig config) : config_(config) {
+Server::Server(event::EventLoop& loop, ServerConfig config)
+    : loop_(loop), config_(config) {
   IPTables::clear();
   IPTables::masquerade(config.addressPool);
   addrPool.reset(new IPAddressPool(config.addressPool));
@@ -17,7 +18,7 @@ Server::Server(ServerConfig config) : config_(config) {
   }
 
   server_.reset(new TCPServer(networking::NetworkType::IPv4));
-  listener_.reset(new event::Action({server_->canAccept()}));
+  listener_ = loop_.createAction({server_->canAccept()});
   listener_->callback.setMethod<Server, &Server::doAccept>(this);
   server_->bind(config.port);
 

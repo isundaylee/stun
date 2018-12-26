@@ -4,6 +4,11 @@
 
 namespace event {
 
+Action::Action(EventLoop& loop, std::vector<Condition*> conditions)
+    : conditions_(conditions) {
+  loop.addAction(this);
+}
+
 Action::Action(std::vector<Condition*> conditions) : conditions_(conditions) {
   EventLoop::getCurrentLoop().addAction(this);
 }

@@ -11,6 +11,7 @@ namespace event {
 
 class Action {
 public:
+  Action(EventLoop& loop, std::vector<Condition*> conditions);
   Action(std::vector<Condition*> conditions);
   ~Action();
 

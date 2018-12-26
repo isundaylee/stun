@@ -2,6 +2,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 
 namespace event {
 
@@ -43,6 +44,8 @@ public:
   void addConditionManager(ConditionManager* manager, ConditionType type);
   void addPreparer(EventLoopPreparer* preparer);
 
+  std::unique_ptr<Action> createAction(std::vector<Condition*> conditions);
+  
   static EventLoop& getCurrentLoop();
 
 private:

@@ -216,7 +216,8 @@ void setupServer() {
           "dns_pushes", {}),
   };
 
-  server = std::make_unique<stun::Server>(config);
+  server = std::make_unique<stun::Server>(event::EventLoop::getCurrentLoop(),
+                                          config);
 }
 
 std::unique_ptr<stun::Client> client;

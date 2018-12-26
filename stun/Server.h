@@ -30,11 +30,13 @@ public:
 
 class Server {
 public:
-  Server(ServerConfig config);
+  Server(event::EventLoop& loop, ServerConfig config);
 
   std::unique_ptr<IPAddressPool> addrPool;
 
 private:
+  event::EventLoop& loop_;
+
   ServerConfig config_;
 
   std::unique_ptr<TCPServer> server_;
