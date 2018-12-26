@@ -48,7 +48,8 @@ void Server::doAccept() {
                                            config_.mtu};
 
   auto handler = std::make_unique<ServerSessionHandler>(
-      this, sessionConfig, std::make_unique<TCPSocket>(std::move(client)));
+      loop_, this, sessionConfig,
+      std::make_unique<TCPSocket>(std::move(client)));
 
   // Trigger to remove finished clients
   auto handlerPtr = handler.get();

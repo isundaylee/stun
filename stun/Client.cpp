@@ -14,13 +14,14 @@ const static event::Duration kReconnectDelayInterval = 5s;
 const static size_t kClientRouteChunkSize = 1;
 
 #if TARGET_IOS
-Client::Client(ClientConfig config,
+Client::Client(event::EventLoop& loop, ClientConfig config,
                ClientSessionHandler::TunnelFactory tunnelFactory)
-    : config_(config), tunnelFactory_(tunnelFactory) {
+    : loop_(loop), config_(config), tunnelFactory_(tunnelFactory) {
   connect();
 }
 #else
-Client::Client(ClientConfig config) : config_(config) {
+Client::Client(event::EventLoop& loop, ClientConfig config)
+    : loop_(loop), config_(config) {
   tunnelFactory_ = [this](ClientTunnelConfig config) {
     auto promise = std::make_shared<event::Promise<std::unique_ptr<Tunnel>>>();
     promise->fulfill(createTunnel(config));
@@ -156,7 +157,8 @@ void Client::connect() {
   socket.connect(config_.serverAddr);
 
   handler_.reset(new ClientSessionHandler(
-      config_, std::make_unique<TCPSocket>(std::move(socket)), tunnelFactory_));
+      loop_, config_, std::make_unique<TCPSocket>(std::move(socket)),
+      tunnelFactory_));
   reconnector_.reset(new event::Action({handler_->didEnd()}));
   reconnector_->callback.setMethod<Client, &Client::doReconnect>(this);
 }

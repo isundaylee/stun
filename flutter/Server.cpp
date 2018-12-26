@@ -15,8 +15,8 @@ using json = nlohmann::json;
 
 class Server::Session {
 public:
-  Session(std::unique_ptr<networking::TCPSocket> client)
-      : messenger_(new networking::Messenger(std::move(client))),
+  Session(event::EventLoop& loop, std::unique_ptr<networking::TCPSocket> client)
+      : messenger_(new networking::Messenger(loop, std::move(client))),
         didEnd_(new event::BaseCondition()) {
     event::Trigger::arm({messenger_->didDisconnect()},
                         [this]() { didEnd_->fire(); });
@@ -60,7 +60,7 @@ private:
   Session& operator=(Session&& move) = delete;
 };
 
-Server::Server(ServerConfig config) {
+Server::Server(event::EventLoop& loop, ServerConfig config) : loop_(loop) {
   socket_.reset(new networking::TCPServer(networking::NetworkType::IPv4));
   socket_->bind(config.port);
 
@@ -81,7 +81,7 @@ Server::~Server() = default;
 
 void Server::doAccept() {
   auto client = std::make_unique<networking::TCPSocket>(socket_->accept());
-  sessions_.emplace_back(new Session(std::move(client)));
+  sessions_.emplace_back(new Session(loop_, std::move(client)));
 
   event::Trigger::arm(
       {sessions_.back()->didEnd()}, [session = sessions_.back().get(), this]() {

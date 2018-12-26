@@ -12,10 +12,12 @@ public:
 
 class Server {
 public:
-  Server(ServerConfig config);
+  Server(event::EventLoop& loop, ServerConfig config);
   ~Server();
 
 private:
+  event::EventLoop& loop_;
+
   std::unique_ptr<networking::TCPServer> socket_;
   std::unique_ptr<event::Action> acceptor_;
 

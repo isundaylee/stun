@@ -67,7 +67,7 @@ const size_t kMessengerReceiveBufferSize = 8192;
 
 class Messenger {
 public:
-  Messenger(std::unique_ptr<TCPSocket> socket);
+  Messenger(event::EventLoop& loop, std::unique_ptr<TCPSocket> socket);
   ~Messenger();
 
   std::unique_ptr<event::FIFO<Message>> outboundQ;
@@ -86,6 +86,8 @@ private:
 
   class Heartbeater;
   class Transporter;
+
+  event::EventLoop& loop_;
 
   std::map<std::string, std::function<Message(Message const&)>> handlers_;
   std::unique_ptr<Transporter> transporter_;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <event/EventLoop.h>
+
 #include <stun/ClientSessionHandler.h>
 
 namespace stun {
@@ -7,10 +9,10 @@ namespace stun {
 class Client {
 public:
 #if TARGET_IOS
-  Client(ClientConfig config,
+  Client(event::EventLoop& loop, ClientConfig config,
          ClientSessionHandler::TunnelFactory tunnelFactory);
 #else
-  Client(ClientConfig config);
+  Client(event::EventLoop& loop, ClientConfig config);
 #endif
   ~Client();
 
@@ -25,6 +27,8 @@ private:
 
   Client(Client&& move) = delete;
   Client& operator=(Client&& move) = delete;
+
+  event::EventLoop& loop_;
 
   ClientSessionHandler::TunnelFactory tunnelFactory_;
 

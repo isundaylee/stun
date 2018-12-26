@@ -45,13 +45,15 @@ public:
   using TunnelFactory = std::function<std::shared_ptr<
       event::Promise<std::unique_ptr<networking::Tunnel>>>(ClientTunnelConfig)>;
 
-  ClientSessionHandler(ClientConfig config,
+  ClientSessionHandler(event::EventLoop& loop, ClientConfig config,
                        std::unique_ptr<TCPSocket> commandPipe,
                        TunnelFactory tunnelFactory);
 
   event::Condition* didEnd() const;
 
 private:
+  event::EventLoop& loop_;
+
   ClientConfig config_;
   TunnelFactory tunnelFactory_;
 

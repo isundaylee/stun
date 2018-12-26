@@ -237,7 +237,7 @@ void setupClient() {
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 
-  client.reset(new stun::Client(config));
+  client.reset(new stun::Client(event::EventLoop::getCurrentLoop(), config));
 }
 
 std::unique_ptr<flutter::Server> flutterServer;
@@ -249,7 +249,8 @@ void setupFlutterServer() {
   auto port = options["flutter"].as<int>();
   auto flutterServerConfig = flutter::ServerConfig{port};
 
-  flutterServer.reset(new flutter::Server(flutterServerConfig));
+  flutterServer.reset(new flutter::Server(event::EventLoop::getCurrentLoop(),
+                                          flutterServerConfig));
 }
 
 std::string generateNotebookPath(std::string const& configPath) {

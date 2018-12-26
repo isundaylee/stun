@@ -21,8 +21,8 @@ public:
       : messenger_(messenger), beatTimer_(new event::Timer(0s)),
         missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
         statRtt_("Connection", "rtt") {
-    beater_.reset(new event::Action(
-        {beatTimer_->didFire(), messenger_->outboundQ->canPush()}));
+    beater_ = messenger_->loop_.createAction(
+        {beatTimer_->didFire(), messenger_->outboundQ->canPush()});
 
     // Sets up periodic heart beat sending
     beater_->callback = [this]() {
@@ -75,9 +75,9 @@ private:
 public:
   Transporter(Messenger* messenger, std::unique_ptr<TCPSocket> socket)
       : messenger_(messenger), socket_(std::move(socket)), bufferUsed_(0),
-        sender_(new event::Action(
+        sender_(messenger_->loop_.createAction(
             {socket_->canWrite(), messenger->outboundQ->canPop()})),
-        receiver_(new event::Action(
+        receiver_(messenger_->loop_.createAction(
             {socket_->canRead(), messenger->outboundQ->canPush()})) {
     sender_->callback.setMethod<Transporter, &Transporter::doSend>(this);
     receiver_->callback.setMethod<Transporter, &Transporter::doReceive>(this);
@@ -187,8 +187,9 @@ private:
   std::unique_ptr<event::Action> receiver_;
 };
 
-Messenger::Messenger(std::unique_ptr<TCPSocket> socket)
-    : outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
+Messenger::Messenger(event::EventLoop& loop, std::unique_ptr<TCPSocket> socket)
+    : loop_(loop),
+      outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
       transporter_(new Transporter(this, std::move(socket))),
       heartbeater_(new Heartbeater(this)),
       didDisconnect_(new event::BaseCondition()) {}

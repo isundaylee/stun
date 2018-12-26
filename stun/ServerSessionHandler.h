@@ -40,13 +40,16 @@ class Server;
 
 class ServerSessionHandler {
 public:
-  ServerSessionHandler(Server* server, ServerSessionConfig config,
+  ServerSessionHandler(event::EventLoop& loop, Server* server,
+                       ServerSessionConfig config,
                        std::unique_ptr<TCPSocket> commandPipe);
   ~ServerSessionHandler();
 
   event::Condition* didEnd() const;
 
 private:
+  event::EventLoop& loop_;
+
   Server* server_;
   ServerSessionConfig config_;
 

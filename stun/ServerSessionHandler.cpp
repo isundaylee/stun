@@ -109,10 +109,10 @@ private:
 };
 
 ServerSessionHandler::ServerSessionHandler(
-    Server* server, ServerSessionConfig config,
+    event::EventLoop& loop, Server* server, ServerSessionConfig config,
     std::unique_ptr<TCPSocket> commandPipe)
-    : server_(server), config_(config),
-      messenger_(new Messenger(std::move(commandPipe))),
+    : loop_(loop), server_(server), config_(config),
+      messenger_(new Messenger(loop, std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (!config_.secret.empty()) {
     messenger_->addEncryptor(

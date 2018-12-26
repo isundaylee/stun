@@ -11,10 +11,10 @@ namespace stun {
 using namespace std::chrono_literals;
 
 ClientSessionHandler::ClientSessionHandler(
-    ClientConfig config, std::unique_ptr<TCPSocket> commandPipe,
-    TunnelFactory tunnelFactory)
-    : config_(config), tunnelFactory_(tunnelFactory),
-      messenger_(new Messenger(std::move(commandPipe))),
+    event::EventLoop& loop, ClientConfig config,
+    std::unique_ptr<TCPSocket> commandPipe, TunnelFactory tunnelFactory)
+    : loop_(loop), config_(config), tunnelFactory_(tunnelFactory),
+      messenger_(new Messenger(loop, std::move(commandPipe))),
       didEnd_(new event::BaseCondition()) {
   if (!config_.secret.empty()) {
     messenger_->addEncryptor(
