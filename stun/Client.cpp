@@ -120,8 +120,8 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
       LOG_I("Client") << "Applied DNS server settings." << std::endl;
 
       cleanerDidFinish_ = loop_.createBaseCondition();
-      cleaner_ = loop_.createAction(
-          {event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())});
+      cleaner_ = loop_.createAction({loop_.getSignalConditionManager().onSigInt(
+          cleanerDidFinish_.get())});
 
       cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
         InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);

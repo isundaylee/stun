@@ -28,6 +28,8 @@ class ComputedCondition;
 
 class ConditionManager {
 public:
+  // TODO: Investigate and fix the absence of virtual destructor.
+  
   virtual void
   prepareConditions(std::vector<Condition*> const& conditions,
                     std::vector<Condition*> const& interesting) = 0;
@@ -39,6 +41,7 @@ public:
 };
 
 class IOConditionManager;
+class SignalConditionManager;
 class Trigger;
 
 class EventLoop {
@@ -60,6 +63,7 @@ public:
   std::unique_ptr<ComputedCondition> createComputedCondition();
 
   IOConditionManager& getIOConditionManager();
+  SignalConditionManager& getSignalConditionManager();
 
   void arm(std::vector<event::Condition*> conditions,
            std::function<void(void)> callback);
@@ -86,6 +90,7 @@ private:
   std::vector<EventLoopPreparer*> preparers_;
 
   std::unique_ptr<IOConditionManager> ioConditionManager_;
+  std::unique_ptr<SignalConditionManager> signalConditionManager_;
   std::unique_ptr<Trigger> triggerManager_;
 };
 } // namespace event

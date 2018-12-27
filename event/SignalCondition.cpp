@@ -7,36 +7,45 @@
 
 namespace event {
 
-SignalConditionManager::SignalConditionManager() {
+SignalConditionManager::Core::Core() {
   struct sigaction sigIntHandler;
 
-  sigIntHandler.sa_handler = &SignalConditionManager::handleSignal;
+  sigIntHandler.sa_handler = &SignalConditionManager::Core::handleSignal;
   sigemptyset(&sigIntHandler.sa_mask);
   sigIntHandler.sa_flags = 0;
 
   sigaction(SIGINT, &sigIntHandler, NULL);
-
-  event::EventLoop::getCurrentLoop().addConditionManager(this,
-                                                         ConditionType::Signal);
 }
 
-/* static */ SignalConditionManager& SignalConditionManager::getInstance() {
-  static SignalConditionManager instance;
+/* static */ SignalConditionManager::Core&
+SignalConditionManager::Core::getInstance() {
+  static SignalConditionManager::Core instance;
   return instance;
 }
 
-/* static */ void SignalConditionManager::handleSignal(int signal) {
+/* static */ void SignalConditionManager::Core::handleSignal(int signal) {
+  // TODO: Thread safety??
+
   if (signal == SIGINT) {
-    SignalConditionManager::getInstance().sigIntPending_ = true;
+    for (auto manager : SignalConditionManager::Core::getInstance().managers_) {
+      manager->sigIntPending = true;
+    }
   }
 }
 
+SignalConditionManager::SignalConditionManager(EventLoop& loop) : loop_(loop) {
+  loop_.addConditionManager(this, ConditionType::Signal);
+  SignalConditionManager::Core::getInstance().addManager(this);
+}
+
+SignalConditionManager::~SignalConditionManager() {
+  SignalConditionManager::Core::getInstance().removeManager(this);
+}
+
 SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
-  SignalCondition* condition =
-      new SignalCondition(event::EventLoop::getCurrentLoop(), SignalType::Int);
-  SignalConditionManager::getInstance().conditions_.push_back(condition);
-  SignalConditionManager::getInstance().sigIntPendingConditions_.push_back(
-      pendingCondition);
+  SignalCondition* condition = new SignalCondition(loop_, SignalType::Int);
+  conditions_.push_back(condition);
+  sigIntPendingConditions_.push_back(pendingCondition);
   return condition;
 }
 
@@ -50,7 +59,7 @@ SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
     signalCond->arm();
   }
 
-  if (sigIntPending_) {
+  if (sigIntPending) {
     for (auto const& cond : conditions) {
       auto signalCond = static_cast<SignalCondition*>(cond);
       if (signalCond->type == SignalType::Int) {
@@ -58,16 +67,10 @@ SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
       }
     }
 
-    sigIntPending_ = false;
+    sigIntPending = false;
 
-    auto sigIntPendingConditions =
-        SignalConditionManager::getInstance().sigIntPendingConditions_;
-    SignalConditionManager::getInstance().terminator_ =
-        event::EventLoop::getCurrentLoop().createAction(
-            sigIntPendingConditions_);
-    SignalConditionManager::getInstance().terminator_->callback = []() {
-      throw NormalTerminationException();
-    };
+    terminator_ = loop_.createAction(sigIntPendingConditions_);
+    terminator_->callback = []() { throw NormalTerminationException(); };
   }
 }
 

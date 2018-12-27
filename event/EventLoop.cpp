@@ -2,6 +2,7 @@
 
 #include <event/Action.h>
 #include <event/IOCondition.h>
+#include <event/SignalCondition.h>
 #include <event/Trigger.h>
 
 #include <common/Util.h>
@@ -14,6 +15,7 @@ namespace event {
 EventLoop::EventLoop()
     : actions_(), conditions_(), conditionManagers_(),
       ioConditionManager_(new IOConditionManager(*this)),
+      signalConditionManager_(new SignalConditionManager(*this)),
       triggerManager_(new Trigger(*this)) {}
 
 EventLoop::~EventLoop() = default;
@@ -59,6 +61,10 @@ std::unique_ptr<ComputedCondition> EventLoop::createComputedCondition() {
 
 IOConditionManager& EventLoop::getIOConditionManager() {
   return *ioConditionManager_.get();
+}
+
+SignalConditionManager& EventLoop::getSignalConditionManager() {
+  return *signalConditionManager_.get();
 }
 
 void EventLoop::arm(std::vector<event::Condition*> conditions,
