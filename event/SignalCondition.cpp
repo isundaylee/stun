@@ -62,7 +62,8 @@ SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
     auto sigIntPendingConditions =
         SignalConditionManager::getInstance().sigIntPendingConditions_;
     SignalConditionManager::getInstance().terminator_ =
-        std::make_unique<Action>(sigIntPendingConditions_);
+        event::EventLoop::getCurrentLoop().createAction(
+            sigIntPendingConditions_);
     SignalConditionManager::getInstance().terminator_->callback = []() {
       throw NormalTerminationException();
     };
