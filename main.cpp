@@ -284,7 +284,7 @@ int main(int argc, char* argv[]) {
   // Sets up stats collection
   event::Duration statsDumpInerval =
       std::chrono::milliseconds(options["stats"].as<int>());
-  statsTimer.reset(new event::Timer{statsDumpInerval});
+  statsTimer = event::EventLoop::getCurrentLoop().createTimer(statsDumpInerval);
   statsDumper =
       event::EventLoop::getCurrentLoop().createAction({statsTimer->didFire()});
   statsDumper->callback = [&statsTimer, statsDumpInerval]() {

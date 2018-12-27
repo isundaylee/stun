@@ -3,6 +3,7 @@
 #include <event/Action.h>
 #include <event/IOCondition.h>
 #include <event/SignalCondition.h>
+#include <event/Timer.h>
 #include <event/Trigger.h>
 
 #include <common/Util.h>
@@ -16,6 +17,7 @@ EventLoop::EventLoop()
     : actions_(), conditions_(), conditionManagers_(),
       ioConditionManager_(new IOConditionManager(*this)),
       signalConditionManager_(new SignalConditionManager(*this)),
+      timerManager_(new TimerManager(*this)),
       triggerManager_(new Trigger(*this)) {}
 
 EventLoop::~EventLoop() = default;
@@ -57,6 +59,13 @@ std::unique_ptr<BaseCondition> EventLoop::createBaseCondition(
 
 std::unique_ptr<ComputedCondition> EventLoop::createComputedCondition() {
   return std::make_unique<ComputedCondition>(*this);
+}
+
+std::unique_ptr<Timer> EventLoop::createTimer() {
+  return std::make_unique<Timer>(*timerManager_);
+}
+std::unique_ptr<Timer> EventLoop::createTimer(Duration timeout) {
+  return std::make_unique<Timer>(*timerManager_, timeout);
 }
 
 IOConditionManager& EventLoop::getIOConditionManager() {

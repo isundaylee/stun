@@ -29,7 +29,7 @@ public:
     assertTrue(session->config_.quota != 0,
                "QuotaReporter running on a unlimited session.");
 
-    timer_.reset(new event::Timer(0s));
+    timer_ = session->loop_.createTimer(0s);
     reporter_ = session_->loop_.createAction(
         {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     reporter_->callback.setMethod<QuotaReporter, &QuotaReporter::doReport>(
@@ -74,7 +74,7 @@ public:
     assertTrue(session->config_.quota != 0,
                "QuotaPolice running on an unlimited session.");
 
-    timer_.reset(new event::Timer(0s));
+    timer_ = session->loop_.createTimer(0s);
     police_ = session_->loop_.createAction(
         {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     police_->callback.setMethod<QuotaPolice, &QuotaPolice::doPolice>(this);
@@ -223,8 +223,8 @@ void ServerSessionHandler::attachHandlers() {
 
     // Set up data pipe rotation if it is configured in the server config.
     if (config_.dataPipeRotationInterval != 0s) {
-      dataPipeRotationTimer_.reset(
-          new event::Timer(config_.dataPipeRotationInterval));
+      dataPipeRotationTimer_ =
+          loop_.createTimer(config_.dataPipeRotationInterval);
       dataPipeRotator_ = loop_.createAction({dataPipeRotationTimer_->didFire(),
                                              messenger_->outboundQ->canPush()});
       dataPipeRotator_->callback.setMethod<

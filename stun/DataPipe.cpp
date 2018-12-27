@@ -27,7 +27,7 @@ DataPipe::DataPipe(event::EventLoop& loop,
       isPrimed_(loop.createBaseCondition()) {
   // Sets up TTL killer
   if (ttl != 0s) {
-    ttlTimer_.reset(new event::Timer(ttl));
+    ttlTimer_ = loop.createTimer(ttl);
     ttlKiller_ = loop_.createAction({ttlTimer_->didFire()});
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
@@ -53,7 +53,7 @@ DataPipe::DataPipe(event::EventLoop& loop,
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
-  probeTimer_.reset(new event::Timer(0s));
+  probeTimer_ = loop_.createTimer(0s);
   prober_ = loop_.createAction(
       {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);

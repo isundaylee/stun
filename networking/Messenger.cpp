@@ -18,8 +18,8 @@ static const size_t kMessengerOutboundQueueSize = 32;
 class Messenger::Heartbeater {
 public:
   Heartbeater(Messenger* messenger)
-      : messenger_(messenger), beatTimer_(new event::Timer(0s)),
-        missedTimer_(new event::Timer(kMessengerHeartBeatTimeout)),
+      : messenger_(messenger), beatTimer_(messenger->loop_.createTimer(0s)),
+        missedTimer_(messenger->loop_.createTimer(kMessengerHeartBeatTimeout)),
         statRtt_("Connection", "rtt") {
     beater_ = messenger_->loop_.createAction(
         {beatTimer_->didFire(), messenger_->outboundQ->canPush()});

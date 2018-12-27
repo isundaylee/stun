@@ -35,7 +35,8 @@ void Trigger::perform(std::function<void(void)> callback) {
 
 void Trigger::performIn(event::Duration delay,
                         std::function<void(void)> callback) {
-  auto timer = std::make_shared<event::Timer>(delay);
+  auto timer =
+      std::shared_ptr<event::Timer>(loop_.createTimer(delay).release());
 
   // We explicitly capture timer by copying here because we need to keep timer
   // alive as long as the trigger.
