@@ -12,23 +12,23 @@ namespace event {
 
 class Trigger : EventLoopPreparer {
 public:
+  Trigger(event::EventLoop& loop);
+
   // Arm a callback to be called when the given conditions fire. The trigger
   // would self-destruct once the conditions fire. It will also self-destruct
   // if some of the conditions it depends on is already removed from the event
   // loop.
-  static void arm(std::vector<event::Condition*> conditions,
-                  std::function<void(void)> callback);
+  void arm(std::vector<event::Condition*> conditions,
+           std::function<void(void)> callback);
 
-  static void perform(std::function<void(void)> callback);
+  void perform(std::function<void(void)> callback);
 
-  static void performIn(event::Duration delay,
-                        std::function<void(void)> callback);
+  void performIn(event::Duration delay, std::function<void(void)> callback);
 
   virtual void prepare() override;
 
 private:
-  Trigger();
-  static Trigger& getInstance();
+  event::EventLoop& loop_;
 
   std::vector<std::unique_ptr<Action>> triggerActions_;
 };

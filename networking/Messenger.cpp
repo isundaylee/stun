@@ -33,7 +33,7 @@ public:
     };
 
     // Sets up missed heartbeat disconnection
-    event::Trigger::arm({missedTimer_->didFire()}, [this]() {
+    messenger_->loop_.arm({missedTimer_->didFire()}, [this]() {
       LOG_I("Messenger") << "Disconnected due to missed heartbeats."
                          << std::endl;
       messenger_->disconnect();

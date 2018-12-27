@@ -18,8 +18,7 @@ public:
   Session(event::EventLoop& loop, std::unique_ptr<networking::TCPSocket> client)
       : messenger_(new networking::Messenger(loop, std::move(client))),
         didEnd_(loop.createBaseCondition()) {
-    event::Trigger::arm({messenger_->didDisconnect()},
-                        [this]() { didEnd_->fire(); });
+    loop.arm({messenger_->didDisconnect()}, [this]() { didEnd_->fire(); });
   }
 
   void publish(stats::StatsManager::SubscribeData const& data) {
@@ -83,15 +82,15 @@ void Server::doAccept() {
   auto client = std::make_unique<networking::TCPSocket>(socket_->accept());
   sessions_.emplace_back(new Session(loop_, std::move(client)));
 
-  event::Trigger::arm(
-      {sessions_.back()->didEnd()}, [session = sessions_.back().get(), this]() {
-        auto it = std::find_if(
-            sessions_.begin(), sessions_.end(),
-            [session](auto const& ptr) { return ptr.get() == session; });
+  loop_.arm({sessions_.back()->didEnd()},
+            [session = sessions_.back().get(), this]() {
+              auto it = std::find_if(
+                  sessions_.begin(), sessions_.end(),
+                  [session](auto const& ptr) { return ptr.get() == session; });
 
-        assertTrue(it != sessions_.end(),
-                   "Cannot find flutter server session to remove.");
-        sessions_.erase(it);
-      });
+              assertTrue(it != sessions_.end(),
+                         "Cannot find flutter server session to remove.");
+              sessions_.erase(it);
+            });
 }
 } // namespace flutter

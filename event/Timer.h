@@ -6,14 +6,10 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <chrono>
 #include <memory>
 #include <queue>
 
 namespace event {
-
-using Time = std::chrono::steady_clock::time_point;
-using Duration = std::chrono::milliseconds;
 
 class Timer {
 public:

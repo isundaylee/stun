@@ -35,7 +35,7 @@ Client::Client(event::EventLoop& loop, ClientConfig config)
 
 Client::~Client() = default;
 
-/* static */ void Client::createRoutes(std::vector<Route> routes) {
+void Client::createRoutes(std::vector<Route> routes) {
   // Adding routes under OSX is slow if we have thousands of routes to add.
   // We need to chunk them, as otherwise, doing it all at the same time would
   // starve our Messenger heartbeats, and cause the connection to fail.
@@ -51,8 +51,8 @@ Client::~Client() = default;
                        << std::endl;
 
       // We yield the remaining routes to the next event loop iteration
-      event::Trigger::perform(
-          [routes = std::move(routes)]() { Client::createRoutes(routes); });
+      loop_.perform(
+          [routes = std::move(routes), this]() { createRoutes(routes); });
 
       break;
     }
@@ -174,7 +174,7 @@ void Client::doReconnect() {
                          .count()
                   << " ms." << std::endl;
 
-  event::Trigger::performIn(kReconnectDelayInterval, [this]() {
+  loop_.performIn(kReconnectDelayInterval, [this]() {
     LOG_I("Client") << "Reconnecting..." << std::endl;
     connect();
   });

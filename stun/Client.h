@@ -29,7 +29,7 @@ private:
   event::EventLoop& loop_;
 
   ClientConfig config_;
-  
+
   ClientSessionHandler::TunnelFactory tunnelFactory_;
 
   std::unique_ptr<ClientSessionHandler> handler_;
@@ -37,7 +37,7 @@ private:
   std::unique_ptr<event::BaseCondition> cleanerDidFinish_;
   std::unique_ptr<event::Action> cleaner_;
 
-  static void createRoutes(std::vector<networking::Route> routes);
+  void createRoutes(std::vector<networking::Route> routes);
   std::unique_ptr<Tunnel> createTunnel(ClientTunnelConfig config);
   void doReconnect();
 };

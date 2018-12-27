@@ -39,8 +39,7 @@ event::Condition* ClientSessionHandler::didEnd() const { return didEnd_.get(); }
 
 void ClientSessionHandler::attachHandlers() {
   // Fire our didEnd() when our command pipe is closed
-  event::Trigger::arm({messenger_->didDisconnect()},
-                      [this]() { didEnd_->fire(); });
+  loop_.arm({messenger_->didDisconnect()}, [this]() { didEnd_->fire(); });
 
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
@@ -80,16 +79,16 @@ void ClientSessionHandler::attachHandlers() {
                        << std::endl;
     }
 
-    event::Trigger::arm(
-        {tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
-        [this, tunnelPromise]() {
-          LOG_I("Session") << "Tunnel established." << std::endl;
-          dispatcher_.reset(new Dispatcher(loop_, tunnelPromise->consume()));
+    loop_.arm({tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
+              [this, tunnelPromise]() {
+                LOG_I("Session") << "Tunnel established." << std::endl;
+                dispatcher_.reset(
+                    new Dispatcher(loop_, tunnelPromise->consume()));
 
-          // TODO: Set up DNS servers
+                // TODO: Set up DNS servers
 
-          messenger_->outboundQ->push(Message("config_done", ""));
-        });
+                messenger_->outboundQ->push(Message("config_done", ""));
+              });
 
     return Message::null();
   });

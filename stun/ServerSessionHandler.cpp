@@ -148,8 +148,7 @@ event::Condition* ServerSessionHandler::didEnd() const { return didEnd_.get(); }
 
 void ServerSessionHandler::attachHandlers() {
   // Fire our didEnd() when our command pipe is closed
-  event::Trigger::arm({messenger_->didDisconnect()},
-                      [this]() { didEnd_->fire(); });
+  loop_.arm({messenger_->didDisconnect()}, [this]() { didEnd_->fire(); });
 
   messenger_->addHandler("hello", [this](auto const& message) {
     auto body = message.getBody();

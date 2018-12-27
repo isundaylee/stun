@@ -186,7 +186,7 @@ static const size_t kDefaultMTU = 1400;
                              NSArray<NSNumber *> *_Nonnull protocols) {
                            // Stun is not yet thread-safe. We need to post this
                            // block back to the stun event loop thread.
-                           event::Trigger::arm({}, [
+                           event::EventLoop::getCurrentLoop().arm({}, [
                              packets, protocols, packetsPromise
                            ]() {
                              auto tunnelPackets =

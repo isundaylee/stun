@@ -53,7 +53,7 @@ void Server::doAccept() {
 
   // Trigger to remove finished clients
   auto handlerPtr = handler.get();
-  event::Trigger::arm({handler->didEnd()}, [this, handlerPtr]() {
+  loop_.arm({handler->didEnd()}, [this, handlerPtr]() {
     auto it = std::find_if(sessionHandlers_.begin(), sessionHandlers_.end(),
                            [handlerPtr](auto const& handler) {
                              return handler.get() == handlerPtr;

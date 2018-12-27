@@ -3,8 +3,12 @@
 #include <memory>
 #include <set>
 #include <vector>
+#include <chrono>
 
 namespace event {
+
+using Time = std::chrono::steady_clock::time_point;
+using Duration = std::chrono::milliseconds;
 
 struct NormalTerminationException : public std::exception {
   const char* what() const throw() { return "Normal termination."; }
@@ -35,6 +39,7 @@ public:
 };
 
 class IOConditionManager;
+class Trigger;
 
 class EventLoop {
 public:
@@ -56,6 +61,13 @@ public:
 
   IOConditionManager& getIOConditionManager();
 
+  void arm(std::vector<event::Condition*> conditions,
+           std::function<void(void)> callback);
+
+  void perform(std::function<void(void)> callback);
+
+  void performIn(event::Duration delay, std::function<void(void)> callback);
+
   static EventLoop& getCurrentLoop();
 
 private:
@@ -74,5 +86,6 @@ private:
   std::vector<EventLoopPreparer*> preparers_;
 
   std::unique_ptr<IOConditionManager> ioConditionManager_;
+  std::unique_ptr<Trigger> triggerManager_;
 };
 } // namespace event

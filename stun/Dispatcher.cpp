@@ -123,7 +123,7 @@ void Dispatcher::addDataPipe(std::unique_ptr<DataPipe> dataPipe) {
   dataPipes_.emplace_back(std::move(dataPipe));
 
   // Trigger to remove the DataPipe upon it closing
-  event::Trigger::arm({pipe->didClose()}, [this, pipe]() {
+  loop_.arm({pipe->didClose()}, [this, pipe]() {
     auto it =
         std::find_if(dataPipes_.begin(), dataPipes_.end(),
                      [pipe](std::unique_ptr<DataPipe> const& currentPipe) {
