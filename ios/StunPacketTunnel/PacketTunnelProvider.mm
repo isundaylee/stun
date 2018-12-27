@@ -119,7 +119,8 @@ static const size_t kDefaultMTU = 1400;
         ^std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>(
             stun::ClientTunnelConfig config) {
       auto tunnelPromise = std::make_shared<
-          event::Promise<std::unique_ptr<networking::Tunnel>>>();
+          event::Promise<std::unique_ptr<networking::Tunnel>>>(
+            event::EventLoop::getCurrentLoop());
 
       // Setting up basic settings
       NEPacketTunnelNetworkSettings *settings =
@@ -168,7 +169,8 @@ static const size_t kDefaultMTU = 1400;
                    auto tunnelReceiver = ^std::shared_ptr<event::Promise<
                        std::vector<networking::TunnelPacket>>>() {
                      auto packetsPromise = std::make_shared<event::Promise<
-                         std::vector<networking::TunnelPacket>>>();
+                         std::vector<networking::TunnelPacket>>>(
+                           event::EventLoop::getCurrentLoop());
 
                      if (weakSelf == nil) {
                        NSLog(@"Trying to receive packets when "

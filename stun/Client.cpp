@@ -22,8 +22,9 @@ Client::Client(event::EventLoop& loop, ClientConfig config,
 #else
 Client::Client(event::EventLoop& loop, ClientConfig config)
     : loop_(loop), config_(config) {
-  tunnelFactory_ = [this](ClientTunnelConfig config) {
-    auto promise = std::make_shared<event::Promise<std::unique_ptr<Tunnel>>>();
+  tunnelFactory_ = [this, &loop](ClientTunnelConfig config) {
+    auto promise =
+        std::make_shared<event::Promise<std::unique_ptr<Tunnel>>>(loop);
     promise->fulfill(createTunnel(config));
     return promise;
   };
