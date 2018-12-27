@@ -31,7 +31,7 @@ public:
 
 class Tunnel {
 public:
-  Tunnel();
+  Tunnel(event::EventLoop& loop);
 
 #if TARGET_IOS
   using Sender = std::function<void(TunnelPacket packet)>;
@@ -58,11 +58,11 @@ private:
   Tunnel(const Tunnel&) = delete;
   Tunnel& operator=(const Tunnel&) = delete;
 
+  event::EventLoop& loop_;
+
   common::FileDescriptor fd_;
 
 #if TARGET_IOS
-  event::EventLoop* loop_;
-
   std::unique_ptr<event::ComputedCondition> canRead_;
   std::unique_ptr<event::ComputedCondition> canWrite_;
   std::unique_ptr<event::ComputedCondition> canReceive_;

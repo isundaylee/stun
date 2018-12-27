@@ -12,7 +12,7 @@ TCPSocket TCPServer::accept() {
     throwUnixError("in Socket::accept()");
   }
 
-  return TCPSocket(this->networkType_, client, peerAddr);
+  return TCPSocket(loop_, this->networkType_, client, peerAddr);
 }
 
 event::Condition* TCPServer::canAccept() const { return canRead(); }

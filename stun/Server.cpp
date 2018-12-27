@@ -17,7 +17,7 @@ Server::Server(event::EventLoop& loop, ServerConfig config)
     addrPool->reserve(entry.second);
   }
 
-  server_.reset(new TCPServer(networking::NetworkType::IPv4));
+  server_.reset(new TCPServer(loop, networking::NetworkType::IPv4));
   listener_ = loop_.createAction({server_->canAccept()});
   listener_->callback.setMethod<Server, &Server::doAccept>(this);
   server_->bind(config.port);

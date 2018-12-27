@@ -99,7 +99,7 @@ void ClientSessionHandler::attachHandlers() {
 
     auto socketAddress =
         SocketAddress{config_.serverAddr.getHost().toString(), body["port"]};
-    auto udpPipe = UDPSocket{socketAddress.type};
+    auto udpPipe = UDPSocket{loop_, socketAddress.type};
     udpPipe.connect(socketAddress);
 
     DataPipe* dataPipe = new DataPipe(

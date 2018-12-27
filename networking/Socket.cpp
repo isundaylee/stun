@@ -15,8 +15,9 @@ namespace networking {
 
 const int kSocketListenBacklog = 10;
 
-Socket::Socket(NetworkType networkType, SocketType type)
-    : networkType_(networkType), type_(type), bound_(false), connected_(false) {
+Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type)
+    : loop_(loop), networkType_(networkType), type_(type), bound_(false),
+      connected_(false) {
   signal(SIGPIPE, SIG_IGN);
   LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
 
@@ -32,10 +33,10 @@ Socket::Socket(NetworkType networkType, SocketType type)
   checkUnixError(ret, "setting SO_REUSEADDR for SocketPipe");
 }
 
-Socket::Socket(NetworkType networkType, SocketType type, int fd,
-               SocketAddress peerAddr)
-    : networkType_(networkType), type_(type), fd_(fd), bound_(false),
-      connected_(true), peerAddr_(new SocketAddress(peerAddr)) {
+Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type,
+               int fd, SocketAddress peerAddr)
+    : loop_(loop), networkType_(networkType), type_(type), fd_(fd),
+      bound_(false), connected_(true), peerAddr_(new SocketAddress(peerAddr)) {
   setNonblock();
 }
 
@@ -175,10 +176,10 @@ void Socket::checkSocketException(int ret, int err) {
 }
 
 event::Condition* Socket::canRead() const {
-  return event::IOConditionManager::canRead(fd_.fd);
+  return loop_.getIOConditionManager().canRead(fd_.fd);
 }
 
 event::Condition* Socket::canWrite() const {
-  return event::IOConditionManager::canWrite(fd_.fd);
+  return loop_.getIOConditionManager().canWrite(fd_.fd);
 }
 } // namespace networking

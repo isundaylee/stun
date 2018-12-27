@@ -32,7 +32,7 @@
 
 namespace networking {
 
-Tunnel::Tunnel() {
+Tunnel::Tunnel(event::EventLoop& loop) : loop_(loop) {
   int ret;
 
 #if TARGET_OSX
@@ -94,11 +94,11 @@ Tunnel::Tunnel() {
 }
 
 event::Condition* Tunnel::canRead() const {
-  return event::IOConditionManager::canRead(fd_.fd);
+  return loop_.getIOConditionManager().canRead(fd_.fd);
 }
 
 event::Condition* Tunnel::canWrite() const {
-  return event::IOConditionManager::canWrite(fd_.fd);
+  return loop_.getIOConditionManager().canWrite(fd_.fd);
 }
 
 #if TARGET_OSX

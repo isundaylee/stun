@@ -10,7 +10,11 @@
 
 namespace event {
 
-EventLoop::EventLoop() : actions_(), conditions_(), conditionManagers_() {}
+EventLoop::EventLoop()
+    : actions_(), conditions_(), conditionManagers_(),
+      ioConditionManager_(new IOConditionManager(*this)) {}
+
+EventLoop::~EventLoop() = default;
 
 void EventLoop::addAction(Action* action) { actions_.insert(action); }
 
@@ -51,13 +55,11 @@ std::unique_ptr<ComputedCondition> EventLoop::createComputedCondition() {
   return std::make_unique<ComputedCondition>(*this);
 }
 
-void EventLoop::run() {
-  // This is needed to force IOConditionManager to initialize and attach its
-  // preparer, even in the case that the program doesn't actually use IO.
-  // Otherwise we have no blocking operation on the event loop, and the CPU
-  // usage is going to skyrocket.
-  static Condition* dummy = IOConditionManager::canRead(0);
+IOConditionManager& EventLoop::getIOConditionManager() {
+  return *ioConditionManager_.get();
+}
 
+void EventLoop::run() {
   try {
     while (true) {
       runOnce();

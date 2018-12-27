@@ -21,26 +21,22 @@ const int kReadPollMask = POLLIN | POLLPRI | POLLHUP;
 
 const int kWritePollMask = POLLOUT;
 
-IOConditionManager::IOConditionManager() : conditions_() {
-  EventLoop::getCurrentLoop().addConditionManager(this, ConditionType::IO);
+IOConditionManager::IOConditionManager(EventLoop& loop)
+    : loop_(loop), conditions_() {
+  loop.addConditionManager(this, ConditionType::IO);
 }
 
-/* static */ IOConditionManager& IOConditionManager::getInstance() {
-  static IOConditionManager instance;
-  return instance;
+IOCondition* IOConditionManager::canRead(int fd) {
+  return canDo(fd, IOType::Read);
 }
 
-/* static */ IOCondition* IOConditionManager::canRead(int fd) {
-  return getInstance().canDo(fd, IOType::Read);
+IOCondition* IOConditionManager::canWrite(int fd) {
+  return canDo(fd, IOType::Write);
 }
 
-/* static */ IOCondition* IOConditionManager::canWrite(int fd) {
-  return getInstance().canDo(fd, IOType::Write);
-}
-
-/* static */ void IOConditionManager::close(int fd) {
-  getInstance().removeCondition(fd, IOType::Read);
-  getInstance().removeCondition(fd, IOType::Write);
+void IOConditionManager::close(int fd) {
+  removeCondition(fd, IOType::Read);
+  removeCondition(fd, IOType::Write);
 }
 
 void IOConditionManager::prepareConditions(
@@ -96,8 +92,7 @@ IOCondition* IOConditionManager::canDo(int fd, IOType type) {
     return existing->second.get();
   }
 
-  IOCondition* condition =
-      new IOCondition(event::EventLoop::getCurrentLoop(), fd, type);
+  IOCondition* condition = new IOCondition(loop_, fd, type);
   conditions_[std::make_pair(type, fd)].reset(condition);
   return condition;
 }

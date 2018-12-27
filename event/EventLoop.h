@@ -34,6 +34,8 @@ public:
   virtual void prepare() = 0;
 };
 
+class IOConditionManager;
+
 class EventLoop {
 public:
   void run();
@@ -52,10 +54,13 @@ public:
   createBaseCondition(ConditionType type = ConditionType::Internal);
   std::unique_ptr<ComputedCondition> createComputedCondition();
 
+  IOConditionManager& getIOConditionManager();
+
   static EventLoop& getCurrentLoop();
 
 private:
   EventLoop();
+  ~EventLoop();
 
   EventLoop(EventLoop const& copy) = delete;
   EventLoop& operator=(EventLoop const& copy) = delete;
@@ -67,5 +72,7 @@ private:
   std::set<Condition*> conditions_;
   std::vector<std::pair<ConditionType, ConditionManager*>> conditionManagers_;
   std::vector<EventLoopPreparer*> preparers_;
+
+  std::unique_ptr<IOConditionManager> ioConditionManager_;
 };
 } // namespace event

@@ -24,26 +24,26 @@ public:
 
 class IOConditionManager : ConditionManager {
 public:
-  static IOCondition* canRead(int fd);
-  static IOCondition* canWrite(int fd);
-  static void close(int fd);
+  IOConditionManager(EventLoop& loop);
+
+  IOCondition* canRead(int fd);
+  IOCondition* canWrite(int fd);
+  void close(int fd);
 
   virtual void
   prepareConditions(std::vector<Condition*> const& conditions,
                     std::vector<Condition*> const& interesting) override;
 
 private:
-  IOConditionManager();
-
   IOConditionManager(IOConditionManager const& copy) = delete;
   IOConditionManager& operator=(IOConditionManager const& copy) = delete;
 
   IOConditionManager(IOConditionManager const&& move) = delete;
   IOConditionManager& operator=(IOConditionManager const&& move) = delete;
 
-  std::map<std::pair<IOType, int>, std::unique_ptr<IOCondition>> conditions_;
+  EventLoop& loop_;
 
-  static IOConditionManager& getInstance();
+  std::map<std::pair<IOType, int>, std::unique_ptr<IOCondition>> conditions_;
 
   IOCondition* canDo(int fd, IOType type);
   void removeCondition(int fd, IOType type);

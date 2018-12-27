@@ -61,7 +61,7 @@ private:
 };
 
 Server::Server(event::EventLoop& loop, ServerConfig config) : loop_(loop) {
-  socket_.reset(new networking::TCPServer(networking::NetworkType::IPv4));
+  socket_.reset(new networking::TCPServer(loop, networking::NetworkType::IPv4));
   socket_->bind(config.port);
 
   acceptor_ = loop.createAction({socket_->canAccept()});

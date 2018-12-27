@@ -11,24 +11,24 @@ namespace networking {
 
 static const event::Duration kIOSTunnelReceiveInterval = 1000ms;
 
-Tunnel::Tunnel() {
+Tunnel::Tunnel(event::EventLoop& loop) : loop_(loop) {
   notImplemented("Default construction of Tunnel is not supported on iOS.");
 }
 
 Tunnel::Tunnel(event::EventLoop& loop, Sender sender, Receiver receiver)
-    : loop_(&loop), sender_(sender), receiver_(receiver),
+    : loop_(loop), sender_(sender), receiver_(receiver),
       pendingPackets_(new event::FIFO<TunnelPacket>(
           loop, kIOSTunnelPendingPacketQueueSize)) {
-  canRead_ = loop_->createComputedCondition();
+  canRead_ = loop_.createComputedCondition();
   canRead_->expression.setMethod<Tunnel, &Tunnel::calculateCanRead>(this);
 
-  canWrite_ = loop_->createComputedCondition();
+  canWrite_ = loop_.createComputedCondition();
   canWrite_->expression.setMethod<Tunnel, &Tunnel::calculateCanWrite>(this);
 
-  canReceive_ = loop_->createComputedCondition();
+  canReceive_ = loop_.createComputedCondition();
   canReceive_->expression.setMethod<Tunnel, &Tunnel::calculateCanReceive>(this);
 
-  receiveAction_ = loop.createAction({canReceive_.get()});
+  receiveAction_ = loop_.createAction({canReceive_.get()});
   receiveAction_->callback.setMethod<Tunnel, &Tunnel::doReceive>(this);
 }
 

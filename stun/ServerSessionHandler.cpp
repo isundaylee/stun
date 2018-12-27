@@ -215,7 +215,7 @@ void ServerSessionHandler::attachHandlers() {
     config_.addrAcquired = true;
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
-    auto tunnel = std::make_unique<Tunnel>();
+    auto tunnel = std::make_unique<Tunnel>(loop_);
     InterfaceConfig::newLink(tunnel->deviceName, config_.mtu);
     InterfaceConfig::setLinkAddress(tunnel->deviceName, config_.myTunnelAddr,
                                     config_.peerTunnelAddr);
@@ -253,7 +253,7 @@ void ServerSessionHandler::doRotateDataPipe() {
 }
 
 json ServerSessionHandler::createDataPipe() {
-  UDPSocket udpPipe{networking::NetworkType::IPv4};
+  UDPSocket udpPipe{loop_, networking::NetworkType::IPv4};
   int port = udpPipe.bind(0);
 
   LOG_V("Session") << "Creating a new data pipe." << std::endl;

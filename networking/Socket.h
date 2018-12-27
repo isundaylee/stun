@@ -20,9 +20,9 @@ enum SocketType { TCP, UDP };
 
 class Socket {
 public:
-  Socket(NetworkType networkType, SocketType type);
-  Socket(NetworkType networkType, SocketType type, int fd,
-         SocketAddress peerAddr);
+  Socket(event::EventLoop& loop, NetworkType networkType, SocketType type);
+  Socket(event::EventLoop& loop, NetworkType networkType, SocketType type,
+         int fd, SocketAddress peerAddr);
 
   Socket(Socket&& move) = default;
   Socket& operator=(Socket&& move) = default;
@@ -37,6 +37,8 @@ public:
   event::Condition* canWrite() const;
 
 protected:
+  event::EventLoop& loop_;
+
   NetworkType networkType_;
   SocketType type_;
   common::FileDescriptor fd_;

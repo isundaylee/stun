@@ -14,7 +14,8 @@ public:
 
 class UDPSocket : public Socket {
 public:
-  UDPSocket(NetworkType networkType) : Socket(networkType, UDP) {}
+  UDPSocket(event::EventLoop& loop, NetworkType networkType)
+      : Socket(loop, networkType, UDP) {}
 
   void write(UDPPacket packet);
   bool read(UDPPacket& packet);

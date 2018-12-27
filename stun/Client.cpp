@@ -60,7 +60,7 @@ Client::~Client() = default;
 }
 
 std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
-  auto tunnel = std::make_unique<Tunnel>();
+  auto tunnel = std::make_unique<Tunnel>(loop_);
 
   // Configure the new interface
   InterfaceConfig::newLink(tunnel->deviceName, config.mtu);
@@ -154,7 +154,7 @@ void Client::connect() {
       SubnetAddress{config_.serverAddr.getHost(), 32});
 #endif
 
-  auto socket = TCPSocket{config_.serverAddr.type};
+  auto socket = TCPSocket{loop_, config_.serverAddr.type};
   socket.connect(config_.serverAddr);
 
   handler_.reset(new ClientSessionHandler(
