@@ -5,22 +5,17 @@
 namespace event {
 
 Action::Action(EventLoop& loop, std::vector<Condition*> conditions)
-    : conditions_(conditions) {
+    : loop_(loop), conditions_(conditions) {
   loop.addAction(this);
 }
 
-Action::Action(std::vector<Condition*> conditions) : conditions_(conditions) {
-  EventLoop::getCurrentLoop().addAction(this);
-}
-
-Action::~Action() { EventLoop::getCurrentLoop().removeAction(this); }
+Action::~Action() { loop_.removeAction(this); }
 
 void Action::invoke() { callback.invoke(); }
 
 bool Action::canInvoke() const {
   for (auto condition : conditions_) {
-    if (!EventLoop::getCurrentLoop().hasCondition(condition) ||
-        !condition->eval()) {
+    if (!loop_.hasCondition(condition) || !condition->eval()) {
       return false;
     }
   }
@@ -30,7 +25,7 @@ bool Action::canInvoke() const {
 
 bool Action::isDead() const {
   for (auto condition : conditions_) {
-    if (!EventLoop::getCurrentLoop().hasCondition(condition)) {
+    if (!loop_.hasCondition(condition)) {
       return true;
     }
   }

@@ -12,7 +12,7 @@ namespace event {
 class Action {
 public:
   Action(EventLoop& loop, std::vector<Condition*> conditions);
-  Action(std::vector<Condition*> conditions);
+
   ~Action();
 
   friend class EventLoop;
@@ -29,6 +29,8 @@ private:
 
   Action(Action const&& move) = delete;
   Action& operator=(Action const&& move) = delete;
+
+  event::EventLoop& loop_;
 
   std::vector<Condition*> conditions_;
 };
