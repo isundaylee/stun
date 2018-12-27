@@ -118,7 +118,7 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
                                      config.dnsPushes);
       LOG_I("Client") << "Applied DNS server settings." << std::endl;
 
-      cleanerDidFinish_ = std::make_unique<event::BaseCondition>();
+      cleanerDidFinish_ = loop_.createBaseCondition();
       cleaner_ = loop_.createAction(
           {event::SignalConditionManager::onSigInt(cleanerDidFinish_.get())});
 

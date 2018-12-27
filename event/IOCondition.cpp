@@ -96,7 +96,8 @@ IOCondition* IOConditionManager::canDo(int fd, IOType type) {
     return existing->second.get();
   }
 
-  IOCondition* condition = new IOCondition(fd, type);
+  IOCondition* condition =
+      new IOCondition(event::EventLoop::getCurrentLoop(), fd, type);
   conditions_[std::make_pair(type, fd)].reset(condition);
   return condition;
 }

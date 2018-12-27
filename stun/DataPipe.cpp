@@ -20,11 +20,11 @@ DataPipe::DataPipe(event::EventLoop& loop,
                    std::unique_ptr<networking::UDPSocket> socket,
                    std::string const& aesKey, size_t minPaddingTo,
                    bool compression, event::Duration ttl)
-    : inboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
-      outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)), loop_(loop),
-      socket_(std::move(socket)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
-      didClose_(new event::BaseCondition()),
-      isPrimed_(new event::BaseCondition()) {
+    : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
+      outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
+      loop_(loop), socket_(std::move(socket)), aesKey_(aesKey),
+      minPaddingTo_(minPaddingTo), didClose_(loop.createBaseCondition()),
+      isPrimed_(loop.createBaseCondition()) {
   // Sets up TTL killer
   if (ttl != 0s) {
     ttlTimer_.reset(new event::Timer(ttl));

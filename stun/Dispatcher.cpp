@@ -9,8 +9,8 @@ using networking::TunnelClosedException;
 Dispatcher::Dispatcher(event::EventLoop& loop,
                        std::unique_ptr<networking::Tunnel> tunnel)
     : loop_(loop), tunnel_(std::move(tunnel)),
-      canSend_(new event::ComputedCondition()),
-      canReceive_(new event::ComputedCondition()),
+      canSend_(loop.createComputedCondition()),
+      canReceive_(loop.createComputedCondition()),
       statTxBytes_("Connection", "tx_bytes"),
       statRxBytes_("Connection", "rx_bytes"),
       statEfficiency_("Connection", "efficiency") {

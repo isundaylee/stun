@@ -8,7 +8,8 @@ namespace event {
 
 template <typename T> class Promise {
 public:
-  Promise() : isReady_(new BaseCondition()) {}
+  Promise()
+      : isReady_(event::EventLoop::getCurrentLoop().createBaseCondition()) {}
 
   Promise(Promise&& move) = default;
   Promise& operator=(Promise&& move) = default;

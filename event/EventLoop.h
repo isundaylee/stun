@@ -1,8 +1,8 @@
 #pragma once
 
+#include <memory>
 #include <set>
 #include <vector>
-#include <memory>
 
 namespace event {
 
@@ -19,6 +19,8 @@ enum class ConditionType {
 
 class Action;
 class Condition;
+class BaseCondition;
+class ComputedCondition;
 
 class ConditionManager {
 public:
@@ -45,7 +47,11 @@ public:
   void addPreparer(EventLoopPreparer* preparer);
 
   std::unique_ptr<Action> createAction(std::vector<Condition*> conditions);
-  
+
+  std::unique_ptr<BaseCondition>
+  createBaseCondition(ConditionType type = ConditionType::Internal);
+  std::unique_ptr<ComputedCondition> createComputedCondition();
+
   static EventLoop& getCurrentLoop();
 
 private:

@@ -9,9 +9,9 @@ namespace event {
 
 template <typename T> class FIFO {
 public:
-  FIFO(std::size_t capacity)
-      : capacity_(capacity), queue_(), canPush_(new BaseCondition()),
-        canPop_(new BaseCondition()) {
+  FIFO(EventLoop& loop, std::size_t capacity)
+      : capacity_(capacity), queue_(), canPush_(loop.createBaseCondition()),
+        canPop_(loop.createBaseCondition()) {
     updateConditions();
   }
 

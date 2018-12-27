@@ -42,6 +42,15 @@ EventLoop::createAction(std::vector<Condition*> conditions) {
   return std::make_unique<Action>(*this, conditions);
 }
 
+std::unique_ptr<BaseCondition> EventLoop::createBaseCondition(
+    ConditionType type /* = ConditionType::Internal */) {
+  return std::make_unique<BaseCondition>(*this, type);
+}
+
+std::unique_ptr<ComputedCondition> EventLoop::createComputedCondition() {
+  return std::make_unique<ComputedCondition>(*this);
+}
+
 void EventLoop::run() {
   // This is needed to force IOConditionManager to initialize and attach its
   // preparer, even in the case that the program doesn't actually use IO.

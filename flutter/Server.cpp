@@ -17,7 +17,7 @@ class Server::Session {
 public:
   Session(event::EventLoop& loop, std::unique_ptr<networking::TCPSocket> client)
       : messenger_(new networking::Messenger(loop, std::move(client))),
-        didEnd_(new event::BaseCondition()) {
+        didEnd_(loop.createBaseCondition()) {
     event::Trigger::arm({messenger_->didDisconnect()},
                         [this]() { didEnd_->fire(); });
   }

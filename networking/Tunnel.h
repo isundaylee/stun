@@ -71,8 +71,7 @@ private:
   Receiver receiver_;
 
   std::unique_ptr<event::Action> receiveAction_;
-  std::unique_ptr<event::FIFO<TunnelPacket>> pendingPackets_{
-      new event::FIFO<TunnelPacket>(kIOSTunnelPendingPacketQueueSize)};
+  std::unique_ptr<event::FIFO<TunnelPacket>> pendingPackets_;
   std::shared_ptr<PacketsPromise> packetsPromise_;
 
   void doReceive();

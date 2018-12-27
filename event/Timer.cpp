@@ -157,10 +157,12 @@ void TimerManager::updateTimer(Time now) {
   currentTarget_.reset(new Time(now + timeout));
 }
 
-Timer::Timer() : didFire_(new BaseCondition()) {}
+Timer::Timer()
+    : didFire_(event::EventLoop::getCurrentLoop().createBaseCondition()) {}
 
 Timer::Timer(Duration timeout)
-    : didFire_(new BaseCondition(ConditionType::TimerSignal)) {
+    : didFire_(event::EventLoop::getCurrentLoop().createBaseCondition(
+          ConditionType::TimerSignal)) {
   reset(timeout);
 }
 

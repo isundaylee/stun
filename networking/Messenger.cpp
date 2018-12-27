@@ -188,11 +188,10 @@ private:
 };
 
 Messenger::Messenger(event::EventLoop& loop, std::unique_ptr<TCPSocket> socket)
-    : loop_(loop),
-      outboundQ(new event::FIFO<Message>(kMessengerOutboundQueueSize)),
-      transporter_(new Transporter(this, std::move(socket))),
+    : outboundQ(new event::FIFO<Message>(loop, kMessengerOutboundQueueSize)),
+      loop_(loop), transporter_(new Transporter(this, std::move(socket))),
       heartbeater_(new Heartbeater(this)),
-      didDisconnect_(new event::BaseCondition()) {}
+      didDisconnect_(loop.createBaseCondition()) {}
 
 Messenger::~Messenger() {}
 

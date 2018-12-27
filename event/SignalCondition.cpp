@@ -32,7 +32,8 @@ SignalConditionManager::SignalConditionManager() {
 }
 
 SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
-  SignalCondition* condition = new SignalCondition(SignalType::Int);
+  SignalCondition* condition =
+      new SignalCondition(event::EventLoop::getCurrentLoop(), SignalType::Int);
   SignalConditionManager::getInstance().conditions_.push_back(condition);
   SignalConditionManager::getInstance().sigIntPendingConditions_.push_back(
       pendingCondition);

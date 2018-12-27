@@ -4,8 +4,8 @@
 #include <event/Condition.h>
 
 #include <memory>
-#include <vector>
 #include <stdexcept>
+#include <vector>
 
 namespace event {
 
@@ -15,8 +15,8 @@ enum SignalType {
 
 class SignalCondition : public BaseCondition {
 public:
-  SignalCondition(SignalType type)
-      : BaseCondition(ConditionType::Signal), type(type) {}
+  SignalCondition(EventLoop& loop, SignalType type)
+      : BaseCondition(loop, ConditionType::Signal), type(type) {}
 
   SignalType type;
 };

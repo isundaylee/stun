@@ -15,8 +15,8 @@ enum IOType {
 
 class IOCondition : public BaseCondition {
 public:
-  IOCondition(int fd, IOType type)
-      : BaseCondition(ConditionType::IO), fd(fd), type(type) {}
+  IOCondition(event::EventLoop& loop, int fd, IOType type)
+      : BaseCondition(loop, ConditionType::IO), fd(fd), type(type) {}
 
   int fd;
   IOType type;

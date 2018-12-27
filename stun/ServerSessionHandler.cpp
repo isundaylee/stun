@@ -113,7 +113,7 @@ ServerSessionHandler::ServerSessionHandler(
     std::unique_ptr<TCPSocket> commandPipe)
     : loop_(loop), server_(server), config_(config),
       messenger_(new Messenger(loop, std::move(commandPipe))),
-      didEnd_(new event::BaseCondition()) {
+      didEnd_(loop.createBaseCondition()) {
   if (!config_.secret.empty()) {
     messenger_->addEncryptor(
         std::make_unique<crypto::AESEncryptor>(crypto::AESKey(config_.secret)));

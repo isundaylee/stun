@@ -16,14 +16,16 @@ Tunnel::Tunnel() {
 }
 
 Tunnel::Tunnel(event::EventLoop& loop, Sender sender, Receiver receiver)
-    : loop_(&loop), sender_(sender), receiver_(receiver) {
-  canRead_.reset(new event::ComputedCondition{});
+    : loop_(&loop), sender_(sender), receiver_(receiver),
+      pendingPackets_(new event::FIFO<TunnelPacket>(
+          loop, kIOSTunnelPendingPacketQueueSize)) {
+  canRead_ = loop_->createComputedCondition();
   canRead_->expression.setMethod<Tunnel, &Tunnel::calculateCanRead>(this);
 
-  canWrite_.reset(new event::ComputedCondition{});
+  canWrite_ = loop_->createComputedCondition();
   canWrite_->expression.setMethod<Tunnel, &Tunnel::calculateCanWrite>(this);
 
-  canReceive_.reset(new event::ComputedCondition{});
+  canReceive_ = loop_->createComputedCondition();
   canReceive_->expression.setMethod<Tunnel, &Tunnel::calculateCanReceive>(this);
 
   receiveAction_ = loop.createAction({canReceive_.get()});
