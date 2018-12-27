@@ -234,6 +234,7 @@ static const size_t kDefaultMTU = 1400;
                    };
 
                    tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
+                       event::EventLoop::getCurrentLoop(),
                        tunnelSender, tunnelReceiver));
                    completionHandler(nil);
                  }];
@@ -241,7 +242,8 @@ static const size_t kDefaultMTU = 1400;
       return tunnelPromise;
     };
 
-    client.reset(new stun::Client(clientConfig, tunnelFactory));
+    client.reset(new stun::Client(event::EventLoop::getCurrentLoop(),
+                                  clientConfig, tunnelFactory));
   } catch (std::exception const &ex) {
     LOG_I("Loop") << "Uncaught exception while starting the tunnel: "
                   << ex.what() << std::endl;

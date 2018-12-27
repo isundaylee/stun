@@ -15,8 +15,8 @@ Tunnel::Tunnel() {
   notImplemented("Default construction of Tunnel is not supported on iOS.");
 }
 
-Tunnel::Tunnel(Sender sender, Receiver receiver)
-    : sender_(sender), receiver_(receiver) {
+Tunnel::Tunnel(event::EventLoop& loop, Sender sender, Receiver receiver)
+    : loop_(&loop), sender_(sender), receiver_(receiver) {
   canRead_.reset(new event::ComputedCondition{});
   canRead_->expression.setMethod<Tunnel, &Tunnel::calculateCanRead>(this);
 
@@ -26,13 +26,14 @@ Tunnel::Tunnel(Sender sender, Receiver receiver)
   canReceive_.reset(new event::ComputedCondition{});
   canReceive_->expression.setMethod<Tunnel, &Tunnel::calculateCanReceive>(this);
 
-  receiveAction_.reset(new event::Action({canReceive_.get()}));
+  receiveAction_ = loop.createAction({canReceive_.get()});
   receiveAction_->callback.setMethod<Tunnel, &Tunnel::doReceive>(this);
 }
 
 Tunnel::Tunnel(Tunnel&& move)
-    : deviceName(std::move(move.deviceName)), fd_(std::move(move.fd_)),
-      canRead_(std::move(move.canRead_)), canWrite_(std::move(move.canWrite_)),
+    : deviceName(std::move(move.deviceName)), loop_(move.loop_),
+      fd_(std::move(move.fd_)), canRead_(std::move(move.canRead_)),
+      canWrite_(std::move(move.canWrite_)),
       canReceive_(std::move(move.canReceive_)),
       sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)),
       receiveAction_(std::move(move.receiveAction_)),

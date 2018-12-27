@@ -38,7 +38,7 @@ public:
   using PacketsPromise = event::Promise<std::vector<TunnelPacket>>;
   using Receiver = std::function<std::shared_ptr<PacketsPromise>()>;
 
-  Tunnel(Sender sender, Receiver receiver);
+  Tunnel(event::EventLoop& loop, Sender sender, Receiver receiver);
   Tunnel(Tunnel&& move);
 #endif
 
@@ -61,6 +61,8 @@ private:
   common::FileDescriptor fd_;
 
 #if TARGET_IOS
+  event::EventLoop* loop_;
+
   std::unique_ptr<event::ComputedCondition> canRead_;
   std::unique_ptr<event::ComputedCondition> canWrite_;
   std::unique_ptr<event::ComputedCondition> canReceive_;
