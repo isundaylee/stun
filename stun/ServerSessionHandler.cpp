@@ -30,8 +30,8 @@ public:
                "QuotaReporter running on a unlimited session.");
 
     timer_.reset(new event::Timer(0s));
-    reporter_.reset(new event::Action(
-        {timer_->didFire(), session->messenger_->outboundQ->canPush()}));
+    reporter_ = session_->loop_.createAction(
+        {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     reporter_->callback.setMethod<QuotaReporter, &QuotaReporter::doReport>(
         this);
   }
@@ -75,8 +75,8 @@ public:
                "QuotaPolice running on an unlimited session.");
 
     timer_.reset(new event::Timer(0s));
-    police_.reset(new event::Action(
-        {timer_->didFire(), session->messenger_->outboundQ->canPush()}));
+    police_ = session_->loop_.createAction(
+        {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     police_->callback.setMethod<QuotaPolice, &QuotaPolice::doPolice>(this);
   }
 
@@ -226,9 +226,8 @@ void ServerSessionHandler::attachHandlers() {
     if (config_.dataPipeRotationInterval != 0s) {
       dataPipeRotationTimer_.reset(
           new event::Timer(config_.dataPipeRotationInterval));
-      dataPipeRotator_.reset(
-          new event::Action({dataPipeRotationTimer_->didFire(),
-                             messenger_->outboundQ->canPush()}));
+      dataPipeRotator_ = loop_.createAction({dataPipeRotationTimer_->didFire(),
+                                             messenger_->outboundQ->canPush()});
       dataPipeRotator_->callback.setMethod<
           ServerSessionHandler, &ServerSessionHandler::doRotateDataPipe>(this);
     }
