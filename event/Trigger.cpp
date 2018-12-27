@@ -11,7 +11,7 @@ Trigger::Trigger() { EventLoop::getCurrentLoop().addPreparer(this); }
 /* static */ void Trigger::arm(std::vector<event::Condition*> conditions,
                                std::function<void(void)> callback) {
   auto& instance = Trigger::getInstance();
-  auto action = std::make_unique<Action>(conditions);
+  auto action = event::EventLoop::getCurrentLoop().createAction(conditions);
   auto actionPtr = action.get();
 
   action->callback = [callback, actionPtr, &instance]() {
