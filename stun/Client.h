@@ -17,8 +17,6 @@ public:
   ~Client();
 
 private:
-  ClientConfig config_;
-
   void connect();
 
 private:
@@ -30,6 +28,8 @@ private:
 
   event::EventLoop& loop_;
 
+  ClientConfig config_;
+  
   ClientSessionHandler::TunnelFactory tunnelFactory_;
 
   std::unique_ptr<ClientSessionHandler> handler_;
