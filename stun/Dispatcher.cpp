@@ -6,8 +6,10 @@ namespace stun {
 
 using networking::TunnelClosedException;
 
-Dispatcher::Dispatcher(std::unique_ptr<networking::Tunnel> tunnel)
-    : tunnel_(std::move(tunnel)), canSend_(new event::ComputedCondition()),
+Dispatcher::Dispatcher(event::EventLoop& loop,
+                       std::unique_ptr<networking::Tunnel> tunnel)
+    : loop_(loop), tunnel_(std::move(tunnel)),
+      canSend_(new event::ComputedCondition()),
       canReceive_(new event::ComputedCondition()),
       statTxBytes_("Connection", "tx_bytes"),
       statRxBytes_("Connection", "rx_bytes"),
@@ -17,10 +19,10 @@ Dispatcher::Dispatcher(std::unique_ptr<networking::Tunnel> tunnel)
   canReceive_->expression
       .setMethod<Dispatcher, &Dispatcher::calculateCanReceive>(this);
 
-  sender_.reset(new event::Action({tunnel_->canRead(), canSend_.get()}));
+  sender_ = loop.createAction({tunnel_->canRead(), canSend_.get()});
   sender_->callback.setMethod<Dispatcher, &Dispatcher::doSend>(this);
 
-  receiver_.reset(new event::Action({canReceive_.get(), tunnel_->canWrite()}));
+  receiver_ = loop.createAction({canReceive_.get(), tunnel_->canWrite()});
   receiver_->callback.setMethod<Dispatcher, &Dispatcher::doReceive>(this);
 }
 

@@ -84,7 +84,7 @@ void ClientSessionHandler::attachHandlers() {
         {tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
         [this, tunnelPromise]() {
           LOG_I("Session") << "Tunnel established." << std::endl;
-          dispatcher_.reset(new Dispatcher(tunnelPromise->consume()));
+          dispatcher_.reset(new Dispatcher(loop_, tunnelPromise->consume()));
 
           // TODO: Set up DNS servers
 

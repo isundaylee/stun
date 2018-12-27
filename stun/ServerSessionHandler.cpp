@@ -220,7 +220,7 @@ void ServerSessionHandler::attachHandlers() {
     InterfaceConfig::setLinkAddress(tunnel->deviceName, config_.myTunnelAddr,
                                     config_.peerTunnelAddr);
 
-    dispatcher_.reset(new Dispatcher(std::move(tunnel)));
+    dispatcher_.reset(new Dispatcher(loop_, std::move(tunnel)));
 
     // Set up data pipe rotation if it is configured in the server config.
     if (config_.dataPipeRotationInterval != 0s) {
