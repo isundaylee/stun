@@ -4,6 +4,8 @@
 #import "event/Trigger.h"
 #import "stun/Client.h"
 
+static event::EventLoop loop;
+
 @interface PacketTunnelProvider ()
 
 @property BOOL stopped;
@@ -51,7 +53,7 @@ using namespace std::chrono_literals;
       }
 
       @autoreleasepool {
-        event::EventLoop::getCurrentLoop().runOnce();
+        loop.runOnce();
       }
     }
   } catch (std::exception const &ex) {
@@ -119,8 +121,7 @@ static const size_t kDefaultMTU = 1400;
         ^std::shared_ptr<event::Promise<std::unique_ptr<networking::Tunnel>>>(
             stun::ClientTunnelConfig config) {
       auto tunnelPromise = std::make_shared<
-          event::Promise<std::unique_ptr<networking::Tunnel>>>(
-            event::EventLoop::getCurrentLoop());
+          event::Promise<std::unique_ptr<networking::Tunnel>>>(loop);
 
       // Setting up basic settings
       NEPacketTunnelNetworkSettings *settings =
@@ -169,8 +170,7 @@ static const size_t kDefaultMTU = 1400;
                    auto tunnelReceiver = ^std::shared_ptr<event::Promise<
                        std::vector<networking::TunnelPacket>>>() {
                      auto packetsPromise = std::make_shared<event::Promise<
-                         std::vector<networking::TunnelPacket>>>(
-                           event::EventLoop::getCurrentLoop());
+                         std::vector<networking::TunnelPacket>>>(loop);
 
                      if (weakSelf == nil) {
                        NSLog(@"Trying to receive packets when "
@@ -186,9 +186,7 @@ static const size_t kDefaultMTU = 1400;
                              NSArray<NSNumber *> *_Nonnull protocols) {
                            // Stun is not yet thread-safe. We need to post this
                            // block back to the stun event loop thread.
-                           event::EventLoop::getCurrentLoop().arm({}, [
-                             packets, protocols, packetsPromise
-                           ]() {
+                           loop.arm({}, [packets, protocols, packetsPromise]() {
                              auto tunnelPackets =
                                  std::vector<networking::TunnelPacket>{};
 
@@ -236,16 +234,14 @@ static const size_t kDefaultMTU = 1400;
                    };
 
                    tunnelPromise->fulfill(std::make_unique<networking::Tunnel>(
-                       event::EventLoop::getCurrentLoop(),
-                       tunnelSender, tunnelReceiver));
+                       loop, tunnelSender, tunnelReceiver));
                    completionHandler(nil);
                  }];
 
       return tunnelPromise;
     };
 
-    client.reset(new stun::Client(event::EventLoop::getCurrentLoop(),
-                                  clientConfig, tunnelFactory));
+    client.reset(new stun::Client(loop, clientConfig, tunnelFactory));
   } catch (std::exception const &ex) {
     LOG_I("Loop") << "Uncaught exception while starting the tunnel: "
                   << ex.what() << std::endl;

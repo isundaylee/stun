@@ -206,8 +206,4 @@ void EventLoop::runOnce() {
   }
 }
 
-/* static */ EventLoop& EventLoop::getCurrentLoop() {
-  static EventLoop instance;
-  return instance;
-}
 } // namespace event

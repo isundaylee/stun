@@ -48,6 +48,9 @@ class Trigger;
 
 class EventLoop {
 public:
+  EventLoop();
+  ~EventLoop();
+
   void run();
   void runOnce();
   void addAction(Action* action);
@@ -77,12 +80,7 @@ public:
 
   void performIn(event::Duration delay, std::function<void(void)> callback);
 
-  static EventLoop& getCurrentLoop();
-
 private:
-  EventLoop();
-  ~EventLoop();
-
   EventLoop(EventLoop const& copy) = delete;
   EventLoop& operator=(EventLoop const& copy) = delete;
 

@@ -185,8 +185,6 @@ auto parseStaticHosts() {
   return result;
 }
 
-std::unique_ptr<stun::Server> server;
-
 std::map<std::string, size_t> parseQuotaTable() {
   auto raw =
       common::Configerator::get<std::map<std::string, size_t>>("quotas", {});
@@ -196,7 +194,7 @@ std::map<std::string, size_t> parseQuotaTable() {
   return raw;
 }
 
-void setupServer() {
+std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop) {
   auto config = ServerConfig{
       kServerPort,
       networking::SubnetAddress{
@@ -216,13 +214,10 @@ void setupServer() {
           "dns_pushes", {}),
   };
 
-  server = std::make_unique<stun::Server>(event::EventLoop::getCurrentLoop(),
-                                          config);
+  return std::make_unique<stun::Server>(loop, config);
 }
 
-std::unique_ptr<stun::Client> client;
-
-void setupClient() {
+std::unique_ptr<stun::Client> setupClient(event::EventLoop& loop) {
   auto config = ClientConfig{
       SocketAddress(common::Configerator::getString("server"), kServerPort),
       common::Configerator::get<bool>("encryption", true),
@@ -237,20 +232,18 @@ void setupClient() {
       parseSubnets("forward_subnets"),
       parseSubnets("excluded_subnets")};
 
-  client.reset(new stun::Client(event::EventLoop::getCurrentLoop(), config));
+  return std::make_unique<stun::Client>(loop, config);
 }
 
-std::unique_ptr<flutter::Server> flutterServer;
-void setupFlutterServer() {
+std::unique_ptr<flutter::Server> setupFlutterServer(event::EventLoop& loop) {
   if (options.count("flutter") == 0) {
-    return;
+    return nullptr;
   }
 
   auto port = options["flutter"].as<int>();
   auto flutterServerConfig = flutter::ServerConfig{port};
 
-  flutterServer.reset(new flutter::Server(event::EventLoop::getCurrentLoop(),
-                                          flutterServerConfig));
+  return std::make_unique<flutter::Server>(loop, flutterServerConfig);
 }
 
 std::string generateNotebookPath(std::string const& configPath) {
@@ -263,6 +256,8 @@ std::string generateNotebookPath(std::string const& configPath) {
 }
 
 int main(int argc, char* argv[]) {
+  event::EventLoop loop;
+
   LOG_I("Main") << "Running version " << kVersion << std::endl;
 
   setupAndParseOptions(argc, argv);
@@ -284,9 +279,8 @@ int main(int argc, char* argv[]) {
   // Sets up stats collection
   event::Duration statsDumpInerval =
       std::chrono::milliseconds(options["stats"].as<int>());
-  statsTimer = event::EventLoop::getCurrentLoop().createTimer(statsDumpInerval);
-  statsDumper =
-      event::EventLoop::getCurrentLoop().createAction({statsTimer->didFire()});
+  statsTimer = loop.createTimer(statsDumpInerval);
+  statsDumper = loop.createAction({statsTimer->didFire()});
   statsDumper->callback = [&statsTimer, statsDumpInerval]() {
     stats::StatsManager::collect();
     statsTimer->extend(statsDumpInerval);
@@ -296,19 +290,22 @@ int main(int argc, char* argv[]) {
     stats::StatsManager::dump(LOG_V("Stats"), data);
   });
 
-  setupFlutterServer();
+  auto flutterServer = setupFlutterServer(loop);
 
   std::string role = common::Configerator::getString("role");
 
   LOG_I("Main") << "Running as " << role << std::endl;
 
+  std::unique_ptr<stun::Server> server;
+  std::unique_ptr<stun::Client> client;
+
   if (role == "server") {
-    setupServer();
+    server = setupServer(loop);
   } else {
-    setupClient();
+    client = setupClient(loop);
   }
 
-  event::EventLoop::getCurrentLoop().run();
+  loop.run();
 
   return 0;
 }
