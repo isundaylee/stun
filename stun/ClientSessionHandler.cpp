@@ -103,7 +103,7 @@ void ClientSessionHandler::attachHandlers() {
     udpPipe.connect(socketAddress);
 
     DataPipe* dataPipe = new DataPipe(
-        std::make_unique<UDPSocket>(std::move(udpPipe)), body["aes_key"],
+        loop_, std::make_unique<UDPSocket>(std::move(udpPipe)), body["aes_key"],
         body["padding_to_size"], body["compression"], 0s);
     dataPipe->setPrePrimed();
 

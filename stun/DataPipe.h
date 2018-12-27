@@ -29,8 +29,9 @@ public:
 
 class DataPipe {
 public:
-  DataPipe(std::unique_ptr<UDPSocket> socket, std::string const& aesKey,
-           size_t minPaddingTo, bool compression, event::Duration ttl);
+  DataPipe(event::EventLoop& loop, std::unique_ptr<UDPSocket> socket,
+           std::string const& aesKey, size_t minPaddingTo, bool compression,
+           event::Duration ttl);
 
   DataPipe(DataPipe&& move);
 
@@ -46,6 +47,8 @@ public:
 private:
   DataPipe(DataPipe const& copy) = delete;
   DataPipe& operator=(DataPipe const& copy) = delete;
+
+  event::EventLoop& loop_;
 
   // Settings & states
   std::unique_ptr<networking::UDPSocket> socket_;

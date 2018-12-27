@@ -16,18 +16,19 @@ static const size_t kDataPipeFIFOSize = 16;
 static const size_t kDataPipeFIFOSize = 256;
 #endif
 
-DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
+DataPipe::DataPipe(event::EventLoop& loop,
+                   std::unique_ptr<networking::UDPSocket> socket,
                    std::string const& aesKey, size_t minPaddingTo,
                    bool compression, event::Duration ttl)
     : inboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
-      outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)),
+      outboundQ(new event::FIFO<DataPacket>(kDataPipeFIFOSize)), loop_(loop),
       socket_(std::move(socket)), aesKey_(aesKey), minPaddingTo_(minPaddingTo),
       didClose_(new event::BaseCondition()),
       isPrimed_(new event::BaseCondition()) {
   // Sets up TTL killer
   if (ttl != 0s) {
     ttlTimer_.reset(new event::Timer(ttl));
-    ttlKiller_.reset(new event::Action({ttlTimer_->didFire()}));
+    ttlKiller_ = loop_.createAction({ttlTimer_->didFire()});
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
 
@@ -45,24 +46,24 @@ DataPipe::DataPipe(std::unique_ptr<networking::UDPSocket> socket,
   }
 
   // Configure sender and receiver
-  sender_.reset(new event::Action(
-      {outboundQ->canPop(), socket_->canWrite(), isPrimed_.get()}));
+  sender_ = loop_.createAction(
+      {outboundQ->canPop(), socket_->canWrite(), isPrimed_.get()});
   sender_->callback.setMethod<DataPipe, &DataPipe::doSend>(this);
-  receiver_.reset(new event::Action({inboundQ->canPush(), socket_->canRead()}));
+  receiver_ = loop_.createAction({inboundQ->canPush(), socket_->canRead()});
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
   probeTimer_.reset(new event::Timer(0s));
-  prober_.reset(new event::Action(
-      {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()}));
+  prober_ = loop_.createAction(
+      {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
 
 DataPipe::DataPipe(DataPipe&& move)
     : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
-      statEfficiency(move.statEfficiency), socket_(std::move(move.socket_)),
-      aesKey_(std::move(move.aesKey_)), minPaddingTo_(move.minPaddingTo_),
-      didClose_(std::move(move.didClose_)),
+      statEfficiency(move.statEfficiency), loop_(move.loop_),
+      socket_(std::move(move.socket_)), aesKey_(std::move(move.aesKey_)),
+      minPaddingTo_(move.minPaddingTo_), didClose_(std::move(move.didClose_)),
       isPrimed_(std::move(move.isPrimed_)),
       ttlTimer_(std::move(move.ttlTimer_)),
       probeTimer_(std::move(move.probeTimer_)),
