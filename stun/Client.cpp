@@ -120,8 +120,9 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
       LOG_I("Client") << "Applied DNS server settings." << std::endl;
 
       cleanerDidFinish_ = loop_.createBaseCondition();
-      cleaner_ = loop_.createAction({loop_.getSignalConditionManager().onSigInt(
-          cleanerDidFinish_.get())});
+      cleanerCondition_ =
+          loop_.getSignalConditionManager().onSigInt(cleanerDidFinish_.get());
+      cleaner_ = loop_.createAction({cleanerCondition_.get()});
 
       cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
         InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);
@@ -167,6 +168,14 @@ void Client::connect() {
 void Client::doReconnect() {
   handler_.reset();
   reconnector_.reset();
+
+#if TARGET_OSX
+  cleaner_->callback.invoke();
+
+  cleaner_.reset();
+  cleanerCondition_.reset();
+  cleanerDidFinish_.reset();
+#endif
 
   LOG_I("Client") << "Will reconnect in "
                   << std::chrono::duration_cast<std::chrono::milliseconds>(

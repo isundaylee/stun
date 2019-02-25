@@ -7,6 +7,31 @@
 
 namespace event {
 
+SignalCondition::~SignalCondition() {
+  switch (type) {
+  case SignalType::Int: {
+    auto& manager = loop_.getSignalConditionManager();
+
+    auto it =
+        std::find(manager.conditions_.begin(), manager.conditions_.end(), this);
+    assertTrue(it != manager.conditions_.end(),
+               "Cannot find SignalCondition in conditions_ list.");
+    manager.conditions_.erase(it);
+
+    switch (type) {
+    case SignalType::Int: {
+      auto it = manager.sigIntPendingConditions_.find(this);
+      assertTrue(
+          it != manager.sigIntPendingConditions_.end(),
+          "Cannot find SignalCondition in sigIntPendingConditions_ list.");
+      manager.sigIntPendingConditions_.erase(it);
+      break;
+    }
+    }
+  }
+  }
+}
+
 SignalConditionManager::Core::Core() {
   struct sigaction sigIntHandler;
 
@@ -42,10 +67,11 @@ SignalConditionManager::~SignalConditionManager() {
   SignalConditionManager::Core::getInstance().removeManager(this);
 }
 
-SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
-  SignalCondition* condition = new SignalCondition(loop_, SignalType::Int);
-  conditions_.push_back(condition);
-  sigIntPendingConditions_.push_back(pendingCondition);
+std::unique_ptr<SignalCondition>
+SignalConditionManager::onSigInt(Condition* pendingCondition) {
+  auto condition = std::make_unique<SignalCondition>(loop_, SignalType::Int);
+  conditions_.push_back(condition.get());
+  sigIntPendingConditions_[condition.get()] = pendingCondition;
   return condition;
 }
 
@@ -69,7 +95,11 @@ SignalCondition* SignalConditionManager::onSigInt(Condition* pendingCondition) {
 
     sigIntPending = false;
 
-    terminator_ = loop_.createAction(sigIntPendingConditions_);
+    auto pendingConditions = std::vector<Condition*>{};
+    for (auto pair : sigIntPendingConditions_) {
+      pendingConditions.push_back(pair.second);
+    }
+    terminator_ = loop_.createAction(std::move(pendingConditions));
     terminator_->callback = []() { throw NormalTerminationException(); };
   }
 }

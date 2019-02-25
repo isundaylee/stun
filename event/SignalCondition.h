@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 namespace event {
@@ -20,6 +21,8 @@ class SignalCondition : public BaseCondition {
 public:
   SignalCondition(EventLoop& loop, SignalType type)
       : BaseCondition(loop, ConditionType::Signal), type(type) {}
+
+  ~SignalCondition();
 
   SignalType type;
 };
@@ -55,7 +58,7 @@ private:
 
   bool sigIntPending = false;
 
-  std::vector<Condition*> sigIntPendingConditions_;
+  std::unordered_map<SignalCondition*, Condition*> sigIntPendingConditions_;
   std::vector<SignalCondition*> conditions_;
 
   std::unique_ptr<Action> terminator_;
@@ -64,11 +67,13 @@ public:
   SignalConditionManager(EventLoop& loop);
   ~SignalConditionManager();
 
-  SignalCondition* onSigInt(Condition* pendingCondition);
+  std::unique_ptr<SignalCondition> onSigInt(Condition* pendingCondition);
 
   virtual void
   prepareConditions(std::vector<Condition*> const& conditions,
                     std::vector<Condition*> const& interesting) override;
+
+  friend SignalCondition;
 };
 
 }; // namespace event

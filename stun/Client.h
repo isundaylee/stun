@@ -35,6 +35,7 @@ private:
   std::unique_ptr<ClientSessionHandler> handler_;
   std::unique_ptr<event::Action> reconnector_;
   std::unique_ptr<event::BaseCondition> cleanerDidFinish_;
+  std::unique_ptr<event::BaseCondition> cleanerCondition_;
   std::unique_ptr<event::Action> cleaner_;
 
   void createRoutes(std::vector<networking::Route> routes);
