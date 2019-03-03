@@ -1,3 +1,7 @@
+# v0.9.2 (2019-03-03)
+
+- [macOS] Fixes a crash during DNS settings restoration.
+
 # v0.9.1 (2018-12-24)
 
 - [macOS] Adds `accept_dns_pushes` option to the client config wizard.
