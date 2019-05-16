@@ -143,9 +143,14 @@ void TimerManager::updateTimer() {
   TimerManager::Core::getInstance().requestTimeout(targets_.back().first);
 }
 
+// assertMessage must be declared here. If it were to be declared within
+// handleTimeout, its construction might trigger a heap allocation, which is
+// prohibited within a signal handler. Since TimerManager::handleTimeout is
+// called in TimerManager::Core::handleSignal, heap allocations must be avoided.
+static std::string const handleTimeoutAssertMessage =
+    "How can time go backwards?";
 void TimerManager::handleTimeout(Time target) {
-  assertTrue(target >= clock_, "How can time go backwards?");
-
+  assertTrue(target >= clock_, handleTimeoutAssertMessage);
   clock_ = target;
 }
 
