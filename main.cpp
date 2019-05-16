@@ -1,5 +1,7 @@
 #include <cxxopts/cxxopts.hpp>
 
+#include <Metadata.h>
+
 #include <common/Configerator.h>
 #include <common/Notebook.h>
 #include <common/Util.h>
@@ -24,7 +26,6 @@
 using namespace stun;
 
 const int kServerPort = 2859;
-const std::string kVersion = "0.9.2";
 
 static const std::string serverConfigTemplate = R"(
 {
@@ -258,7 +259,15 @@ std::string generateNotebookPath(std::string const& configPath) {
 int main(int argc, char* argv[]) {
   event::EventLoop loop;
 
-  LOG_I("Main") << "Running version " << kVersion << std::endl;
+  auto gitVersion = kGitCommitId;
+
+  if (kGitDirtyStatus) {
+    gitVersion += " dirty";
+  }
+
+  auto version = kVersion + " (" + gitVersion + ")";
+
+  LOG_I("Main") << "Running version " << version << std::endl;
 
   setupAndParseOptions(argc, argv);
   std::string configPath = getConfigPath();
