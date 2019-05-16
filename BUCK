@@ -1,7 +1,10 @@
+with allow_unsafe_import():
+    import time
+
 genrule(
     name = 'metadata-header',
     srcs = ['generate-metadata-header.sh'],
-    cmd = './generate-metadata-header.sh $OUT',
+    bash = './generate-metadata-header.sh $OUT; echo ' + str(time.time()),
     out = 'Metadata.h',
 )
 
