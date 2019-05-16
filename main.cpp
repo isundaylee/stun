@@ -259,13 +259,19 @@ std::string generateNotebookPath(std::string const& configPath) {
 int main(int argc, char* argv[]) {
   event::EventLoop loop;
 
+#define XSTRINGIFY(str) #str
+#define STRINGIFY(str) XSTRINGIFY(str)
+  auto buildFlavor = STRINGIFY(STUN_BUILD_FLAVOR);
+#undef STRINGIFY
+#undef XSTRINGIFY
+
   auto gitVersion = kGitCommitId;
 
   if (kGitDirtyStatus) {
     gitVersion += " dirty";
   }
 
-  auto version = kVersion + " (" + gitVersion + ")";
+  auto version = kVersion + " (" + buildFlavor + " build, " + gitVersion + ")";
 
   LOG_I("Main") << "Running version " << version << std::endl;
 

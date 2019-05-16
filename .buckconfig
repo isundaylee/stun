@@ -16,12 +16,12 @@
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
-  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fsanitize=address
+  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fsanitize=address -DSTUN_BUILD_FLAVOR="asan"
 
 [cxx#debug]
   ldflags = -static-libstdc++
-  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fstandalone-debug
+  cxxflags = -Wall -O0 -g -std=c++14 -fno-omit-frame-pointer -fstandalone-debug -DSTUN_BUILD_FLAVOR="debug"
 
 [cxx#release]
   ldflags = -static-libstdc++
-  cxxflags = -Wall -O3 -g -std=c++14 -fno-omit-frame-pointer
+  cxxflags = -Wall -O3 -g -std=c++14 -fno-omit-frame-pointer -DSTUN_BUILD_FLAVOR="release"
