@@ -72,7 +72,7 @@ void TimerManager::Core::requestTimeout(Time target) {
 
 void TimerManager::Core::handleSignal(int sig, siginfo_t* si, void* uc) {
   // TODO: Potential race condition?
-  
+
   for (auto manager : TimerManager::Core::getInstance().managers_) {
     manager->handleTimeout(TimerManager::Core::getInstance().currentTarget_);
   }
