@@ -70,6 +70,10 @@ public:
   static void deleteRoute(SubnetAddress const& dest);
   static RouteDestination getRoute(IPAddress const& destAddr);
 
+#if TARGET_LINUX
+  static void disableIPv6(std::string const& deviceName);
+#endif
+
 #if TARGET_OSX
   static std::vector<networking::IPAddress>
   getDNSServers(std::string const& interfaceName);

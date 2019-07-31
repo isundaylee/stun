@@ -63,6 +63,12 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
   auto tunnel = std::make_unique<Tunnel>(loop_);
 
   // Configure the new interface
+#if TARGET_LINUX
+  // For now we disable IPv6, since otherwise we might get IPv6 packets on the
+  // tunnel that we cannot deal with yet.
+  InterfaceConfig::disableIPv6(tunnel->deviceName);
+#endif
+
   InterfaceConfig::newLink(tunnel->deviceName, config.mtu);
   InterfaceConfig::setLinkAddress(tunnel->deviceName, config.myTunnelAddr,
                                   config.peerTunnelAddr);

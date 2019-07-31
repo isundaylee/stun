@@ -12,8 +12,10 @@
 #include <netinet/ip.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/sysctl.h>
 #include <unistd.h>
 
+#include <fstream>
 #include <stdexcept>
 
 namespace networking {
@@ -342,6 +344,17 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
   } else {
     return RouteDestination(interface, IPAddress(gateway, NetworkType::IPv4));
   }
+}
+
+/* static */ void InterfaceConfig::disableIPv6(std::string const& deviceName) {
+  std::string ctlName =
+      "/proc/sys/net/ipv6/conf/" + deviceName + "/disable_ipv6";
+
+  std::ofstream of(ctlName);
+  assertTrue(of.is_open(), "Failed to open: " + ctlName);
+
+  of << 1;
+  of.close();
 }
 
 /* static */ InterfaceConfig& InterfaceConfig::getInstance() {

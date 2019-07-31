@@ -215,6 +215,13 @@ void ServerSessionHandler::attachHandlers() {
 
     // Set up the data tunnel. Data pipes will be set up in a later stage.
     auto tunnel = std::make_unique<Tunnel>(loop_);
+
+#if TARGET_LINUX
+    // For now we disable IPv6, since otherwise we might get IPv6 packets on the
+    // tunnel that we cannot deal with yet.
+    InterfaceConfig::disableIPv6(tunnel->deviceName);
+#endif
+
     InterfaceConfig::newLink(tunnel->deviceName, config_.mtu);
     InterfaceConfig::setLinkAddress(tunnel->deviceName, config_.myTunnelAddr,
                                     config_.peerTunnelAddr);
