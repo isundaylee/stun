@@ -1,3 +1,7 @@
+- [Core] Implements client-provided subnet feature. For each subnet that the
+client claims to provide, the server will route all traffic belonging to that
+subnet to the client whenever the client is connected.
+
 # v0.9.2 (2019-03-03)
 
 - [macOS] Fixes a crash during DNS settings restoration.
