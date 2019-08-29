@@ -173,3 +173,13 @@ class TestBasic(unittest.TestCase):
                 route_lines,
                 "Server should have added a route for the client-provided subnet."
             )
+
+    def test_custom_port(self):
+        with Host("server", get_server_config(port=1099)) as server, \
+            Host("client", get_client_config(port=1099)) as client:
+
+            self.assertEqual(
+                client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
+                0,
+                "Failed to ping from client to server."
+            )

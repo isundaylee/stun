@@ -25,7 +25,7 @@
 
 using namespace stun;
 
-const int kServerPort = 2859;
+const int kDefaultServerPort = 2859;
 
 static const std::string serverConfigTemplate = R"(
 {
@@ -201,7 +201,7 @@ std::map<std::string, size_t> parseQuotaTable() {
 
 std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop) {
   auto config = ServerConfig{
-      kServerPort,
+      common::Configerator::get<int>("port", kDefaultServerPort),
       networking::SubnetAddress{
           common::Configerator::get<std::string>("address_pool")},
       common::Configerator::get<bool>("encryption", true),
@@ -224,7 +224,8 @@ std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop) {
 
 std::unique_ptr<stun::Client> setupClient(event::EventLoop& loop) {
   auto config = ClientConfig{
-      SocketAddress(common::Configerator::getString("server"), kServerPort),
+      SocketAddress(common::Configerator::getString("server"),
+                    common::Configerator::get<int>("port", kDefaultServerPort)),
       common::Configerator::get<bool>("encryption", true),
       common::Configerator::get<std::string>("secret", ""),
       common::Configerator::get<size_t>("padding_to", 0),
