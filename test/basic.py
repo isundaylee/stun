@@ -156,3 +156,20 @@ class TestBasic(unittest.TestCase):
                 1,
                 "Should not be able to ping from client to server."
             )
+
+    def test_provided_subnets(self):
+        with Host("server", get_server_config()) as server, \
+            Host("client", get_client_config(provided_subnets=["10.180.0.0/24"])) as client:
+
+            self.assertEqual(
+                client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
+                0,
+                "Failed to ping from client to server."
+            )
+
+            route_lines = server.exec(["ip", "route"], assert_on_failure=True)[0].split("\n")
+            self.assertIn(
+                "10.180.0.0/24 via 10.179.0.2 dev tun0 ",
+                route_lines,
+                "Server should have added a route for the client-provided subnet."
+            )

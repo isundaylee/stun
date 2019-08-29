@@ -1,7 +1,7 @@
 FROM ubuntu:bionic
 
 RUN apt-get update
-RUN apt-get install -qq iptables iputils-ping net-tools
+RUN apt-get install -qq iptables iputils-ping net-tools iproute2
 
 RUN mkdir -p /usr/src
 WORKDIR /usr/src
