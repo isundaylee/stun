@@ -163,6 +163,10 @@ void setupAndParseOptions(int argc, char* argv[]) {
 }
 
 auto parseSubnets(std::string const& key) {
+  if (!common::Configerator::hasKey(key)) {
+    return std::vector<SubnetAddress>{};
+  }
+
   auto subnets = common::Configerator::getStringArray(key);
   auto results = std::vector<SubnetAddress>{};
 
@@ -231,7 +235,8 @@ std::unique_ptr<stun::Client> setupClient(event::EventLoop& loop) {
                                         networking::kTunnelEthernetDefaultMTU),
       common::Configerator::get<bool>("accept_dns_pushes", false),
       parseSubnets("forward_subnets"),
-      parseSubnets("excluded_subnets")};
+      parseSubnets("excluded_subnets"),
+      parseSubnets("provided_subnets")};
 
   return std::make_unique<stun::Client>(loop, config);
 }

@@ -38,6 +38,7 @@ public:
 
   std::vector<SubnetAddress> subnetsToForward;
   std::vector<SubnetAddress> subnetsToExclude;
+  std::vector<SubnetAddress> subnetsProvided;
 };
 
 class ClientSessionHandler {

@@ -30,6 +30,10 @@ ClientSessionHandler::ClientSessionHandler(
   if (!config_.user.empty()) {
     helloBody["user"] = config_.user;
   }
+  helloBody["provided_subnets"] = json::array();
+  for (auto const& subnet : config_.subnetsProvided) {
+    helloBody["provided_subnets"].push_back(subnet.toString());
+  }
   messenger_->outboundQ->push(Message("hello", helloBody));
 
   attachHandlers();
