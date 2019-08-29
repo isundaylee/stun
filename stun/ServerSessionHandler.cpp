@@ -228,6 +228,24 @@ void ServerSessionHandler::attachHandlers() {
 
     dispatcher_.reset(new Dispatcher(loop_, std::move(tunnel)));
 
+    if (body.find("provided_subnets") != body.end()) {
+      for (auto const& subnetString : body["provided_subnets"]) {
+        networking::SubnetAddress subnet{
+            subnetString.template get<std::string>()};
+
+        LOG_V("Session") << "Adding routes for client-provided subnet: "
+                         << subnet.toString() << std::endl;
+
+        auto route = networking::Route{
+            subnet, networking::RouteDestination{config_.peerTunnelAddr}};
+        InterfaceConfig::newRoute(route);
+
+        // TODO: Upon disconnection, these routes would be removed along with
+        // the tunnel interface. Should we still remove them manually for good
+        // hygiene?
+      }
+    }
+
     // Set up data pipe rotation if it is configured in the server config.
     if (config_.dataPipeRotationInterval != 0s) {
       dataPipeRotationTimer_ =
