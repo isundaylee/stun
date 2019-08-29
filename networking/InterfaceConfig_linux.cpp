@@ -351,7 +351,11 @@ InterfaceConfig::getRoute(IPAddress const& destAddr) {
       "/proc/sys/net/ipv6/conf/" + deviceName + "/disable_ipv6";
 
   std::ofstream of(ctlName);
-  assertTrue(of.is_open(), "Failed to open: " + ctlName);
+
+  if (!of.is_open()) {
+    LOG_E("InterfaceConfig")
+        << "Failed to disable IPv6: failed to open: " << ctlName << std::endl;
+  }
 
   of << 1;
   of.close();
