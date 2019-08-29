@@ -9,7 +9,7 @@ import shutil
 tempfile.tempdir = "/tmp"
 
 def docker(args, assert_on_failure=True):
-    result = subprocess.run(["sudo", "docker"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(["docker"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if assert_on_failure and result.returncode != 0:
         print('STDOUT: ')
