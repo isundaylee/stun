@@ -92,9 +92,9 @@ IOCondition* IOConditionManager::canDo(int fd, IOType type) {
     return existing->second.get();
   }
 
-  IOCondition* condition = new IOCondition(loop_, fd, type);
-  conditions_[std::make_pair(type, fd)].reset(condition);
-  return condition;
+  conditions_[std::make_pair(type, fd)] =
+      std::make_unique<IOCondition>(loop_, fd, type);
+  return conditions_[std::make_pair(type, fd)].get();
 }
 
 void IOConditionManager::removeCondition(int fd, IOType type) {

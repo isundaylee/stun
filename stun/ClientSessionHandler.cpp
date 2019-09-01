@@ -105,12 +105,12 @@ void ClientSessionHandler::attachHandlers() {
     auto udpPipe = UDPSocket{loop_, socketAddress.type};
     udpPipe.connect(socketAddress);
 
-    DataPipe* dataPipe = new DataPipe(
+    auto dataPipe = std::make_unique<DataPipe>(
         loop_, std::make_unique<UDPSocket>(std::move(udpPipe)), body["aes_key"],
         body["padding_to_size"], body["compression"], 0s);
     dataPipe->setPrePrimed();
 
-    dispatcher_->addDataPipe(std::unique_ptr<DataPipe>(dataPipe));
+    dispatcher_->addDataPipe(std::move(dataPipe));
 
     LOG_V("Session") << "Rotated to a new data pipe." << std::endl;
 
