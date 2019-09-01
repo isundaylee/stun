@@ -92,6 +92,10 @@ class Host():
 
         return None
 
+skip_all_tests_if_env_set = unittest.skipIf(
+    os.environ.get('SKIP_ALL_TESTS', False), 'Skip all tests.'
+)
+
 class TestBasic(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -106,6 +110,7 @@ class TestBasic(unittest.TestCase):
     def tearDown(self):
         docker(['network', 'rm', DOCKER_NETWORK_NAME])
 
+    @skip_all_tests_if_env_set
     def test_basic(self):
         with Host("server", get_server_config()) as server, \
             Host("client", get_client_config()) as client:
@@ -116,6 +121,7 @@ class TestBasic(unittest.TestCase):
                 "Failed to ping from client to server."
             )
 
+    @skip_all_tests_if_env_set
     def test_static_hosts(self):
         server_config = get_server_config(
             authentication = True,
@@ -141,6 +147,7 @@ class TestBasic(unittest.TestCase):
                 "Unexpected IP assigned to client."
             )
 
+    @skip_all_tests_if_env_set
     def test_authentication_without_username(self):
         with Host("server", get_server_config(authentication=True)) as server, \
             Host("client", get_client_config()) as client:
@@ -157,6 +164,7 @@ class TestBasic(unittest.TestCase):
                 "Should not be able to ping from client to server."
             )
 
+    @skip_all_tests_if_env_set
     def test_provided_subnets(self):
         with Host("server", get_server_config()) as server, \
             Host("client", get_client_config(provided_subnets=["10.180.0.0/24"])) as client:
@@ -174,6 +182,7 @@ class TestBasic(unittest.TestCase):
                 "Server should have added a route for the client-provided subnet."
             )
 
+    @skip_all_tests_if_env_set
     def test_custom_port(self):
         with Host("server", get_server_config(port=1099)) as server, \
             Host("client", get_client_config(port=1099)) as client:
