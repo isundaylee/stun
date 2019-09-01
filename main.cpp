@@ -199,8 +199,10 @@ std::map<std::string, size_t> parseQuotaTable() {
   return raw;
 }
 
-std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop) {
+std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop,
+                                          std::string getServerConfigID) {
   auto config = ServerConfig{
+      getServerConfigID,
       common::Configerator::get<int>("port", kDefaultServerPort),
       networking::SubnetAddress{
           common::Configerator::get<std::string>("address_pool")},
@@ -253,13 +255,17 @@ std::unique_ptr<flutter::Server> setupFlutterServer(event::EventLoop& loop) {
   return std::make_unique<flutter::Server>(loop, flutterServerConfig);
 }
 
-std::string generateNotebookPath(std::string const& configPath) {
+std::string getServerConfigID(std::string const& configPath) {
   unsigned long hash = 5381;
   for (size_t i = 0; i < configPath.length(); i++) {
     hash = ((hash << 5) + hash) + configPath[i];
   }
 
-  return "/tmp/stun-notebook-" + std::to_string(hash);
+  return std::to_string(hash);
+}
+
+std::string generateNotebookPath(std::string const& configPath) {
+  return "/tmp/stun-notebook-" + getServerConfigID(configPath);
 }
 
 int main(int argc, char* argv[]) {
@@ -321,7 +327,7 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<stun::Client> client;
 
   if (role == "server") {
-    server = setupServer(loop);
+    server = setupServer(loop, getServerConfigID(configPath));
   } else {
     client = setupClient(loop);
   }

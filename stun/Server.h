@@ -14,6 +14,8 @@ using networking::TCPServer;
 
 struct ServerConfig {
 public:
+  std::string configID;
+
   int port;
   SubnetAddress addressPool;
   bool encryption;

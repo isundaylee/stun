@@ -5,11 +5,17 @@ import unittest
 import tempfile
 import json
 import shutil
+import time
 
 tempfile.tempdir = "/tmp"
 
-def docker(args, assert_on_failure=True):
-    result = subprocess.run(["docker"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def docker(args, assert_on_failure=True, input=None):
+    result = subprocess.run(
+        ["docker"] + args, 
+        input=input, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE
+    )
 
     if assert_on_failure and result.returncode != 0:
         print('STDOUT: ')
@@ -77,8 +83,20 @@ class Host():
     def logs(self):
         return docker(["logs", self.id])[0]
 
-    def exec(self, cmd, assert_on_failure=False):
-        return docker(["exec", self.id] + cmd, assert_on_failure=assert_on_failure)
+    def exec(self, cmd, assert_on_failure=False, input=None, detach=False):
+        extra_flags = ["--interactive"]
+
+        if detach:
+            extra_flags.append("-d")
+
+        return docker(
+            ["exec"] + extra_flags + [self.id] + cmd, 
+            assert_on_failure=assert_on_failure, 
+            input=input
+        )
+    
+    def create_file(self, path, content):
+        self.exec(["tee", path], assert_on_failure=True, input=content)
 
     def get_client_tunnel_ip(self):
         lines = self.exec(["ifconfig"], assert_on_failure=True)[0].split('\n')
@@ -91,6 +109,54 @@ class Host():
                 return match[1]
 
         return None
+
+    def run_stun(self, name, config):
+        """Run an additional `stun` process with the given name and config. 
+        Return the PID of the launched `stun` process."""
+        config_path = "/usr/config/stunrc-{}".format(name)
+        self.create_file(config_path, json.dumps(config).encode())
+
+        self.exec(
+            ["/usr/src/stun", "-c", config_path], 
+            assert_on_failure=True, 
+            detach=True
+        )
+
+        time.sleep(1)
+
+        return self.get_stun_pid(name)
+
+    
+    def get_stun_pid(self, name):
+        """Return the PID of the `stun` process previously launched with
+        `run_stun` with the given name."""
+        config_path = "/usr/config/stunrc-{}".format(name)
+        ps_entries = self.exec(["ps", "aux"], assert_on_failure=True)[0].split("\n")
+        ps_entries = [e for e in ps_entries if "-c {}".format(config_path) in e]
+
+        if len(ps_entries) != 1:
+            raise RuntimeError("Failed to get stun PID.")
+
+        return int(ps_entries[0].split()[1])
+    
+    def kill_stun(self, name):
+        """Kill a `stun` process previously launched with `run_stun` with the
+        given name."""
+        self.exec(["kill", str(self.get_stun_pid(name))], assert_on_failure=True)
+        time.sleep(1)
+    
+    def get_masqueraded_subnets(self):
+        """Return a list of subnets corresponding to iptables MASQUERADE rules
+        created by `stun`."""
+        entries = self.exec([
+            "iptables", "-t", "nat", "-L", "POSTROUTING"
+        ], assert_on_failure=True)[0].split("\n")
+
+        entries = [e for e in entries if e.startswith("MASQUERADE")]
+        entries = [e for e in entries if "/* stun" in e]
+
+        return [e.split()[3] for e in entries]
+
 
 skip_all_tests_if_env_set = unittest.skipIf(
     os.environ.get('SKIP_ALL_TESTS', False), 'Skip all tests.'
@@ -191,4 +257,76 @@ class TestBasic(unittest.TestCase):
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
                 "Failed to ping from client to server."
+            )
+    
+    @skip_all_tests_if_env_set
+    def test_multiple_servers_iptables_rule(self):
+        with Host("server", get_server_config()) as server:
+            server.run_stun(
+                "extra", 
+                get_server_config(
+                    address_pool="10.180.0.0/24",
+                    port=1099
+                )
+            )
+
+            masqueraded_subnets = server.get_masqueraded_subnets()
+                
+            self.assertEqual(
+                len(masqueraded_subnets), 
+                2, 
+                "Two MASQUERADE rules should exist."
+            )
+
+            self.assertIn(
+                "10.179.0.0/24", 
+                masqueraded_subnets, 
+                "10.179.0.0/24 should be MASQUERADE-d."
+            )
+
+            self.assertIn(
+                "10.180.0.0/24", 
+                masqueraded_subnets, 
+                "10.180.0.0/24 should be MASQUERADE-d."
+            )
+    
+    @skip_all_tests_if_env_set
+    def test_multiple_servers_iptables_rule_cleared_properly(self):
+        with Host("server", get_server_config()) as server:
+            server.run_stun(
+                "extra", 
+                get_server_config(
+                    address_pool="10.180.0.0/24",
+                    port=1099
+                )
+            )
+
+            server.kill_stun("extra")
+
+            server.run_stun(
+                "extra", 
+                get_server_config(
+                    address_pool="10.180.0.0/24",
+                    port=1099
+                )
+            )
+
+            masqueraded_subnets = server.get_masqueraded_subnets()
+
+            self.assertEqual(
+                len(masqueraded_subnets), 
+                2, 
+                "Two MASQUERADE rules should exist."
+            )
+
+            self.assertIn(
+                "10.179.0.0/24", 
+                masqueraded_subnets, 
+                "10.179.0.0/24 should be MASQUERADE-d."
+            )
+
+            self.assertIn(
+                "10.180.0.0/24", 
+                masqueraded_subnets, 
+                "10.180.0.0/24 should be MASQUERADE-d."
             )

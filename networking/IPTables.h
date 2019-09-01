@@ -12,21 +12,22 @@
 
 namespace networking {
 
-static const std::string kIPTablesCommonClause = " -m comment --comment stun";
 static const size_t kIPTablesOutputBufferSize = 1024;
 
 class IPTables {
 public:
-  static void masquerade(SubnetAddress const& sourceSubnet) {
+  static void masquerade(SubnetAddress const& sourceSubnet,
+                         std::string const& ruleID) {
+    auto ruleComment = "stun " + ruleID;
     runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " +
-                               sourceSubnet.toString() + " -j MASQUERADE" +
-                               kIPTablesCommonClause);
+                               sourceSubnet.toString() + " -j MASQUERADE " +
+                               "-m comment --comment \"" + ruleComment + "\"");
 
     LOG_V("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
                       << "." << std::endl;
   }
 
-  static void clear() {
+  static void clear(std::string const& ruleID) {
     std::string rules =
         runCommandAndAssertSuccess("-t nat -L POSTROUTING --line-numbers -n");
     std::stringstream ss(rules);
@@ -35,7 +36,7 @@ public:
     std::vector<int> rulesToDelete;
 
     while (std::getline(ss, line, '\n')) {
-      std::size_t pos = line.find("/* stun */");
+      std::size_t pos = line.find("/* stun " + ruleID + " */");
       if (pos != std::string::npos) {
         std::size_t spacePos = line.find(" ");
         assertTrue(spacePos != std::string::npos,
