@@ -48,6 +48,13 @@ void TimerManager::Core::removeManager(TimerManager* manager) {
 void TimerManager::Core::requestTimeout(Time target) {
   maskSignal();
 
+  // If the requested target is not in the future.
+  if (target <= masterClock_) {
+    unmaskSignal();
+    return;
+  }
+
+  // If we have a pending target that is before the requested target.
   if (pending_ && currentTarget_ <= target) {
     unmaskSignal();
     return;
@@ -97,14 +104,23 @@ void TimerManager::Core::unmaskSignal() {
   checkUnixError(ret, "calling sigprocmask()");
 }
 
+// See handleTimeoutAssertMessage comment.
+static std::string const handleSignalAssertMessage =
+    "How can time not go forward in handleSignal?";
 void TimerManager::Core::handleSignal(int sig, siginfo_t* si, void* uc) {
   // TODO: Potential race condition?
 
-  for (auto manager : TimerManager::Core::getInstance().managers_) {
-    manager->handleTimeout(TimerManager::Core::getInstance().currentTarget_);
-  }
+  assertTrue(TimerManager::Core::getInstance().currentTarget_ >
+                 TimerManager::Core::getInstance().masterClock_,
+             handleSignalAssertMessage);
 
+  TimerManager::Core::getInstance().masterClock_ =
+      TimerManager::Core::getInstance().currentTarget_;
   TimerManager::Core::getInstance().pending_ = false;
+
+  for (auto manager : TimerManager::Core::getInstance().managers_) {
+    manager->handleTimeout(TimerManager::Core::getInstance().masterClock_);
+  }
 }
 
 TimerManager::TimerManager(EventLoop& loop) : loop_(loop) {

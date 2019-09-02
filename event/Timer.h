@@ -48,6 +48,7 @@ private:
     std::vector<TimerManager*> managers_;
 
     bool pending_ = false;
+    Time masterClock_ = std::numeric_limits<Time>::min();
     Time currentTarget_;
   };
 
