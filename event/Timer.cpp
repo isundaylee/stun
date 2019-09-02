@@ -46,7 +46,10 @@ void TimerManager::Core::removeManager(TimerManager* manager) {
 }
 
 void TimerManager::Core::requestTimeout(Time target) {
+  maskSignal();
+
   if (pending_ && currentTarget_ <= target) {
+    unmaskSignal();
     return;
   }
 
@@ -68,6 +71,8 @@ void TimerManager::Core::requestTimeout(Time target) {
 
   int ret = setitimer(ITIMER_REAL, &its, NULL);
   assertTrue(ret == 0, "Cannot set timer.");
+
+  unmaskSignal();
 }
 
 static sigset_t getTimerSignalSet() {
@@ -114,11 +119,15 @@ TimerManager::~TimerManager() {
 /* virtual */ void
 TimerManager::prepareConditions(std::vector<Condition*> const& conditions,
                                 std::vector<Condition*> const& interesting) {
+  TimerManager::Core::getInstance().maskSignal();
+
   while (!targets_.empty() && targets_.back().first <= clock_) {
     TimeoutTrigger fired = targets_.back();
     targets_.pop_back();
     fired.second->fire();
   }
+
+  TimerManager::Core::getInstance().unmaskSignal();
 
   updateTimer();
 }
