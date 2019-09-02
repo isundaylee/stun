@@ -70,6 +70,28 @@ void TimerManager::Core::requestTimeout(Time target) {
   assertTrue(ret == 0, "Cannot set timer.");
 }
 
+static sigset_t getTimerSignalSet() {
+  sigset_t set;
+  sigisemptyset(&set);
+
+  int ret = sigaddset(&set, SIGALRM);
+  checkUnixError(ret, "calling sigaddset()");
+
+  return set;
+}
+
+void TimerManager::Core::maskSignal() {
+  auto set = getTimerSignalSet();
+  int ret = sigprocmask(SIG_BLOCK, &set, NULL);
+  checkUnixError(ret, "calling sigprocmask()");
+}
+
+void TimerManager::Core::unmaskSignal() {
+  auto set = getTimerSignalSet();
+  int ret = sigprocmask(SIG_UNBLOCK, &set, NULL);
+  checkUnixError(ret, "calling sigprocmask()");
+}
+
 void TimerManager::Core::handleSignal(int sig, siginfo_t* si, void* uc) {
   // TODO: Potential race condition?
 

@@ -41,6 +41,9 @@ private:
     void removeManager(TimerManager* manager);
     void requestTimeout(Time target);
 
+    void maskSignal();
+    void unmaskSignal();
+
   private:
     std::vector<TimerManager*> managers_;
 
