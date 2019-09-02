@@ -4,6 +4,8 @@
 
 #include <event/Condition.h>
 
+#include <stats/MinStat.h>
+
 #include <signal.h>
 #include <stdint.h>
 #include <time.h>
@@ -50,6 +52,8 @@ private:
     bool pending_ = false;
     Time masterClock_ = std::numeric_limits<Time>::min();
     Time currentTarget_;
+
+    stats::MinStat<uint64_t> statMinRemainingTimeUSec_;
   };
 
   void handleTimeout(Time target);

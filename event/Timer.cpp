@@ -14,7 +14,8 @@ namespace event {
 
 using namespace std::chrono_literals;
 
-TimerManager::Core::Core() {
+TimerManager::Core::Core()
+    : statMinRemainingTimeUSec_{"Timer", "min_remaining_time_usec"} {
   struct sigaction sa;
   sa.sa_flags = SA_SIGINFO;
   sa.sa_sigaction = &TimerManager::Core::handleSignal;
@@ -77,9 +78,9 @@ void TimerManager::Core::requestTimeout(Time target) {
     checkUnixError(ret, "getitimer()");
 
     static auto const kWaitThreshold = std::chrono::microseconds{100};
-    if (std::chrono::seconds(old.it_value.tv_sec) +
-            std::chrono::microseconds(old.it_value.tv_usec) <=
-        kWaitThreshold) {
+    auto remainingTime = std::chrono::seconds(old.it_value.tv_sec) +
+                         std::chrono::microseconds(old.it_value.tv_usec);
+    if (remainingTime <= kWaitThreshold) {
       // The current pending timer is nearing its expiration / has already
       // expired. In this case, to be safe, we just wait out its expiration, and
       // consume the pending signal. If we do not consume the pending signal,
@@ -95,6 +96,10 @@ void TimerManager::Core::requestTimeout(Time target) {
       int ret = setitimer(ITIMER_REAL, &stop, NULL);
       checkUnixError(ret, "setitimer() while stopping");
     }
+
+    statMinRemainingTimeUSec_.accumulate(
+        std::chrono::duration_cast<std::chrono::microseconds>(remainingTime)
+            .count());
   }
 
   // Then, we calculate and set the new timer.
