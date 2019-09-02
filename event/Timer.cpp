@@ -45,6 +45,16 @@ void TimerManager::Core::removeManager(TimerManager* manager) {
   return instance;
 }
 
+static sigset_t getTimerSignalSet() {
+  sigset_t set;
+  sigisemptyset(&set);
+
+  int ret = sigaddset(&set, SIGALRM);
+  checkUnixError(ret, "calling sigaddset()");
+
+  return set;
+}
+
 void TimerManager::Core::requestTimeout(Time target) {
   maskSignal();
 
@@ -60,6 +70,34 @@ void TimerManager::Core::requestTimeout(Time target) {
     return;
   }
 
+  // First, we stop the current timer (if any).
+  if (pending_) {
+    struct itimerval old;
+    int ret = getitimer(ITIMER_REAL, &old);
+    checkUnixError(ret, "getitimer()");
+
+    static auto const kWaitThreshold = std::chrono::microseconds{100};
+    if (std::chrono::seconds(old.it_value.tv_sec) +
+            std::chrono::microseconds(old.it_value.tv_usec) <=
+        kWaitThreshold) {
+      // The current pending timer is nearing its expiration / has already
+      // expired. In this case, to be safe, we just wait out its expiration, and
+      // consume the pending signal. If we do not consume the pending signal,
+      // after we unblock the signal, the signal handler might be triggered with
+      // the wrong currentTarget set.
+      sigset_t sigset = getTimerSignalSet();
+      int sigConsumed;
+      int ret = sigwait(&sigset, &sigConsumed);
+      checkUnixError(ret, "sigwait()");
+    } else {
+      // The expiration is still far away enough. We can safely stop the timer.
+      struct itimerval stop = {{0, 0}, {0, 0}};
+      int ret = setitimer(ITIMER_REAL, &stop, NULL);
+      checkUnixError(ret, "setitimer() while stopping");
+    }
+  }
+
+  // Then, we calculate and set the new timer.
   Duration timeout =
       std::max(std::chrono::milliseconds(1),
                std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -77,19 +115,9 @@ void TimerManager::Core::requestTimeout(Time target) {
   pending_ = true;
 
   int ret = setitimer(ITIMER_REAL, &its, NULL);
-  assertTrue(ret == 0, "Cannot set timer.");
+  checkUnixError(ret, "setitimer() while (re)starting");
 
   unmaskSignal();
-}
-
-static sigset_t getTimerSignalSet() {
-  sigset_t set;
-  sigisemptyset(&set);
-
-  int ret = sigaddset(&set, SIGALRM);
-  checkUnixError(ret, "calling sigaddset()");
-
-  return set;
 }
 
 void TimerManager::Core::maskSignal() {
