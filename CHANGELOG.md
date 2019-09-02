@@ -4,6 +4,8 @@ subnet to the client whenever the client is connected.
 - [Core] Fixes the issue where launching a second `stun` server incorrectly
 clears the iptables MASQUERADE rule created by the previous, unrelated `stun`
 server. (Issue #2)
+- [Core] Improves timer code's robustness, including fixing a timer-related
+  assertion error (Issue #4).
 
 # v0.9.2 (2019-03-03)
 
