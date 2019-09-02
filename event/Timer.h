@@ -4,6 +4,7 @@
 
 #include <event/Condition.h>
 
+#include <stats/CountStat.h>
 #include <stats/MinStat.h>
 
 #include <signal.h>
@@ -54,6 +55,8 @@ private:
     Time currentTarget_;
 
     stats::MinStat<uint64_t> statMinRemainingTimeUSec_;
+    stats::CountStat statTimesWaited_;
+    stats::CountStat statTimesStopped_;
   };
 
   void handleTimeout(Time target);

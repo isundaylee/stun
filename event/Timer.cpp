@@ -15,7 +15,9 @@ namespace event {
 using namespace std::chrono_literals;
 
 TimerManager::Core::Core()
-    : statMinRemainingTimeUSec_{"Timer", "min_remaining_time_usec"} {
+    : statMinRemainingTimeUSec_{"Timer", "min_remaining_time_usec"},
+      statTimesWaited_{"Timer", "times_waited"}, statTimesStopped_{
+                                                     "Timer", "times_stopped"} {
   struct sigaction sa;
   sa.sa_flags = SA_SIGINFO;
   sa.sa_sigaction = &TimerManager::Core::handleSignal;
@@ -90,11 +92,15 @@ void TimerManager::Core::requestTimeout(Time target) {
       int sigConsumed;
       int ret = sigwait(&sigset, &sigConsumed);
       checkUnixError(ret, "sigwait()");
+
+      statTimesWaited_.accumulate();
     } else {
       // The expiration is still far away enough. We can safely stop the timer.
       struct itimerval stop = {{0, 0}, {0, 0}};
       int ret = setitimer(ITIMER_REAL, &stop, NULL);
       checkUnixError(ret, "setitimer() while stopping");
+
+      statTimesStopped_.accumulate();
     }
 
     statMinRemainingTimeUSec_.accumulate(
