@@ -1,9 +1,9 @@
 - [Core] Implements client-provided subnet feature. For each subnet that the
-client claims to provide, the server will route all traffic belonging to that
-subnet to the client whenever the client is connected.
+  client claims to provide, the server will route all traffic belonging to that
+  subnet to the client whenever the client is connected.
 - [Core] Fixes the issue where launching a second `stun` server incorrectly
-clears the iptables MASQUERADE rule created by the previous, unrelated `stun`
-server. (Issue #2)
+  clears the iptables MASQUERADE rule created by the previous, unrelated `stun`
+  server. (Issue #2)
 - [Core] Improves timer code's robustness, including fixing a timer-related
   assertion error (Issue #4).
 
