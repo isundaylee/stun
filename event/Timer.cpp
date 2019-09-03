@@ -50,7 +50,7 @@ void TimerManager::Core::removeManager(TimerManager* manager) {
 
 static sigset_t getTimerSignalSet() {
   sigset_t set;
-  sigisemptyset(&set);
+  sigemptyset(&set);
 
   int ret = sigaddset(&set, SIGALRM);
   checkUnixError(ret, "calling sigaddset()");
