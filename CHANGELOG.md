@@ -1,3 +1,5 @@
+# v0.10.0 (2019-09-02)
+
 - [Core] Implements client-provided subnet feature. For each subnet that the
   client claims to provide, the server will route all traffic belonging to that
   subnet to the client whenever the client is connected.
