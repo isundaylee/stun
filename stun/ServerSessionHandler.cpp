@@ -112,6 +112,7 @@ ServerSessionHandler::ServerSessionHandler(
     event::EventLoop& loop, Server* server, ServerSessionConfig config,
     std::unique_ptr<TCPSocket> commandPipe)
     : loop_(loop), server_(server), config_(config),
+      peerPublicAddr_(commandPipe->getPeerAddress()),
       messenger_(new Messenger(loop, std::move(commandPipe))),
       didEnd_(loop.createBaseCondition()) {
   if (!config_.secret.empty()) {
@@ -159,21 +160,21 @@ void ServerSessionHandler::attachHandlers() {
       }
 
       config_.user = body["user"].template get<std::string>();
-      LOG_I("Session") << "Client " << config_.user << " said hello!"
+      LOG_I("Session") << getClientLogTag() << ": Client said hello!"
                        << std::endl;
 
       // Retrieve this user's quota
       if (!config_.quotaTable.empty()) {
         auto it = config_.quotaTable.find(config_.user);
         if (it == config_.quotaTable.end()) {
-          LOG_I("Session") << "Unknown client " << config_.user
-                           << " disconnected." << std::endl;
+          LOG_I("Session") << getClientLogTag()
+                           << ": Unknown client disconnected." << std::endl;
           return Message("error", "User " + config_.user +
                                       " not allowed on the server.");
         }
 
         config_.quota = it->second;
-        LOG_I("Session") << "Client " << config_.user << " has a quota of "
+        LOG_I("Session") << getClientLogTag() << ": Client has a quota of "
                          << config_.quota << " bytes." << std::endl;
 
         // Retrieve the user's prior used quota
@@ -233,7 +234,8 @@ void ServerSessionHandler::attachHandlers() {
         networking::SubnetAddress subnet{
             subnetString.template get<std::string>()};
 
-        LOG_V("Session") << "Adding routes for client-provided subnet: "
+        LOG_V("Session") << getClientLogTag()
+                         << ": Adding routes for client-provided subnet: "
                          << subnet.toString() << std::endl;
 
         auto route = networking::Route{
@@ -280,14 +282,16 @@ json ServerSessionHandler::createDataPipe() {
   UDPSocket udpPipe{loop_, networking::NetworkType::IPv4};
   int port = udpPipe.bind(0);
 
-  LOG_V("Session") << "Creating a new data pipe." << std::endl;
+  LOG_V("Session") << getClientLogTag() << ": Creating a new data pipe."
+                   << std::endl;
 
   // Prepare encryption config
   std::string aesKey;
   if (config_.encryption) {
     aesKey = crypto::AESKey::randomStringKey();
   } else {
-    LOG_V("Session") << "Data encryption is disabled per configuration."
+    LOG_V("Session") << getClientLogTag()
+                     << ": Data encryption is disabled per configuration."
                      << std::endl;
   }
 
@@ -305,4 +309,13 @@ json ServerSessionHandler::createDataPipe() {
               {"padding_to_size", config_.paddingTo},
               {"compression", config_.compression}};
 }
+
+std::string ServerSessionHandler::getClientLogTag() const {
+  if (config_.authentication) {
+    return config_.user;
+  } else {
+    return peerPublicAddr_.getHost().toString();
+  }
+}
+
 } // namespace stun

@@ -52,15 +52,18 @@ DOCKER_NETWORK_NAME = 'stun_test'
 DOCKER_IMAGE_TAG = 'stun_test'
 
 class Host():
-    def __init__(self, name, config):
+    def __init__(self, name, config, entry_args=[]):
         self.name = name
         self.config = config
+        self.entry_args = entry_args
 
     def __enter__(self):
         td = tempfile.mkdtemp(prefix="stun_tes")
 
         with open(os.path.join(td, 'stunrc'), 'w') as f:
             json.dump(self.config, f)
+
+        args = ["-c", "/usr/config/stunrc"] + self.entry_args
 
         self.id = docker([
             "create",
@@ -69,8 +72,9 @@ class Host():
             "--net={}".format(DOCKER_NETWORK_NAME),
             "--net-alias={}".format(self.name),
             "--device=/dev/net/tun",
+            "--entrypoint=/usr/src/stun",
             DOCKER_IMAGE_TAG,
-        ])[0].strip()
+        ] + args)[0].strip()
 
         docker(["start", self.id])
 
@@ -330,3 +334,74 @@ class TestBasic(unittest.TestCase):
                 masqueraded_subnets, 
                 "10.180.0.0/24 should be MASQUERADE-d."
             )
+
+    @skip_all_tests_if_env_set
+    def test_per_user_log_message_with_name(self):
+        server_config = {
+            "authentication": True,
+            "quotas": {
+                "test-client": 1
+            }
+        }
+
+        with Host("server", get_server_config(**server_config), entry_args=["-v"]) as server, \
+            Host("client", get_client_config(user='test-client'), entry_args=["-v"]) as client:
+
+            server_expected_messages = [
+                "test-client: Client said hello!",
+                "test-client: Client has a quota of 1073741824 bytes.",
+                "test-client: Creating a new data pipe.",
+            ]
+
+            server_logs = server.logs()
+
+            for message in server_expected_messages:
+                self.assertIn(
+                    message,
+                    server_logs,
+                    "Expected log message not present."
+                )
+
+    @skip_all_tests_if_env_set
+    def test_per_user_log_message_with_authentication(self):
+        server_config = {
+            "authentication": True,
+            "quotas": {
+                "test-client": 1
+            }
+        }
+
+        with Host("server", get_server_config(**server_config), entry_args=["-v"]) as server, \
+            Host("client", get_client_config(user='test-client'), entry_args=["-v"]) as client:
+
+            server_expected_messages = [
+                "test-client: Client said hello!",
+                "test-client: Client has a quota of 1073741824 bytes.",
+                "test-client: Creating a new data pipe.",
+            ]
+
+            server_logs = server.logs()
+
+            for message in server_expected_messages:
+                self.assertIn(
+                    message,
+                    server_logs,
+                    "Expected log message not present."
+                )
+
+    @skip_all_tests_if_env_set
+    def test_per_user_log_message_without_authentication(self):
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, \
+            Host("client", get_client_config(), entry_args=["-v"]) as client:
+
+            server_expected_messages = [
+                re.compile("\d+\.\d+\.\d+\.\d+: Creating a new data pipe."),
+            ]
+
+            server_logs = server.logs()
+
+            for message in server_expected_messages:
+                self.assertIsNotNone(
+                    re.search(message, server_logs),
+                    "Expected log message not present."
+                )

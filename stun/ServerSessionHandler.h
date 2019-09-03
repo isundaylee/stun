@@ -52,6 +52,7 @@ private:
 
   Server* server_;
   ServerSessionConfig config_;
+  networking::SocketAddress peerPublicAddr_;
 
   class QuotaReporter;
   class QuotaPolice;
@@ -71,5 +72,7 @@ private:
   json createDataPipe();
   void doRotateDataPipe();
   void savePriorQuota();
+
+  std::string getClientLogTag() const;
 };
 } // namespace stun
