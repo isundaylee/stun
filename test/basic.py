@@ -429,3 +429,14 @@ class TestBasic(unittest.TestCase):
                     found = True
             
             self.assertTrue(found, "Expected iptables rule not found.")
+        
+    @skip_all_tests_if_env_set
+    def test_malformatted_provided_subnet(self):
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, \
+            Host("client", get_client_config(provided_subnets=["10.179.10.1/24"])) as client:
+
+            self.assertIn(
+                "Sent: config = {",
+                server.logs(),
+                "Did not find expected log entry."
+            )

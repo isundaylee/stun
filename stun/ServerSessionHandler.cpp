@@ -240,7 +240,16 @@ void ServerSessionHandler::attachHandlers() {
 
         auto route = networking::Route{
             subnet, networking::RouteDestination{config_.peerTunnelAddr}};
-        InterfaceConfig::newRoute(route);
+
+        try {
+          InterfaceConfig::newRoute(route);
+        } catch (std::runtime_error const& ex) {
+          // TODO: Use some more specific exception type?
+          LOG_E("Session")
+              << getClientLogTag()
+              << ": Failed to add a route for client-provided subnet: "
+              << ex.what() << std::endl;
+        }
 
         // TODO: Upon disconnection, these routes would be removed along with
         // the tunnel interface. Should we still remove them manually for good
