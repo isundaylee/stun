@@ -10,7 +10,8 @@ using networking::IPTables;
 Server::Server(event::EventLoop& loop, ServerConfig config)
     : loop_(loop), config_(config) {
   IPTables::clear(config.configID);
-  IPTables::masquerade(config.addressPool, config.configID);
+  IPTables::masquerade(config.addressPool, config.masqueradeOutputInterface,
+                       config.configID);
   addrPool.reset(new IPAddressPool(config.addressPool));
 
   for (auto const& entry : config_.staticHosts) {

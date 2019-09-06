@@ -18,6 +18,7 @@ public:
 
   int port;
   SubnetAddress addressPool;
+  std::string masqueradeOutputInterface;
   bool encryption;
   std::string secret;
   size_t paddingTo;

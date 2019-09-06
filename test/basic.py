@@ -405,3 +405,27 @@ class TestBasic(unittest.TestCase):
                     re.search(message, server_logs),
                     "Expected log message not present."
                 )
+    
+    @skip_all_tests_if_env_set
+    def test_masquerade_output_interface_set(self):
+        with Host("server", get_server_config(masquerade_output_interface="eth0")) as server:
+            entries = server.exec(["iptables", "-t", "nat", "-S"], assert_on_failure=True)[0].split("\n")
+
+            found = False
+            for entry in entries:
+                if "-A POSTROUTING -s 10.179.0.0/24 -o eth0 -m comment" in entry:
+                    found = True
+            
+            self.assertTrue(found, "Expected iptables rule not found.")
+
+    @skip_all_tests_if_env_set
+    def test_masquerade_output_interface_empty(self):
+        with Host("server", get_server_config()) as server:
+            entries = server.exec(["iptables", "-t", "nat", "-S"], assert_on_failure=True)[0].split("\n")
+
+            found = False
+            for entry in entries:
+                if "-A POSTROUTING -s 10.179.0.0/24 -m comment" in entry:
+                    found = True
+            
+            self.assertTrue(found, "Expected iptables rule not found.")

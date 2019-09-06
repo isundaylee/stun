@@ -206,6 +206,7 @@ std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop,
       common::Configerator::get<int>("port", kDefaultServerPort),
       networking::SubnetAddress{
           common::Configerator::get<std::string>("address_pool")},
+      common::Configerator::get<std::string>("masquerade_output_interface", ""),
       common::Configerator::get<bool>("encryption", true),
       common::Configerator::get<std::string>("secret", ""),
       common::Configerator::get<size_t>("padding_to", 0),

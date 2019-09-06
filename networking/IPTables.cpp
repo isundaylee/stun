@@ -8,11 +8,15 @@
 namespace networking {
 
 /* static */ void IPTables::masquerade(SubnetAddress const& sourceSubnet,
+                                       std::string const& outputInterface,
                                        std::string const& ruleID) {
   auto ruleComment = "stun " + ruleID;
+  auto outputInterfaceClause =
+      (outputInterface == "" ? "" : " -o " + outputInterface);
   runCommandAndAssertSuccess("-t nat -A POSTROUTING -s " +
-                             sourceSubnet.toString() + " -j MASQUERADE " +
-                             "-m comment --comment \"" + ruleComment + "\"");
+                             sourceSubnet.toString() + outputInterfaceClause +
+                             " -j MASQUERADE" + " -m comment --comment \"" +
+                             ruleComment + "\"");
 
   LOG_V("IPTables") << "Set MASQUERADE for source " << sourceSubnet.toString()
                     << "." << std::endl;
