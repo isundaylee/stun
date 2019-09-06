@@ -176,9 +176,12 @@ void Client::doReconnect() {
   reconnector_.reset();
 
 #if TARGET_OSX
-  cleaner_->callback.invoke();
+  if (cleaner_) {
+    // Do DNS setting clean-up
+    cleaner_->callback.invoke();
+    cleaner_.reset();
+  }
 
-  cleaner_.reset();
   cleanerCondition_.reset();
   cleanerDidFinish_.reset();
 #endif
