@@ -9,22 +9,23 @@ import time
 
 tempfile.tempdir = "/tmp"
 
+
 def docker(args, assert_on_failure=True, input=None):
     result = subprocess.run(
-        ["docker"] + args, 
-        input=input, 
-        stdout=subprocess.PIPE, 
-        stderr=subprocess.PIPE
+        ["docker"] + args, input=input, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
 
     if assert_on_failure and result.returncode != 0:
-        print('STDOUT: ')
+        print("STDOUT: ")
         print(result.stdout.decode())
-        print('STDERR: ')
+        print("STDERR: ")
         print(result.stderr.decode())
-        raise RuntimeError("`docker {}` exited with code {}".format(' '.join(args), result.returncode))
+        raise RuntimeError(
+            "`docker {}` exited with code {}".format(" ".join(args), result.returncode)
+        )
 
     return (result.stdout.decode(), result.stderr.decode(), result.returncode)
+
 
 def get_server_config(**kwargs):
     return {
@@ -33,25 +34,26 @@ def get_server_config(**kwargs):
         "address_pool": "10.179.0.0/24",
         "padding_to": 1000,
         "data_pipe_rotate_interval": 60,
-        **kwargs
+        **kwargs,
     }
+
 
 def get_client_config(**kwargs):
     return {
         "role": "client",
         "server": "server",
         "secret": "lovely",
-        "forward_subnets": [
-        ],
-        "excluded_subnets": [
-        ],
-        **kwargs
+        "forward_subnets": [],
+        "excluded_subnets": [],
+        **kwargs,
     }
 
-DOCKER_NETWORK_NAME = 'stun_test'
-DOCKER_IMAGE_TAG = 'stun_test'
 
-class Host():
+DOCKER_NETWORK_NAME = "stun_test"
+DOCKER_IMAGE_TAG = "stun_test"
+
+
+class Host:
     def __init__(self, name, config, entry_args=[]):
         self.name = name
         self.config = config
@@ -60,21 +62,24 @@ class Host():
     def __enter__(self):
         td = tempfile.mkdtemp(prefix="stun_tes")
 
-        with open(os.path.join(td, 'stunrc'), 'w') as f:
+        with open(os.path.join(td, "stunrc"), "w") as f:
             json.dump(self.config, f)
 
         args = ["-c", "/usr/config/stunrc"] + self.entry_args
 
-        self.id = docker([
-            "create",
-            "--volume={}:/usr/config".format(td),
-            "--cap-add=NET_ADMIN",
-            "--net={}".format(DOCKER_NETWORK_NAME),
-            "--net-alias={}".format(self.name),
-            "--device=/dev/net/tun",
-            "--entrypoint=/usr/src/stun",
-            DOCKER_IMAGE_TAG,
-        ] + args)[0].strip()
+        self.id = docker(
+            [
+                "create",
+                "--volume={}:/usr/config".format(td),
+                "--cap-add=NET_ADMIN",
+                "--net={}".format(DOCKER_NETWORK_NAME),
+                "--net-alias={}".format(self.name),
+                "--device=/dev/net/tun",
+                "--entrypoint=/usr/src/stun",
+                DOCKER_IMAGE_TAG,
+            ]
+            + args
+        )[0].strip()
 
         docker(["start", self.id])
 
@@ -94,20 +99,22 @@ class Host():
             extra_flags.append("-d")
 
         return docker(
-            ["exec"] + extra_flags + [self.id] + cmd, 
-            assert_on_failure=assert_on_failure, 
-            input=input
+            ["exec"] + extra_flags + [self.id] + cmd,
+            assert_on_failure=assert_on_failure,
+            input=input,
         )
-    
+
     def create_file(self, path, content):
         self.exec(["tee", path], assert_on_failure=True, input=content)
 
     def get_client_tunnel_ip(self):
-        lines = self.exec(["ifconfig"], assert_on_failure=True)[0].split('\n')
+        lines = self.exec(["ifconfig"], assert_on_failure=True)[0].split("\n")
 
         for i in range(len(lines) - 1):
-            if lines[i].startswith('tun0: '):
-                match = re.search(r'inet ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', lines[i + 1])
+            if lines[i].startswith("tun0: "):
+                match = re.search(
+                    r"inet ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", lines[i + 1]
+                )
                 if match is None:
                     raise RuntimeError("Unable to find client tunnel IP address.")
                 return match[1]
@@ -121,16 +128,13 @@ class Host():
         self.create_file(config_path, json.dumps(config).encode())
 
         self.exec(
-            ["/usr/src/stun", "-c", config_path], 
-            assert_on_failure=True, 
-            detach=True
+            ["/usr/src/stun", "-c", config_path], assert_on_failure=True, detach=True
         )
 
         time.sleep(1)
 
         return self.get_stun_pid(name)
 
-    
     def get_stun_pid(self, name):
         """Return the PID of the `stun` process previously launched with
         `run_stun` with the given name."""
@@ -142,19 +146,19 @@ class Host():
             raise RuntimeError("Failed to get stun PID.")
 
         return int(ps_entries[0].split()[1])
-    
+
     def kill_stun(self, name):
         """Kill a `stun` process previously launched with `run_stun` with the
         given name."""
         self.exec(["kill", str(self.get_stun_pid(name))], assert_on_failure=True)
         time.sleep(1)
-    
+
     def get_masqueraded_subnets(self):
         """Return a list of subnets corresponding to iptables MASQUERADE rules
         created by `stun`."""
-        entries = self.exec([
-            "iptables", "-t", "nat", "-L", "POSTROUTING"
-        ], assert_on_failure=True)[0].split("\n")
+        entries = self.exec(
+            ["iptables", "-t", "nat", "-L", "POSTROUTING"], assert_on_failure=True
+        )[0].split("\n")
 
         entries = [e for e in entries if e.startswith("MASQUERADE")]
         entries = [e for e in entries if "/* stun" in e]
@@ -163,189 +167,178 @@ class Host():
 
 
 skip_all_tests_if_env_set = unittest.skipIf(
-    os.environ.get('SKIP_ALL_TESTS', False), 'Skip all tests.'
+    os.environ.get("SKIP_ALL_TESTS", False), "Skip all tests."
 )
+
 
 class TestBasic(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with tempfile.TemporaryDirectory(prefix='stun_test_build') as td:
-            shutil.copyfile(os.environ['DOCKERFILE_PATH'], os.path.join(td, 'Dockerfile'))
-            shutil.copyfile(os.environ['BINARY_PATH'], os.path.join(td, 'stun'))
-            docker(['build', '-t', DOCKER_IMAGE_TAG, td])
+        with tempfile.TemporaryDirectory(prefix="stun_test_build") as td:
+            shutil.copyfile(
+                os.environ["DOCKERFILE_PATH"], os.path.join(td, "Dockerfile")
+            )
+            shutil.copyfile(os.environ["BINARY_PATH"], os.path.join(td, "stun"))
+            docker(["build", "-t", DOCKER_IMAGE_TAG, td])
 
     def setUp(self):
-        docker(['network', 'create', DOCKER_NETWORK_NAME])
+        docker(["network", "create", DOCKER_NETWORK_NAME])
 
     def tearDown(self):
-        docker(['network', 'rm', DOCKER_NETWORK_NAME])
+        docker(["network", "rm", DOCKER_NETWORK_NAME])
 
     @skip_all_tests_if_env_set
     def test_basic(self):
-        with Host("server", get_server_config()) as server, \
-            Host("client", get_client_config()) as client:
+        with Host("server", get_server_config()) as server, Host(
+            "client", get_client_config()
+        ) as client:
 
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "Failed to ping from client to server."
+                "Failed to ping from client to server.",
             )
 
     @skip_all_tests_if_env_set
     def test_static_hosts(self):
         server_config = get_server_config(
-            authentication = True,
-            static_hosts = {'nice_guy': '10.179.0.152'},
+            authentication=True, static_hosts={"nice_guy": "10.179.0.152"}
         )
 
-        client_config = get_client_config(
-            user = 'nice_guy',
-        )
+        client_config = get_client_config(user="nice_guy")
 
-        with Host("server", server_config) as server, \
-            Host("client", client_config) as client:
+        with Host("server", server_config) as server, Host(
+            "client", client_config
+        ) as client:
 
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "Failed to ping from client to server."
+                "Failed to ping from client to server.",
             )
 
             self.assertEqual(
                 client.get_client_tunnel_ip(),
                 "10.179.0.152",
-                "Unexpected IP assigned to client."
+                "Unexpected IP assigned to client.",
             )
 
     @skip_all_tests_if_env_set
     def test_authentication_without_username(self):
-        with Host("server", get_server_config(authentication=True)) as server, \
-            Host("client", get_client_config()) as client:
+        with Host("server", get_server_config(authentication=True)) as server, Host(
+            "client", get_client_config()
+        ) as client:
 
             self.assertIn(
                 "Session ended with error: No user name provided.",
                 client.logs(),
-                "Client should have received the disconnect reason."
+                "Client should have received the disconnect reason.",
             )
 
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 1,
-                "Should not be able to ping from client to server."
+                "Should not be able to ping from client to server.",
             )
 
     @skip_all_tests_if_env_set
     def test_provided_subnets(self):
-        with Host("server", get_server_config()) as server, \
-            Host("client", get_client_config(provided_subnets=["10.180.0.0/24"])) as client:
+        with Host("server", get_server_config()) as server, Host(
+            "client", get_client_config(provided_subnets=["10.180.0.0/24"])
+        ) as client:
 
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "Failed to ping from client to server."
+                "Failed to ping from client to server.",
             )
 
-            route_lines = server.exec(["ip", "route"], assert_on_failure=True)[0].split("\n")
+            route_lines = server.exec(["ip", "route"], assert_on_failure=True)[0].split(
+                "\n"
+            )
             self.assertIn(
                 "10.180.0.0/24 via 10.179.0.2 dev tun0 ",
                 route_lines,
-                "Server should have added a route for the client-provided subnet."
+                "Server should have added a route for the client-provided subnet.",
             )
 
     @skip_all_tests_if_env_set
     def test_custom_port(self):
-        with Host("server", get_server_config(port=1099)) as server, \
-            Host("client", get_client_config(port=1099)) as client:
+        with Host("server", get_server_config(port=1099)) as server, Host(
+            "client", get_client_config(port=1099)
+        ) as client:
 
             self.assertEqual(
                 client.exec(["ping", "-t", "1", "-c", "1", "10.179.0.1"])[2],
                 0,
-                "Failed to ping from client to server."
+                "Failed to ping from client to server.",
             )
-    
+
     @skip_all_tests_if_env_set
     def test_multiple_servers_iptables_rule(self):
         with Host("server", get_server_config()) as server:
             server.run_stun(
-                "extra", 
-                get_server_config(
-                    address_pool="10.180.0.0/24",
-                    port=1099
-                )
+                "extra", get_server_config(address_pool="10.180.0.0/24", port=1099)
             )
 
             masqueraded_subnets = server.get_masqueraded_subnets()
-                
+
             self.assertEqual(
-                len(masqueraded_subnets), 
-                2, 
-                "Two MASQUERADE rules should exist."
+                len(masqueraded_subnets), 2, "Two MASQUERADE rules should exist."
             )
 
             self.assertIn(
-                "10.179.0.0/24", 
-                masqueraded_subnets, 
-                "10.179.0.0/24 should be MASQUERADE-d."
+                "10.179.0.0/24",
+                masqueraded_subnets,
+                "10.179.0.0/24 should be MASQUERADE-d.",
             )
 
             self.assertIn(
-                "10.180.0.0/24", 
-                masqueraded_subnets, 
-                "10.180.0.0/24 should be MASQUERADE-d."
+                "10.180.0.0/24",
+                masqueraded_subnets,
+                "10.180.0.0/24 should be MASQUERADE-d.",
             )
-    
+
     @skip_all_tests_if_env_set
     def test_multiple_servers_iptables_rule_cleared_properly(self):
         with Host("server", get_server_config()) as server:
             server.run_stun(
-                "extra", 
-                get_server_config(
-                    address_pool="10.180.0.0/24",
-                    port=1099
-                )
+                "extra", get_server_config(address_pool="10.180.0.0/24", port=1099)
             )
 
             server.kill_stun("extra")
 
             server.run_stun(
-                "extra", 
-                get_server_config(
-                    address_pool="10.180.0.0/24",
-                    port=1099
-                )
+                "extra", get_server_config(address_pool="10.180.0.0/24", port=1099)
             )
 
             masqueraded_subnets = server.get_masqueraded_subnets()
 
             self.assertEqual(
-                len(masqueraded_subnets), 
-                2, 
-                "Two MASQUERADE rules should exist."
+                len(masqueraded_subnets), 2, "Two MASQUERADE rules should exist."
             )
 
             self.assertIn(
-                "10.179.0.0/24", 
-                masqueraded_subnets, 
-                "10.179.0.0/24 should be MASQUERADE-d."
+                "10.179.0.0/24",
+                masqueraded_subnets,
+                "10.179.0.0/24 should be MASQUERADE-d.",
             )
 
             self.assertIn(
-                "10.180.0.0/24", 
-                masqueraded_subnets, 
-                "10.180.0.0/24 should be MASQUERADE-d."
+                "10.180.0.0/24",
+                masqueraded_subnets,
+                "10.180.0.0/24 should be MASQUERADE-d.",
             )
 
     @skip_all_tests_if_env_set
     def test_per_user_log_message_with_name(self):
-        server_config = {
-            "authentication": True,
-            "quotas": {
-                "test-client": 1
-            }
-        }
+        server_config = {"authentication": True, "quotas": {"test-client": 1}}
 
-        with Host("server", get_server_config(**server_config), entry_args=["-v"]) as server, \
-            Host("client", get_client_config(user='test-client'), entry_args=["-v"]) as client:
+        with Host(
+            "server", get_server_config(**server_config), entry_args=["-v"]
+        ) as server, Host(
+            "client", get_client_config(user="test-client"), entry_args=["-v"]
+        ) as client:
 
             server_expected_messages = [
                 "test-client: Client said hello!",
@@ -356,23 +349,17 @@ class TestBasic(unittest.TestCase):
             server_logs = server.logs()
 
             for message in server_expected_messages:
-                self.assertIn(
-                    message,
-                    server_logs,
-                    "Expected log message not present."
-                )
+                self.assertIn(message, server_logs, "Expected log message not present.")
 
     @skip_all_tests_if_env_set
     def test_per_user_log_message_with_authentication(self):
-        server_config = {
-            "authentication": True,
-            "quotas": {
-                "test-client": 1
-            }
-        }
+        server_config = {"authentication": True, "quotas": {"test-client": 1}}
 
-        with Host("server", get_server_config(**server_config), entry_args=["-v"]) as server, \
-            Host("client", get_client_config(user='test-client'), entry_args=["-v"]) as client:
+        with Host(
+            "server", get_server_config(**server_config), entry_args=["-v"]
+        ) as server, Host(
+            "client", get_client_config(user="test-client"), entry_args=["-v"]
+        ) as client:
 
             server_expected_messages = [
                 "test-client: Client said hello!",
@@ -383,60 +370,62 @@ class TestBasic(unittest.TestCase):
             server_logs = server.logs()
 
             for message in server_expected_messages:
-                self.assertIn(
-                    message,
-                    server_logs,
-                    "Expected log message not present."
-                )
+                self.assertIn(message, server_logs, "Expected log message not present.")
 
     @skip_all_tests_if_env_set
     def test_per_user_log_message_without_authentication(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, \
-            Host("client", get_client_config(), entry_args=["-v"]) as client:
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
+            "client", get_client_config(), entry_args=["-v"]
+        ) as client:
 
             server_expected_messages = [
-                re.compile("\d+\.\d+\.\d+\.\d+: Creating a new data pipe."),
+                re.compile("\d+\.\d+\.\d+\.\d+: Creating a new data pipe.")
             ]
 
             server_logs = server.logs()
 
             for message in server_expected_messages:
                 self.assertIsNotNone(
-                    re.search(message, server_logs),
-                    "Expected log message not present."
+                    re.search(message, server_logs), "Expected log message not present."
                 )
-    
+
     @skip_all_tests_if_env_set
     def test_masquerade_output_interface_set(self):
-        with Host("server", get_server_config(masquerade_output_interface="eth0")) as server:
-            entries = server.exec(["iptables", "-t", "nat", "-S"], assert_on_failure=True)[0].split("\n")
+        with Host(
+            "server", get_server_config(masquerade_output_interface="eth0")
+        ) as server:
+            entries = server.exec(
+                ["iptables", "-t", "nat", "-S"], assert_on_failure=True
+            )[0].split("\n")
 
             found = False
             for entry in entries:
                 if "-A POSTROUTING -s 10.179.0.0/24 -o eth0 -m comment" in entry:
                     found = True
-            
+
             self.assertTrue(found, "Expected iptables rule not found.")
 
     @skip_all_tests_if_env_set
     def test_masquerade_output_interface_empty(self):
         with Host("server", get_server_config()) as server:
-            entries = server.exec(["iptables", "-t", "nat", "-S"], assert_on_failure=True)[0].split("\n")
+            entries = server.exec(
+                ["iptables", "-t", "nat", "-S"], assert_on_failure=True
+            )[0].split("\n")
 
             found = False
             for entry in entries:
                 if "-A POSTROUTING -s 10.179.0.0/24 -m comment" in entry:
                     found = True
-            
+
             self.assertTrue(found, "Expected iptables rule not found.")
-        
+
     @skip_all_tests_if_env_set
     def test_malformatted_provided_subnet(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, \
-            Host("client", get_client_config(provided_subnets=["10.179.10.1/24"])) as client:
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
+            "client", get_client_config(provided_subnets=["10.179.10.1/24"])
+        ) as client:
 
             self.assertIn(
-                "Sent: config = {",
-                server.logs(),
-                "Did not find expected log entry."
+                "Sent: config = {", server.logs(), "Did not find expected log entry."
             )
+
