@@ -1,3 +1,5 @@
+# v0.10.1 (2019-09-06)
+
 - [Core] Fixes server crash when provided with malformatted client-provided 
   subnets.
 - [Core] Fixes client reconnection crash when DNS settings are not 
