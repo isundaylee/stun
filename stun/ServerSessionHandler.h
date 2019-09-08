@@ -49,6 +49,7 @@ public:
 
 private:
   event::EventLoop& loop_;
+  common::Logger logger_;
 
   Server* server_;
   ServerSessionConfig config_;
@@ -72,7 +73,5 @@ private:
   json createDataPipe();
   void doRotateDataPipe();
   void savePriorQuota();
-
-  std::string getClientLogTag() const;
 };
 } // namespace stun

@@ -111,7 +111,8 @@ private:
 ServerSessionHandler::ServerSessionHandler(
     event::EventLoop& loop, Server* server, ServerSessionConfig config,
     std::unique_ptr<TCPSocket> commandPipe)
-    : loop_(loop), server_(server), config_(config),
+    : loop_(loop), logger_{common::Logger::getDefault("Session")},
+      server_(server), config_(config),
       peerPublicAddr_(commandPipe->getPeerAddress()),
       messenger_(new Messenger(loop, std::move(commandPipe))),
       didEnd_(loop.createBaseCondition()) {
@@ -119,6 +120,7 @@ ServerSessionHandler::ServerSessionHandler(
     messenger_->addEncryptor(
         std::make_unique<crypto::AESEncryptor>(crypto::AESKey(config_.secret)));
   }
+  logger_.setPrefix(peerPublicAddr_.getHost().toString());
   attachHandlers();
 }
 
@@ -160,22 +162,21 @@ void ServerSessionHandler::attachHandlers() {
       }
 
       config_.user = body["user"].template get<std::string>();
-      LOG_I("Session") << getClientLogTag() << ": Client said hello!"
-                       << std::endl;
+      logger_.setPrefix(config_.user);
+      logger_ << "Client said hello!" << std::endl;
 
       // Retrieve this user's quota
       if (!config_.quotaTable.empty()) {
         auto it = config_.quotaTable.find(config_.user);
         if (it == config_.quotaTable.end()) {
-          LOG_I("Session") << getClientLogTag()
-                           << ": Unknown client disconnected." << std::endl;
+          logger_ << "Unknown client disconnected." << std::endl;
           return Message("error", "User " + config_.user +
                                       " not allowed on the server.");
         }
 
         config_.quota = it->second;
-        LOG_I("Session") << getClientLogTag() << ": Client has a quota of "
-                         << config_.quota << " bytes." << std::endl;
+        logger_ << "Client has a quota of " << config_.quota << " bytes."
+                << std::endl;
 
         // Retrieve the user's prior used quota
         auto& notebook = common::Notebook::getInstance();
@@ -234,9 +235,8 @@ void ServerSessionHandler::attachHandlers() {
         networking::SubnetAddress subnet{
             subnetString.template get<std::string>()};
 
-        LOG_V("Session") << getClientLogTag()
-                         << ": Adding routes for client-provided subnet: "
-                         << subnet.toString() << std::endl;
+        logger_ << "Adding routes for client-provided subnet: "
+                << subnet.toString() << std::endl;
 
         auto route = networking::Route{
             subnet, networking::RouteDestination{config_.peerTunnelAddr}};
@@ -245,10 +245,8 @@ void ServerSessionHandler::attachHandlers() {
           InterfaceConfig::newRoute(route);
         } catch (std::runtime_error const& ex) {
           // TODO: Use some more specific exception type?
-          LOG_E("Session")
-              << getClientLogTag()
-              << ": Failed to add a route for client-provided subnet: "
-              << ex.what() << std::endl;
+          logger_ << "Failed to add a route for client-provided subnet: "
+                  << ex.what() << std::endl;
         }
 
         // TODO: Upon disconnection, these routes would be removed along with
@@ -291,17 +289,14 @@ json ServerSessionHandler::createDataPipe() {
   UDPSocket udpPipe{loop_, networking::NetworkType::IPv4};
   int port = udpPipe.bind(0);
 
-  LOG_V("Session") << getClientLogTag() << ": Creating a new data pipe."
-                   << std::endl;
+  logger_ << "Creating a new data pipe." << std::endl;
 
   // Prepare encryption config
   std::string aesKey;
   if (config_.encryption) {
     aesKey = crypto::AESKey::randomStringKey();
   } else {
-    LOG_V("Session") << getClientLogTag()
-                     << ": Data encryption is disabled per configuration."
-                     << std::endl;
+    logger_ << "Data encryption is disabled per configuration." << std::endl;
   }
 
   auto ttl = (config_.dataPipeRotationInterval == 0s
@@ -317,14 +312,6 @@ json ServerSessionHandler::createDataPipe() {
               {"aes_key", aesKey},
               {"padding_to_size", config_.paddingTo},
               {"compression", config_.compression}};
-}
-
-std::string ServerSessionHandler::getClientLogTag() const {
-  if (config_.authentication) {
-    return config_.user;
-  } else {
-    return peerPublicAddr_.getHost().toString();
-  }
 }
 
 } // namespace stun

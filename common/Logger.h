@@ -32,6 +32,11 @@ class Logger {
 public:
   Logger(std::ostream& out = std::cout) : out_(out) {}
 
+  Logger(Logger const& rhs)
+      : linePrimed_{rhs.linePrimed_}, tag_{rhs.tag_}, prefix_{rhs.prefix_},
+        out_{rhs.out_}, threshold_{rhs.threshold_}, level_{rhs.level_},
+        buffer_{rhs.buffer_.str()} {}
+
   template <typename T> Logger& operator<<(const T& v) {
     if (level_ < threshold_) {
       return *this;
@@ -41,6 +46,9 @@ public:
       buffer_ << logHeader() << "[" << tag_ << "] ";
       for (size_t i = tag_.length(); i < kLoggerTagPaddingTo; i++) {
         buffer_ << " ";
+      }
+      if (!prefix_.empty()) {
+        buffer_ << prefix_ << ": ";
       }
       linePrimed_ = true;
     }
@@ -73,13 +81,16 @@ public:
 
   void setLoggingThreshold(LogLevel threshold) { threshold_ = threshold; }
 
+  void setPrefix(std::string prefix) { prefix_ = prefix; }
+
   std::function<void(std::string)> tee;
 
 private:
-  const size_t kTimestampBufferSize = 64;
+  static size_t const kTimestampBufferSize = 64;
 
   bool linePrimed_ = false;
   std::string tag_;
+  std::string prefix_;
   std::ostream& out_;
   LogLevel threshold_ = VERBOSE;
   LogLevel level_ = VERBOSE;
