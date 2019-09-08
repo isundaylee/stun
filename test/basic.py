@@ -166,11 +166,6 @@ class Host:
         return [e.split()[3] for e in entries]
 
 
-skip_all_tests_if_env_set = unittest.skipIf(
-    os.environ.get("SKIP_ALL_TESTS", False), "Skip all tests."
-)
-
-
 class TestBasic(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -187,7 +182,6 @@ class TestBasic(unittest.TestCase):
     def tearDown(self):
         docker(["network", "rm", DOCKER_NETWORK_NAME])
 
-    @skip_all_tests_if_env_set
     def test_basic(self):
         with Host("server", get_server_config()) as server, Host(
             "client", get_client_config()
@@ -199,7 +193,6 @@ class TestBasic(unittest.TestCase):
                 "Failed to ping from client to server.",
             )
 
-    @skip_all_tests_if_env_set
     def test_static_hosts(self):
         server_config = get_server_config(
             authentication=True, static_hosts={"nice_guy": "10.179.0.152"}
@@ -223,7 +216,6 @@ class TestBasic(unittest.TestCase):
                 "Unexpected IP assigned to client.",
             )
 
-    @skip_all_tests_if_env_set
     def test_authentication_without_username(self):
         with Host("server", get_server_config(authentication=True)) as server, Host(
             "client", get_client_config()
@@ -241,7 +233,6 @@ class TestBasic(unittest.TestCase):
                 "Should not be able to ping from client to server.",
             )
 
-    @skip_all_tests_if_env_set
     def test_provided_subnets(self):
         with Host("server", get_server_config()) as server, Host(
             "client", get_client_config(provided_subnets=["10.180.0.0/24"])
@@ -262,7 +253,6 @@ class TestBasic(unittest.TestCase):
                 "Server should have added a route for the client-provided subnet.",
             )
 
-    @skip_all_tests_if_env_set
     def test_custom_port(self):
         with Host("server", get_server_config(port=1099)) as server, Host(
             "client", get_client_config(port=1099)
@@ -274,7 +264,6 @@ class TestBasic(unittest.TestCase):
                 "Failed to ping from client to server.",
             )
 
-    @skip_all_tests_if_env_set
     def test_multiple_servers_iptables_rule(self):
         with Host("server", get_server_config()) as server:
             server.run_stun(
@@ -299,7 +288,6 @@ class TestBasic(unittest.TestCase):
                 "10.180.0.0/24 should be MASQUERADE-d.",
             )
 
-    @skip_all_tests_if_env_set
     def test_multiple_servers_iptables_rule_cleared_properly(self):
         with Host("server", get_server_config()) as server:
             server.run_stun(
@@ -330,7 +318,6 @@ class TestBasic(unittest.TestCase):
                 "10.180.0.0/24 should be MASQUERADE-d.",
             )
 
-    @skip_all_tests_if_env_set
     def test_per_user_log_message_with_authentication(self):
         server_config = {"authentication": True, "quotas": {"test-client": 1}}
 
@@ -351,7 +338,6 @@ class TestBasic(unittest.TestCase):
             for message in server_expected_messages:
                 self.assertIn(message, server_logs, "Expected log message not present.")
 
-    @skip_all_tests_if_env_set
     def test_per_user_log_message_without_authentication(self):
         with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
             "client", get_client_config(), entry_args=["-v"]
@@ -368,7 +354,6 @@ class TestBasic(unittest.TestCase):
                     re.search(message, server_logs), "Expected log message not present."
                 )
 
-    @skip_all_tests_if_env_set
     def test_masquerade_output_interface_set(self):
         with Host(
             "server", get_server_config(masquerade_output_interface="eth0")
@@ -384,7 +369,6 @@ class TestBasic(unittest.TestCase):
 
             self.assertTrue(found, "Expected iptables rule not found.")
 
-    @skip_all_tests_if_env_set
     def test_masquerade_output_interface_empty(self):
         with Host("server", get_server_config()) as server:
             entries = server.exec(
@@ -398,7 +382,6 @@ class TestBasic(unittest.TestCase):
 
             self.assertTrue(found, "Expected iptables rule not found.")
 
-    @skip_all_tests_if_env_set
     def test_malformatted_provided_subnet(self):
         with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
             "client", get_client_config(provided_subnets=["10.179.10.1/24"])
