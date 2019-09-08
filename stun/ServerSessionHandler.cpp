@@ -120,7 +120,7 @@ ServerSessionHandler::ServerSessionHandler(
     messenger_->addEncryptor(
         std::make_unique<crypto::AESEncryptor>(crypto::AESKey(config_.secret)));
   }
-  logger_.setPrefix(peerPublicAddr_.getHost().toString());
+  logger_.setPrefix("session-" + std::to_string(config_.sessionID));
   attachHandlers();
 }
 
@@ -162,7 +162,6 @@ void ServerSessionHandler::attachHandlers() {
       }
 
       config_.user = body["user"].template get<std::string>();
-      logger_.setPrefix(config_.user);
       logger_ << "Client said hello!" << std::endl;
 
       // Retrieve this user's quota

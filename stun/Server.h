@@ -42,6 +42,8 @@ private:
 
   ServerConfig config_;
 
+  size_t sessionIDCounter_ = 0;
+
   std::unique_ptr<TCPServer> server_;
   std::unique_ptr<event::Action> listener_;
   std::vector<std::unique_ptr<ServerSessionHandler>> sessionHandlers_;

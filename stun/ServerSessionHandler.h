@@ -19,6 +19,8 @@ using networking::TCPSocket;
 
 struct ServerSessionConfig {
 public:
+  size_t sessionID;
+
   bool encryption;
   std::string secret;
   size_t paddingTo;

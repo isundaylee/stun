@@ -39,7 +39,8 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  auto sessionConfig = ServerSessionConfig{config_.encryption,
+  auto sessionConfig = ServerSessionConfig{sessionIDCounter_++,
+                                           config_.encryption,
                                            config_.secret,
                                            config_.paddingTo,
                                            config_.compression,

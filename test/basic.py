@@ -341,9 +341,9 @@ class TestBasic(unittest.TestCase):
         ) as client:
 
             server_expected_messages = [
-                "test-client: Client said hello!",
-                "test-client: Client has a quota of 1073741824 bytes.",
-                "test-client: Creating a new data pipe.",
+                "session-0: Client said hello!",
+                "session-0: Client has a quota of 1073741824 bytes.",
+                "session-0: Creating a new data pipe.",
             ]
 
             server_logs = server.logs()
@@ -362,9 +362,9 @@ class TestBasic(unittest.TestCase):
         ) as client:
 
             server_expected_messages = [
-                "test-client: Client said hello!",
-                "test-client: Client has a quota of 1073741824 bytes.",
-                "test-client: Creating a new data pipe.",
+                "session-0: Client said hello!",
+                "session-0: Client has a quota of 1073741824 bytes.",
+                "session-0: Creating a new data pipe.",
             ]
 
             server_logs = server.logs()
@@ -379,15 +379,13 @@ class TestBasic(unittest.TestCase):
         ) as client:
 
             server_expected_messages = [
-                re.compile("\d+\.\d+\.\d+\.\d+: Creating a new data pipe.")
+                "session-0: Creating a new data pipe.",
             ]
 
             server_logs = server.logs()
 
             for message in server_expected_messages:
-                self.assertIsNotNone(
-                    re.search(message, server_logs), "Expected log message not present."
-                )
+                self.assertIn(message, server_logs, "Expected log message not present.")
 
     @skip_all_tests_if_env_set
     def test_masquerade_output_interface_set(self):
