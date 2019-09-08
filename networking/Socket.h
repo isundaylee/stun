@@ -20,9 +20,15 @@ enum SocketType { TCP, UDP };
 
 class Socket {
 public:
-  Socket(event::EventLoop& loop, NetworkType networkType, SocketType type);
+  Socket(event::EventLoop& loop, std::string logPrefix, NetworkType networkType,
+         SocketType type);
+  Socket(event::EventLoop& loop, std::string logPrefix, NetworkType networkType,
+         SocketType type, int fd, SocketAddress peerAddr);
+  Socket(event::EventLoop& loop, NetworkType networkType, SocketType type)
+      : Socket{loop, "", networkType, type} {}
   Socket(event::EventLoop& loop, NetworkType networkType, SocketType type,
-         int fd, SocketAddress peerAddr);
+         int fd, SocketAddress peerAddr)
+      : Socket{loop, "", networkType, type, fd, peerAddr} {}
 
   Socket(Socket&& move) = default;
   Socket& operator=(Socket&& move) = default;
@@ -38,6 +44,7 @@ public:
 
 protected:
   event::EventLoop& loop_;
+  common::Logger logger_;
 
   NetworkType networkType_;
   SocketType type_;

@@ -15,11 +15,15 @@ namespace networking {
 
 const int kSocketListenBacklog = 10;
 
-Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type)
-    : loop_(loop), networkType_(networkType), type_(type), bound_(false),
-      connected_(false) {
+Socket::Socket(event::EventLoop& loop, std::string logPrefix,
+               NetworkType networkType, SocketType type)
+    : loop_(loop), logger_{common::Logger::getDefault("Socket")},
+      networkType_(networkType), type_(type), bound_(false), connected_(false) {
+  logger_.setPrefix(logPrefix);
+
   signal(SIGPIPE, SIG_IGN);
-  LOG_V("Socket") << "Disabled SIGPIPE handling." << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERBOSE)
+      << "Disabled SIGPIPE handling." << std::endl;
 
   int fd = socket(networkType == NetworkType::IPv4 ? PF_INET : PF_INET6,
                   type == TCP ? SOCK_STREAM : SOCK_DGRAM, 0);
@@ -33,10 +37,14 @@ Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type)
   checkUnixError(ret, "setting SO_REUSEADDR for SocketPipe");
 }
 
-Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type,
-               int fd, SocketAddress peerAddr)
-    : loop_(loop), networkType_(networkType), type_(type), fd_(fd),
-      bound_(false), connected_(true), peerAddr_(new SocketAddress(peerAddr)) {
+Socket::Socket(event::EventLoop& loop, std::string logPrefix,
+               NetworkType networkType, SocketType type, int fd,
+               SocketAddress peerAddr)
+    : loop_(loop), logger_{common::Logger::getDefault("Socket")},
+      networkType_(networkType), type_(type), fd_(fd), bound_(false),
+      connected_(true), peerAddr_(new SocketAddress(peerAddr)) {
+  logger_.setPrefix(logPrefix);
+
   setNonblock();
 }
 
@@ -70,7 +78,8 @@ int Socket::bind(int port) {
     checkUnixError(ret, "listening on a SocketPipe's socket");
   }
 
-  LOG_V("Socket") << "Bound to port " << actualPort << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERBOSE)
+      << "Bound to port " << actualPort << std::endl;
 
   bound_ = true;
 
@@ -82,16 +91,18 @@ void Socket::connect(SocketAddress peerAddr) {
   assertTrue((type_ == SocketType::UDP) || !bound_,
              "Connecting while already bound");
 
-  LOG_V("Socket") << "Connecting to " << peerAddr.getHost() << ":"
-                  << peerAddr.getPort() << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERBOSE)
+      << "Connecting to " << peerAddr.getHost() << ":" << peerAddr.getPort()
+      << std::endl;
 
   int ret = ::connect(fd_.fd, peerAddr.asSocketAddress(), peerAddr.getLength());
   checkUnixError(ret, "connecting in SocketPipe", EINPROGRESS);
   connected_ = true;
   peerAddr_.reset(new SocketAddress(peerAddr));
 
-  LOG_V("Socket") << "Connected to " << peerAddr.getHost() << ":"
-                  << peerAddr.getPort() << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERBOSE)
+      << "Connected to " << peerAddr.getHost() << ":" << peerAddr.getPort()
+      << std::endl;
 }
 
 size_t Socket::read(Byte* buffer, size_t capacity) {
@@ -101,7 +112,8 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
 
   int ret, err;
 
-  LOG_VV("Socket") << "Reading with buffer capacity " << capacity << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERY_VERBOSE)
+      << "Reading with buffer capacity " << capacity << std::endl;
 
   if (!peerAddr_) {
     assertTrue(type_ == UDP, "Trying to read from an unconnected TCP socket.");
@@ -134,7 +146,8 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
     return 0;
   }
 
-  LOG_VV("Socket") << "Read a packet with size " << ret << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERY_VERBOSE)
+      << "Read a packet with size " << ret << std::endl;
 
   return ret;
 }
@@ -142,7 +155,8 @@ size_t Socket::read(Byte* buffer, size_t capacity) {
 size_t Socket::write(Byte* buffer, size_t size) {
   assertTrue(connected_, "Socket::write() called on a unconnected socket.");
 
-  LOG_VV("Socket") << "Writing a packet with size " << size << std::endl;
+  logger_.withLogLevel(common::LogLevel::VERY_VERBOSE)
+      << "Writing a packet with size " << size << std::endl;
 
   int ret = send(fd_.fd, buffer, size, 0);
 

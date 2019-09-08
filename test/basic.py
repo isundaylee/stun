@@ -343,6 +343,9 @@ class TestBasic(unittest.TestCase):
 
             server_logs = server.logs()
 
+            print(server_logs)
+            self.assertEqual(0, 1)
+
             for message in server_expected_messages:
                 self.assertIn(message, server_logs, "Expected log message not present.")
 

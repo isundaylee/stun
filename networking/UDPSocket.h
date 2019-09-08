@@ -13,9 +13,19 @@ public:
 };
 
 class UDPSocket : public Socket {
+private:
+  common::Logger logger_;
+
 public:
+  UDPSocket(event::EventLoop& loop, std::string logPrefix,
+            NetworkType networkType)
+      : Socket(loop, logPrefix, networkType, UDP),
+        logger_{common::Logger::getDefault("Socket")} {
+    logger_.setPrefix(logPrefix);
+  }
+
   UDPSocket(event::EventLoop& loop, NetworkType networkType)
-      : Socket(loop, networkType, UDP) {}
+      : UDPSocket(loop, "", networkType) {}
 
   void write(UDPPacket packet);
   bool read(UDPPacket& packet);

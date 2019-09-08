@@ -6,7 +6,8 @@ void UDPSocket::write(UDPPacket packet) {
   size_t written = Socket::write(packet.data, packet.size);
 
   if (written < packet.size) {
-    LOG_V("Socket") << "A UDPPacket is fragmented." << std::endl;
+    logger_.withLogLevel(common::LogLevel::VERBOSE)
+        << "A UDPPacket is fragmented." << std::endl;
   }
 }
 
