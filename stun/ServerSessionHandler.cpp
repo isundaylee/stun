@@ -114,7 +114,9 @@ ServerSessionHandler::ServerSessionHandler(
     : loop_(loop), logger_{common::Logger::getDefault("Session")},
       server_(server), config_(config),
       peerPublicAddr_(commandPipe->getPeerAddress()),
-      messenger_(new Messenger(loop, std::move(commandPipe))),
+      messenger_(new Messenger(loop,
+                               "session-" + std::to_string(config_.sessionID),
+                               move(commandPipe))),
       didEnd_(loop.createBaseCondition()) {
   if (!config_.secret.empty()) {
     messenger_->addEncryptor(

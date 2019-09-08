@@ -34,8 +34,8 @@ public:
 
     // Sets up missed heartbeat disconnection
     messenger_->loop_.arm({missedTimer_->didFire()}, [this]() {
-      LOG_I("Messenger") << "Disconnected due to missed heartbeats."
-                         << std::endl;
+      messenger_->logger_ << "Disconnected due to missed heartbeats."
+                          << std::endl;
       messenger_->disconnect();
     });
 
@@ -91,7 +91,7 @@ public:
                                   kMessengerReceiveBufferSize - bufferUsed_);
       bufferUsed_ += read;
     } catch (SocketClosedException const& ex) {
-      LOG_I("Messenger") << "While receiving: " << ex.what() << std::endl;
+      messenger_->logger_ << "While receiving: " << ex.what() << std::endl;
       messenger_->disconnect();
       return;
     }
@@ -122,16 +122,16 @@ public:
       }
 
       if (!message.isValid()) {
-        LOG_I("Messenger") << "Disconnected due to invalid message."
-                           << std::endl;
+        messenger_->logger_ << "Disconnected due to invalid message."
+                            << std::endl;
         messenger_->disconnect();
         return;
       }
 
       bufferUsed_ -= (totalLen);
 
-      LOG_V("Messenger") << "Received: " << message.getType() << " - "
-                         << message.getBody() << std::endl;
+      messenger_->logger_ << "Received: " << message.getType() << " - "
+                          << message.getBody() << std::endl;
 
       //  Dispatch the incoming message to the correct handler
       auto it = messenger_->handlers_.find(message.getType());
@@ -148,13 +148,13 @@ public:
     Message message = messenger_->outboundQ->pop();
 
     if (message.isDisconnect()) {
-      LOG_I("Messenger") << "Disconnected." << std::endl;
+      messenger_->logger_ << "Disconnected." << std::endl;
       messenger_->disconnect();
       return;
     }
 
-    LOG_V("Messenger") << "Sent: " << message.getType() << " = "
-                       << message.getBody() << std::endl;
+    messenger_->logger_ << "Sent: " << message.getType() << " = "
+                        << message.getBody() << std::endl;
 
     LengthHeaderType payloadSize = message.size;
     for (auto const& encryptor : encryptors_) {
@@ -171,7 +171,7 @@ public:
       written = socket_->write(message.data, payloadSize);
       assertTrue(written == payloadSize, "Message content fragmented");
     } catch (SocketClosedException const& ex) {
-      LOG_I("Messenger") << "While sending: " << ex.what() << std::endl;
+      messenger_->logger_ << "While sending: " << ex.what() << std::endl;
       messenger_->disconnect();
       return;
     }
@@ -187,11 +187,15 @@ private:
   std::unique_ptr<event::Action> receiver_;
 };
 
-Messenger::Messenger(event::EventLoop& loop, std::unique_ptr<TCPSocket> socket)
+Messenger::Messenger(event::EventLoop& loop, std::string logPrefix,
+                     std::unique_ptr<TCPSocket> socket)
     : outboundQ(new event::FIFO<Message>(loop, kMessengerOutboundQueueSize)),
-      loop_(loop), transporter_(new Transporter(this, std::move(socket))),
+      loop_(loop), logger_{common::Logger::getDefault("Messenger")},
+      transporter_(new Transporter(this, std::move(socket))),
       heartbeater_(new Heartbeater(this)),
-      didDisconnect_(loop.createBaseCondition()) {}
+      didDisconnect_(loop.createBaseCondition()) {
+  logger_.setPrefix(logPrefix);
+}
 
 Messenger::~Messenger() {}
 

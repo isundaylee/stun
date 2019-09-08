@@ -328,9 +328,17 @@ class TestBasic(unittest.TestCase):
         ) as client:
 
             server_expected_messages = [
-                "session-0: Client said hello!",
-                "session-0: Client has a quota of 1073741824 bytes.",
-                "session-0: Creating a new data pipe.",
+                "[Session]   session-0: Client said hello!",
+                "[Session]   session-0: Client has a quota of 1073741824 bytes.",
+                "[Session]   session-0: Creating a new data pipe.",
+                "[Messenger] session-0: Sent: config = {",
+                "[Messenger] session-0: Sent: heartbeat = {",
+                "[Messenger] session-0: Received: heartbeat - {",
+                "[Messenger] session-0: Sent: heartbeat_reply = {",
+                "[Messenger] session-0: Sent: message = \"",
+                "[Messenger] session-0: Received: heartbeat_reply - {",
+                "[Messenger] session-0: Received: config_done - \"\"",
+                "[Messenger] session-0: Sent: new_data_pipe = {",
             ]
 
             server_logs = server.logs()
@@ -344,7 +352,14 @@ class TestBasic(unittest.TestCase):
         ) as client:
 
             server_expected_messages = [
-                "session-0: Creating a new data pipe.",
+                "[Session]   session-0: Creating a new data pipe.",
+                "[Messenger] session-0: Sent: config = {",
+                "[Messenger] session-0: Sent: heartbeat = {",
+                "[Messenger] session-0: Received: heartbeat - {",
+                "[Messenger] session-0: Sent: heartbeat_reply = {",
+                "[Messenger] session-0: Received: heartbeat_reply - {",
+                "[Messenger] session-0: Received: config_done - \"\"",
+                "[Messenger] session-0: Sent: new_data_pipe = {",
             ]
 
             server_logs = server.logs()
