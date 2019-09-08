@@ -331,27 +331,6 @@ class TestBasic(unittest.TestCase):
             )
 
     @skip_all_tests_if_env_set
-    def test_per_user_log_message_with_name(self):
-        server_config = {"authentication": True, "quotas": {"test-client": 1}}
-
-        with Host(
-            "server", get_server_config(**server_config), entry_args=["-v"]
-        ) as server, Host(
-            "client", get_client_config(user="test-client"), entry_args=["-v"]
-        ) as client:
-
-            server_expected_messages = [
-                "test-client: Client said hello!",
-                "test-client: Client has a quota of 1073741824 bytes.",
-                "test-client: Creating a new data pipe.",
-            ]
-
-            server_logs = server.logs()
-
-            for message in server_expected_messages:
-                self.assertIn(message, server_logs, "Expected log message not present.")
-
-    @skip_all_tests_if_env_set
     def test_per_user_log_message_with_authentication(self):
         server_config = {"authentication": True, "quotas": {"test-client": 1}}
 
