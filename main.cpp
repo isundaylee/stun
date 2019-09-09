@@ -72,6 +72,11 @@ std::string getWizardInput(char const* message,
   auto input = std::string{};
 
   do {
+    if (!std::cin.good()) {
+      throw std::runtime_error(
+          "Configuration wizard not completed. Exiting...");
+    }
+
     std::cout << message;
     std::getline(std::cin, input);
   } while (!validator(input));

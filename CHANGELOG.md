@@ -1,3 +1,5 @@
+- [Core] Fixes infinite prompt stream when configuration wizard is interrupted.
+
 # v0.10.1 (2019-09-06)
 
 - [Core] Fixes server crash when provided with malformatted client-provided 
