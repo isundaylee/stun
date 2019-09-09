@@ -67,6 +67,18 @@ std::string getConfigPath() {
   return std::string(homeDir) + "/.stunrc";
 }
 
+std::string getWizardInput(char const* message,
+                           std::function<bool(std::string const&)> validator) {
+  auto input = std::string{};
+
+  do {
+    std::cout << message;
+    std::getline(std::cin, input);
+  } while (!validator(input));
+
+  return input;
+}
+
 void generateConfig(std::string path) {
   std::string role, serverAddr, user, acceptDNSPushes, secret;
 
@@ -74,34 +86,29 @@ void generateConfig(std::string path) {
             << std::endl;
 
   // Prompt the user for role
-  while (role != "server" && role != "client") {
-    std::cout << "Is this a client or a server? ";
-    std::getline(std::cin, role);
-  }
+  role =
+      getWizardInput("Is this a client or a server? ", [](auto const& value) {
+        return value == "server" || value == "client";
+      });
 
   // Prompt the user for server address and client name if we're a client
   if (role == "client") {
-    while (serverAddr.empty()) {
-      std::cout << "What is the server's address? ";
-      std::getline(std::cin, serverAddr);
-    }
-
-    std::cout << "What is your assigned user name? (May be left empty for an "
-                 "unauthenticated server) ";
-    std::getline(std::cin, user);
-
-    while (acceptDNSPushes != "yes" && acceptDNSPushes != "no") {
-      std::cout << "Do you want to automatically apply DNS settings that the "
-                   "server sends if available? (yes or no) ";
-      std::getline(std::cin, acceptDNSPushes);
-    }
+    serverAddr =
+        getWizardInput("What is the server's address? ",
+                       [](auto const& value) { return !value.empty(); });
+    user = getWizardInput(
+        "What is your assigned user name? (May be left empty for an "
+        "unauthenticated server) ",
+        [](auto) { return true; });
+    acceptDNSPushes = getWizardInput(
+        "Do you want to automatically apply DNS settings that the "
+        "server sends if available? (yes or no) ",
+        [](auto const& value) { return (value == "yes") || (value == "no"); });
   }
 
   // Prompt the user for the secret
-  while (secret.empty()) {
-    std::cout << "What is the secret (passcode) for the server? ";
-    std::getline(std::cin, secret);
-  }
+  secret = getWizardInput("What is the secret (passcode) for the server? ",
+                          [](auto const& value) { return !value.empty(); });
 
   std::string content =
       (role == "server" ? serverConfigTemplate : clientConfigTemplate);
