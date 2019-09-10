@@ -3,6 +3,7 @@
 #include <stun/DataPipe.h>
 
 #include <networking/Tunnel.h>
+#include <stats/CountStat.h>
 #include <stats/RateStat.h>
 #include <stats/RatioStat.h>
 
@@ -38,7 +39,9 @@ private:
   std::unique_ptr<event::Action> sender_;
   std::unique_ptr<event::Action> receiver_;
 
+  stats::CountStat statTxPackets_;
   stats::RateStat statTxBytes_;
+  stats::CountStat statRxPackets_;
   stats::RateStat statRxBytes_;
   stats::RatioStat statEfficiency_;
 

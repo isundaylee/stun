@@ -11,7 +11,9 @@ Dispatcher::Dispatcher(event::EventLoop& loop,
     : loop_(loop), tunnel_(std::move(tunnel)),
       canSend_(loop.createComputedCondition()),
       canReceive_(loop.createComputedCondition()),
+      statTxPackets_("Connection", "tx_packets"),
       statTxBytes_("Connection", "tx_bytes"),
+      statRxPackets_("Connection", "rx_packets"),
       statRxBytes_("Connection", "rx_bytes"),
       statEfficiency_("Connection", "efficiency") {
   canSend_->expression.setMethod<Dispatcher, &Dispatcher::calculateCanSend>(
@@ -80,6 +82,7 @@ void Dispatcher::doSend() {
 
         DataPacket out;
         bytesDispatched += in.size;
+        statTxPackets_.accumulate();
         statTxBytes_.accumulate(in.size);
         out.fill(std::move(in));
 
@@ -103,6 +106,7 @@ void Dispatcher::doReceive() {
       TunnelPacket in;
       in.fill(dataPipe_->inboundQ->pop());
       bytesDispatched += in.size;
+      statRxPackets_.accumulate();
       statRxBytes_.accumulate(in.size);
 
       if (!tunnel_->write(std::move(in))) {
