@@ -45,6 +45,12 @@ public:
                        std::unique_ptr<TCPSocket> commandPipe);
   ~ServerSessionHandler();
 
+  ServerSessionHandler(ServerSessionHandler const& rhs) = delete;
+  ServerSessionHandler& operator=(ServerSessionHandler const& rhs) = delete;
+
+  ServerSessionHandler(ServerSessionHandler&& rhs) = delete;
+  ServerSessionHandler& operator=(ServerSessionHandler&& rhs) = delete;
+
   event::Condition* didEnd() const;
 
 private:

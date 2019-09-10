@@ -1,5 +1,6 @@
 #include "stun/ServerSessionHandler.h"
 
+#include <stun/LossEstimatorHeartbeatService.h>
 #include <stun/Server.h>
 
 #include <common/Notebook.h>
@@ -228,6 +229,8 @@ void ServerSessionHandler::attachHandlers() {
                                     config_.peerTunnelAddr);
 
     dispatcher_.reset(new Dispatcher(loop_, std::move(tunnel)));
+    messenger_->addHeartbeatService(
+        buildLossEstimatorHeartbeatService(*dispatcher_));
 
     if (body.find("provided_subnets") != body.end()) {
       for (auto const& subnetString : body["provided_subnets"]) {

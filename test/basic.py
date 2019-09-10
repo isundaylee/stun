@@ -391,3 +391,25 @@ class TestBasic(unittest.TestCase):
                 "Sent: config = {", server.logs(), "Did not find expected log entry."
             )
 
+    def test_loss_estimator(self):
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
+            "client", get_client_config(), entry_args=["-v"]
+        ) as client:
+
+            client.exec(
+                ["ping", "-i", "0.1", "-t", "1", "-c", "10", "10.179.0.1"],
+                assert_on_failure=True,
+            )
+            time.sleep(1)
+
+            self.assertIn(
+                "TX loss rate: 0.000000, RX loss rate: 0.000000",
+                server.logs(),
+                "Expected entry not found in server logs.",
+            )
+            self.assertIn(
+                "TX loss rate: 0.000000, RX loss rate: 0.000000",
+                client.logs(),
+                "Expected entry not found in client logs.",
+            )
+

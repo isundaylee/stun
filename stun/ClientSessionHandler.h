@@ -50,6 +50,12 @@ public:
                        std::unique_ptr<TCPSocket> commandPipe,
                        TunnelFactory tunnelFactory);
 
+  ClientSessionHandler(ClientSessionHandler const& rhs) = delete;
+  ClientSessionHandler& operator=(ClientSessionHandler const& rhs) = delete;
+
+  ClientSessionHandler(ClientSessionHandler&& rhs) = delete;
+  ClientSessionHandler& operator=(ClientSessionHandler&& rhs) = delete;
+
   event::Condition* didEnd() const;
 
 private:

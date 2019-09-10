@@ -13,6 +13,8 @@ public:
 
   void accumulate() { count_++; }
 
+  size_t getCount() const { return count_; }
+
 private:
   size_t count_ = 0;
 

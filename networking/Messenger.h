@@ -67,6 +67,8 @@ const size_t kMessengerReceiveBufferSize = 8192;
 
 class Messenger {
 public:
+  class HeartbeatService;
+
   Messenger(event::EventLoop& loop, std::unique_ptr<TCPSocket> socket);
   ~Messenger();
 
@@ -75,6 +77,7 @@ public:
   void addEncryptor(std::unique_ptr<crypto::Encryptor> encryptor);
   void addHandler(std::string messageType,
                   std::function<Message(Message const&)> handler);
+  void addHeartbeatService(HeartbeatService service);
   event::Condition* didDisconnect() const;
 
 private:
@@ -90,6 +93,7 @@ private:
   event::EventLoop& loop_;
 
   std::map<std::string, std::function<Message(Message const&)>> handlers_;
+  std::vector<HeartbeatService> heartbeatServices_;
   std::unique_ptr<Transporter> transporter_;
   std::unique_ptr<Heartbeater> heartbeater_;
 
@@ -97,4 +101,15 @@ private:
 
   void disconnect();
 };
+
+class Messenger::HeartbeatService final {
+public:
+  using PayloadProducer = std::function<json()>;
+  using PayloadConsumer = std::function<void(json const&)>;
+
+  std::string name;
+  PayloadProducer producer;
+  PayloadConsumer consumer;
+};
+
 } // namespace networking

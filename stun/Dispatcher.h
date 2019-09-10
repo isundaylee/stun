@@ -20,6 +20,9 @@ public:
 
   void addDataPipe(std::unique_ptr<DataPipe> dataPipe);
 
+  stats::CountStat const& getStatTxPackets() const { return statTxPackets_; }
+  stats::CountStat const& getStatRxPackets() const { return statRxPackets_; }
+
 private:
   Dispatcher(Dispatcher const& copy) = delete;
   Dispatcher& operator=(Dispatcher const& copy) = delete;

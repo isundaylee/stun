@@ -26,9 +26,19 @@ public:
 
     // Sets up periodic heart beat sending
     beater_->callback = [this]() {
-      messenger_->outboundQ->push(Message(
-          kMessengerHeartBeatMessageType,
-          {{"start", event::Timer::getEpochTimeInMilliseconds().count()}}));
+      auto messageBody =
+          json{{"start", event::Timer::getEpochTimeInMilliseconds().count()}};
+
+      for (auto const& service : messenger_->heartbeatServices_) {
+        auto payload = service.producer();
+
+        if (!payload.is_null()) {
+          messageBody[service.name] = service.producer();
+        }
+      }
+
+      messenger_->outboundQ->push(
+          Message(kMessengerHeartBeatMessageType, std::move(messageBody)));
       beatTimer_->extend(kMessengerHeartBeatInterval);
     };
 
@@ -42,9 +52,20 @@ public:
     // Sets up heartbeat message handler
     messenger_->addHandler(
         kMessengerHeartBeatMessageType, [this](auto const& message) {
+          auto body = message.getBody();
+
+          for (auto const& service : messenger_->heartbeatServices_) {
+            if (body.find(service.name) == body.end()) {
+              continue;
+            }
+
+            service.consumer(body[service.name]);
+          }
+
           messenger_->outboundQ->push(
               Message(kMessengerHeartBeatReplyMessageType, message.getBody()));
           missedTimer_->reset(kMessengerHeartBeatTimeout);
+
           return Message::null();
         });
 
@@ -210,6 +231,10 @@ void Messenger::addHandler(std::string messageType,
   assertTrue(handlers_.find(messageType) == handlers_.end(),
              "Duplicate handler registered for message type " + messageType);
   handlers_[messageType] = handler;
+}
+
+void Messenger::addHeartbeatService(HeartbeatService service) {
+  heartbeatServices_.push_back(std::move(service));
 }
 
 event::Condition* Messenger::didDisconnect() const {

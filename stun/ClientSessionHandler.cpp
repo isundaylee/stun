@@ -1,5 +1,7 @@
 #include "stun/ClientSessionHandler.h"
 
+#include "stun/LossEstimatorHeartbeatService.h"
+
 #include <event/SignalCondition.h>
 #include <event/Trigger.h>
 #include <networking/InterfaceConfig.h>
@@ -88,6 +90,8 @@ void ClientSessionHandler::attachHandlers() {
                 LOG_I("Session") << "Tunnel established." << std::endl;
                 dispatcher_.reset(
                     new Dispatcher(loop_, tunnelPromise->consume()));
+                messenger_->addHeartbeatService(
+                    buildLossEstimatorHeartbeatService(*dispatcher_));
 
                 // TODO: Set up DNS servers
 
