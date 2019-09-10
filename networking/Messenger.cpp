@@ -11,8 +11,8 @@ using namespace std::chrono_literals;
 static const std::string kMessengerHeartBeatMessageType = "heartbeat";
 static const std::string kMessengerHeartBeatReplyMessageType =
     "heartbeat_reply";
-static const event::Duration kMessengerHeartBeatInterval = 1s /* ms */;
-static const event::Duration kMessengerHeartBeatTimeout = 10s /* ms */;
+static const event::Duration kMessengerHeartBeatInterval = 1s;
+static const event::Duration kMessengerHeartBeatTimeout = 10s;
 static const size_t kMessengerOutboundQueueSize = 32;
 
 class Messenger::Heartbeater {
