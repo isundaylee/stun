@@ -39,14 +39,15 @@ void Server::doAccept() {
   LOG_I("Center") << "Accepted a client from "
                   << client.getPeerAddress().getHost() << std::endl;
 
-  auto sessionConfig = ServerSessionConfig{config_.encryption,
-                                           config_.secret,
-                                           config_.paddingTo,
-                                           config_.compression,
-                                           config_.dataPipeRotationInterval,
-                                           config_.authentication,
-                                           config_.quotaTable,
-                                           config_.mtu};
+  auto sessionConfig =
+      ServerSessionHandler::Config{config_.encryption,
+                                   config_.secret,
+                                   config_.paddingTo,
+                                   config_.compression,
+                                   config_.dataPipeRotationInterval,
+                                   config_.authentication,
+                                   config_.quotaTable,
+                                   config_.mtu};
 
   auto handler = std::make_unique<ServerSessionHandler>(
       loop_, this, sessionConfig,

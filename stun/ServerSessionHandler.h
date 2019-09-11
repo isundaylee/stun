@@ -17,31 +17,30 @@ using networking::Messenger;
 using networking::SubnetAddress;
 using networking::TCPSocket;
 
-struct ServerSessionConfig {
-public:
-  bool encryption;
-  std::string secret;
-  size_t paddingTo;
-  bool compression;
-  event::Duration dataPipeRotationInterval;
-  bool authentication;
-  std::map<std::string, size_t> quotaTable;
-  size_t mtu;
-
-  std::string user = "";
-  size_t quota = 0;
-  size_t priorQuotaUsed = 0;
-  bool addrAcquired = false;
-  IPAddress myTunnelAddr;
-  IPAddress peerTunnelAddr;
-};
-
 class Server;
 
 class ServerSessionHandler {
 public:
-  ServerSessionHandler(event::EventLoop& loop, Server* server,
-                       ServerSessionConfig config,
+  struct Config {
+  public:
+    bool encryption;
+    std::string secret;
+    size_t paddingTo;
+    bool compression;
+    event::Duration dataPipeRotationInterval;
+    bool authentication;
+    std::map<std::string, size_t> quotaTable;
+    size_t mtu;
+
+    std::string user = "";
+    size_t quota = 0;
+    size_t priorQuotaUsed = 0;
+    bool addrAcquired = false;
+    IPAddress myTunnelAddr;
+    IPAddress peerTunnelAddr;
+  };
+
+  ServerSessionHandler(event::EventLoop& loop, Server* server, Config config,
                        std::unique_ptr<TCPSocket> commandPipe);
   ~ServerSessionHandler();
 
@@ -57,7 +56,7 @@ private:
   event::EventLoop& loop_;
 
   Server* server_;
-  ServerSessionConfig config_;
+  Config config_;
   networking::SocketAddress peerPublicAddr_;
 
   class QuotaReporter;

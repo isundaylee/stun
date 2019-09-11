@@ -110,7 +110,7 @@ private:
 };
 
 ServerSessionHandler::ServerSessionHandler(
-    event::EventLoop& loop, Server* server, ServerSessionConfig config,
+    event::EventLoop& loop, Server* server, Config config,
     std::unique_ptr<TCPSocket> commandPipe)
     : loop_(loop), server_(server), config_(config),
       peerPublicAddr_(commandPipe->getPeerAddress()),
@@ -311,13 +311,12 @@ json ServerSessionHandler::createDataPipe() {
                   ? 0s
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
-  
-  auto dataPipeConfig = DataPipe::Config{
-aesKey,
-      config_.paddingTo, config_.compression, ttl
-  };
+
+  auto dataPipeConfig =
+      DataPipe::Config{aesKey, config_.paddingTo, config_.compression, ttl};
   auto dataPipe = std::make_unique<DataPipe>(
-      loop_, std::make_unique<UDPSocket>(std::move(udpPipe)), std::move(dataPipeConfig));
+      loop_, std::make_unique<UDPSocket>(std::move(udpPipe)),
+      std::move(dataPipeConfig));
   dispatcher_->addDataPipe(std::move(dataPipe));
 
   return json{{"port", port},
