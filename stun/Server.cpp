@@ -7,7 +7,7 @@ namespace stun {
 
 using networking::IPTables;
 
-Server::Server(event::EventLoop& loop, ServerConfig config)
+Server::Server(event::EventLoop& loop, Config config)
     : loop_(loop), config_(config) {
   IPTables::clear(config.configID);
   IPTables::masquerade(config.addressPool, config.masqueradeOutputInterface,

@@ -213,7 +213,7 @@ std::map<std::string, size_t> parseQuotaTable() {
 
 std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop,
                                           std::string getServerConfigID) {
-  auto config = ServerConfig{
+  auto config = Server::Config{
       getServerConfigID,
       common::Configerator::get<int>("port", kDefaultServerPort),
       networking::SubnetAddress{
