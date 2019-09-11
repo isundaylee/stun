@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="0.10.1"
+version="0.10.2"
 
 if [ $(uname) == "Linux" ]; then
   cd $HOME

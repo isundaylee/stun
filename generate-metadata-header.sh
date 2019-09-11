@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="0.10.1"
+version="0.10.2"
 git_commit_id="$(git rev-parse HEAD)"
 
 if git diff-index --quiet HEAD --; then
