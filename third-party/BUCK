@@ -8,11 +8,138 @@ cxx_library(
     'cryptopp/*.cpp',
   ],
   excludes = [
+    'cryptopp/chacha_avx.cpp',
+    'cryptopp/gf2n_simd.cpp',
+    'cryptopp/chacha_simd.cpp',
+    'cryptopp/donna_sse.cpp',
+    'cryptopp/sse_simd.cpp',
+    'cryptopp/blake2b_simd.cpp',
+    'cryptopp/blake2s_simd.cpp',
+    'cryptopp/simon64_simd.cpp',
+    'cryptopp/speck64_simd.cpp',
+    'cryptopp/rijndael_simd.cpp',
+    'cryptopp/crc_simd.cpp',
+    'cryptopp/sha_simd.cpp',
+    'cryptopp/shacal2_simd.cpp',
+    'cryptopp/aria_simd.cpp',
+    'cryptopp/cham_simd.cpp',
+    'cryptopp/keccak_simd.cpp',
+    'cryptopp/lea_simd.cpp',
+    'cryptopp/simeck_simd.cpp',
+    'cryptopp/simon128_simd.cpp',
+    'cryptopp/speck128_simd.cpp',
+    'cryptopp/sm4_simd.cpp',
+    'cryptopp/gcm_simd.cpp',
     'cryptopp/test.cpp',
   ]),
   visibility = [
     'PUBLIC',
   ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1'],
+  deps = [
+    ':cryptopp-avx2',
+    ':cryptopp-pclmul',
+    ':cryptopp-sse2',
+    ':cryptopp-sse4.1',
+    ':cryptopp-sse4.1-aes',
+    ':cryptopp-sse4.2',
+    ':cryptopp-sse4.2-sha',
+    ':cryptopp-ssse3',
+    ':cryptopp-ssse3-aes',
+    ':cryptopp-ssse3-pclmul',
+  ]
+)
+
+cxx_library(
+  name = 'cryptopp-avx2',
+  srcs = [
+    'cryptopp/chacha_avx.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-mavx2'],
+)
+
+cxx_library(
+  name = 'cryptopp-pclmul',
+  srcs = [
+    'cryptopp/gf2n_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-mpclmul'],
+)
+
+cxx_library(
+  name = 'cryptopp-sse2',
+  srcs = [
+    'cryptopp/chacha_simd.cpp',
+    'cryptopp/donna_sse.cpp',
+    'cryptopp/sse_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-msse2'],
+)
+
+cxx_library(
+  name = 'cryptopp-sse4.1',
+  srcs = [
+    'cryptopp/blake2b_simd.cpp',
+    'cryptopp/blake2s_simd.cpp',
+    'cryptopp/simon64_simd.cpp',
+    'cryptopp/speck64_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-msse4.1'],
+)
+
+cxx_library(
+  name = 'cryptopp-sse4.1-aes',
+  srcs = [
+    'cryptopp/rijndael_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-msse4.1', '-maes'],
+)
+
+cxx_library(
+  name = 'cryptopp-sse4.2',
+  srcs = [
+    'cryptopp/crc_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-msse4.2'],
+)
+
+cxx_library(
+  name = 'cryptopp-sse4.2-sha',
+  srcs = [
+    'cryptopp/sha_simd.cpp',
+    'cryptopp/shacal2_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-msse4.2', '-msha'],
+)
+
+cxx_library(
+  name = 'cryptopp-ssse3',
+  srcs = [
+    'cryptopp/aria_simd.cpp',
+    'cryptopp/cham_simd.cpp',
+    'cryptopp/keccak_simd.cpp',
+    'cryptopp/lea_simd.cpp',
+    'cryptopp/simeck_simd.cpp',
+    'cryptopp/simon128_simd.cpp',
+    'cryptopp/speck128_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-mssse3'],
+)
+
+cxx_library(
+  name = 'cryptopp-ssse3-aes',
+  srcs = [
+    'cryptopp/sm4_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-mssse3', '-maes'],
+)
+
+cxx_library(
+  name = 'cryptopp-ssse3-pclmul',
+  srcs = [
+    'cryptopp/gcm_simd.cpp',
+  ],
+  compiler_flags = ['-DCRYPTOPP_DISABLE_MIXED_ASM=1', '-mssse3', '-mpclmul'],
 )
 
 cxx_library(
