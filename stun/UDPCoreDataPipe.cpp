@@ -2,9 +2,15 @@
 
 namespace stun {
 
-UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop,
-                                 std::unique_ptr<networking::UDPSocket> socket)
-    : loop_{loop}, socket_{std::move(socket)} {}
+UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop, ClientConfig config)
+    : socket_{new networking::UDPSocket{loop, config.addr.type}} {
+  socket_->connect(std::move(config.addr));
+}
+
+UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop, ServerConfig config)
+    : socket_{new networking::UDPSocket{loop, networking::NetworkType::IPv4}} {
+  socket_->bind(0);
+}
 
 bool UDPCoreDataPipe::send(DataPacket packet) {
   if (!socket_->isConnected()) {

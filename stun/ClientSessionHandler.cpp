@@ -106,14 +106,12 @@ void ClientSessionHandler::attachHandlers() {
 
     auto socketAddress =
         SocketAddress{config_.serverAddr.getHost().toString(), body["port"]};
-    auto udpPipe = UDPSocket{loop_, socketAddress.type};
-    udpPipe.connect(socketAddress);
-
-    auto dataPipeConfig = DataPipe::Config{DataPipe::CommonConfig{
-        body["aes_key"], body["padding_to_size"], body["compression"], 0s}};
-    auto dataPipe = std::make_unique<DataPipe>(
-        loop_, std::make_unique<UDPSocket>(std::move(udpPipe)),
-        std::move(dataPipeConfig));
+    auto dataPipeConfig = DataPipe::Config{
+        UDPCoreDataPipe::ClientConfig{std::move(socketAddress)},
+        DataPipe::CommonConfig{body["aes_key"], body["padding_to_size"],
+                               body["compression"], 0s}};
+    auto dataPipe =
+        std::make_unique<DataPipe>(loop_, std::move(dataPipeConfig));
 
     dispatcher_->addDataPipe(std::move(dataPipe));
 

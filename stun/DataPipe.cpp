@@ -16,12 +16,33 @@ static const size_t kDataPipeFIFOSize = 16;
 static const size_t kDataPipeFIFOSize = 256;
 #endif
 
-DataPipe::DataPipe(event::EventLoop& loop,
-                   std::unique_ptr<networking::UDPSocket> socket, Config config)
+namespace {
+
+class CoreDataPipeFactory {
+public:
+  CoreDataPipeFactory(event::EventLoop& loop) : loop_{loop} {}
+
+  auto operator()(UDPCoreDataPipe::ServerConfig const& config) {
+    return std::make_unique<UDPCoreDataPipe>(loop_, config);
+  }
+
+  auto operator()(UDPCoreDataPipe::ClientConfig const& config) {
+    return std::make_unique<UDPCoreDataPipe>(loop_, config);
+  }
+
+private:
+  event::EventLoop& loop_;
+};
+
+}; // namespace
+
+DataPipe::DataPipe(event::EventLoop& loop, Config config)
     : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
-      loop_(loop), core_{new UDPCoreDataPipe{loop, std::move(socket)}},
-      config_{config}, didClose_(loop.createBaseCondition()) {
+      loop_(loop), config_{config}, didClose_(loop.createBaseCondition()) {
+
+  core_ = std::visit(CoreDataPipeFactory{loop_}, config.core);
+
   // Sets up TTL killer
   if (config_.common.ttl != 0s) {
     ttlTimer_ = loop.createTimer(config_.common.ttl);
@@ -53,7 +74,7 @@ DataPipe::DataPipe(event::EventLoop& loop,
   probeTimer_ = loop_.createTimer(0s);
   prober_ = loop_.createAction({probeTimer_->didFire(), outboundQ->canPush()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
-}
+} // namespace stun
 
 event::Condition* DataPipe::didClose() { return didClose_.get(); }
 

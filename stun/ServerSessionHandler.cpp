@@ -291,9 +291,6 @@ void ServerSessionHandler::doRotateDataPipe() {
 }
 
 json ServerSessionHandler::createDataPipe() {
-  UDPSocket udpPipe{loop_, networking::NetworkType::IPv4};
-  int port = udpPipe.bind(0);
-
   LOG_V("Session") << getClientLogTag() << ": Creating a new data pipe."
                    << std::endl;
 
@@ -312,11 +309,12 @@ json ServerSessionHandler::createDataPipe() {
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
 
-  auto dataPipeConfig = DataPipe::Config{DataPipe::CommonConfig{
-      aesKey, config_.paddingTo, config_.compression, ttl}};
-  auto dataPipe = std::make_unique<DataPipe>(
-      loop_, std::make_unique<UDPSocket>(std::move(udpPipe)),
-      std::move(dataPipeConfig));
+  auto dataPipeConfig =
+      DataPipe::Config{UDPCoreDataPipe::ServerConfig{},
+                       DataPipe::CommonConfig{aesKey, config_.paddingTo,
+                                              config_.compression, ttl}};
+  auto dataPipe = std::make_unique<DataPipe>(loop_, std::move(dataPipeConfig));
+  auto port = dataPipe->getCore().getPort();
   dispatcher_->addDataPipe(std::move(dataPipe));
 
   return json{{"port", port},

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <variant>
+
 #include <stun/UDPCoreDataPipe.h>
 
 #include <crypto/AESEncryptor.h>
@@ -30,12 +32,15 @@ public:
     event::Duration ttl;
   };
 
+  using CoreConfig = std::variant<UDPCoreDataPipe::ClientConfig,
+                                  UDPCoreDataPipe::ServerConfig>;
+
   struct Config {
+    CoreConfig core;
     CommonConfig common;
   };
 
-  DataPipe(event::EventLoop& loop, std::unique_ptr<UDPSocket> socket,
-           Config config);
+  DataPipe(event::EventLoop& loop, Config config);
 
   DataPipe(DataPipe const& copy) = delete;
   DataPipe& operator=(DataPipe const& copy) = delete;
@@ -49,6 +54,8 @@ public:
   event::Condition* didClose();
 
   stats::RatioStat* statEfficiency;
+
+  UDPCoreDataPipe& getCore() { return *core_; }
 
 private:
   event::EventLoop& loop_;

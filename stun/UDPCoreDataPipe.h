@@ -17,8 +17,14 @@ public:
 
 class UDPCoreDataPipe {
 public:
-  UDPCoreDataPipe(event::EventLoop& loop,
-                  std::unique_ptr<networking::UDPSocket> socket);
+  struct ClientConfig {
+    networking::SocketAddress addr;
+  };
+
+  struct ServerConfig {};
+
+  UDPCoreDataPipe(event::EventLoop& loop, ClientConfig config);
+  UDPCoreDataPipe(event::EventLoop& loop, ServerConfig config);
 
   event::Condition* canSend() { return socket_->canWrite(); }
   event::Condition* canReceive() { return socket_->canRead(); }
@@ -26,9 +32,9 @@ public:
   bool send(DataPacket packet);
   bool receive(DataPacket& output);
 
-private:
-  event::EventLoop& loop_;
+  int getPort() const { return socket_->getPort().value(); }
 
+private:
   std::unique_ptr<networking::UDPSocket> socket_;
 };
 
