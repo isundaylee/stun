@@ -20,9 +20,9 @@ DataPipe::DataPipe(event::EventLoop& loop,
                    std::unique_ptr<networking::UDPSocket> socket, Config config)
     : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
-      loop_(loop), socket_(std::move(socket)), config_{config},
-      didClose_(loop.createBaseCondition()),
-      isPrimed_(loop.createBaseCondition()) {
+      loop_(loop), core_{loop, std::move(socket)}, config_{config},
+      readyForSend_{loop.createBaseCondition()},
+      didClose_(loop.createBaseCondition()) {
   // Sets up TTL killer
   if (config_.ttl != 0s) {
     ttlTimer_ = loop.createTimer(config_.ttl);
@@ -46,28 +46,24 @@ DataPipe::DataPipe(event::EventLoop& loop,
 
   // Configure sender and receiver
   sender_ = loop_.createAction(
-      {outboundQ->canPop(), socket_->canWrite(), isPrimed_.get()});
+      {outboundQ->canPop(), core_.canSend(), readyForSend_.get()});
   sender_->callback.setMethod<DataPipe, &DataPipe::doSend>(this);
-  receiver_ = loop_.createAction({inboundQ->canPush(), socket_->canRead()});
+  receiver_ = loop_.createAction({inboundQ->canPush(), core_.canReceive()});
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
   probeTimer_ = loop_.createTimer(0s);
   prober_ = loop_.createAction(
-      {probeTimer_->didFire(), outboundQ->canPush(), isPrimed_.get()});
+      {probeTimer_->didFire(), outboundQ->canPush(), readyForSend_.get()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
 
-void DataPipe::setPrePrimed() { isPrimed_->fire(); }
-
 event::Condition* DataPipe::didClose() { return didClose_.get(); }
-event::Condition* DataPipe::isPrimed() { return isPrimed_.get(); }
 
 void DataPipe::doKill() {
   sender_.reset();
   receiver_.reset();
   prober_.reset();
-  socket_.reset();
   didClose_->fire();
 }
 
@@ -79,29 +75,28 @@ void DataPipe::doProbe() {
 void DataPipe::doSend() {
   while (outboundQ->canPop()->eval()) {
     DataPacket data = outboundQ->pop();
-    UDPPacket out;
 
     size_t payloadSize = data.size;
 
-    out.fill(std::move(data));
     if (!!compressor_) {
-      out.size = compressor_->encrypt(out.data, out.size, out.capacity);
+      data.size = compressor_->encrypt(data.data, data.size, data.capacity);
     }
     if (!!padder_) {
-      out.size = padder_->encrypt(out.data, out.size, out.capacity);
+      data.size = padder_->encrypt(data.data, data.size, data.capacity);
     }
     if (!!aesEncryptor_) {
-      out.size = aesEncryptor_->encrypt(out.data, out.size, out.capacity);
+      data.size = aesEncryptor_->encrypt(data.data, data.size, data.capacity);
     }
 
     if (statEfficiency != nullptr) {
-      statEfficiency->accumulate(payloadSize, out.size);
+      statEfficiency->accumulate(payloadSize, data.size);
     }
 
     try {
-      socket_->write(std::move(out));
+      core_.send(std::move(data));
     } catch (networking::SocketClosedException const& ex) {
-      LOG_V("DataPipe") << "While sending: " << ex.what() << std::endl;
+      // TODO: SocketClosedException should not leak outside of CoreDataPipe
+      LOG_E("DataPipe") << "While sending: " << ex.what() << std::endl;
       doKill();
       return;
     }
@@ -110,12 +105,10 @@ void DataPipe::doSend() {
 
 void DataPipe::doReceive() {
   while (inboundQ->canPush()->eval()) {
-    UDPPacket in;
     DataPacket data;
 
     try {
-      bool read = socket_->read(in);
-      if (!read) {
+      if (!core_.receive(data)) {
         break;
       }
     } catch (networking::SocketClosedException const& ex) {
@@ -124,9 +117,8 @@ void DataPipe::doReceive() {
       return;
     }
 
-    size_t wireSize = in.size;
+    size_t wireSize = data.size;
 
-    data.fill(std::move(in));
     if (!!aesEncryptor_) {
       data.size = aesEncryptor_->decrypt(data.data, data.size, data.capacity);
     }
@@ -146,6 +138,6 @@ void DataPipe::doReceive() {
     }
   }
 
-  isPrimed_->fire();
+  readyForSend_->fire();
 }
 } // namespace stun

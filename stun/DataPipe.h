@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stun/UDPCoreDataPipe.h>
+
 #include <crypto/AESEncryptor.h>
 #include <crypto/LZOCompressor.h>
 #include <crypto/Padder.h>
@@ -19,14 +21,6 @@ using networking::UDPPacket;
 using networking::UDPSocket;
 
 namespace stun {
-
-static const size_t kDataPacketSize = 2048;
-
-class DataPacket : public Packet {
-public:
-  DataPacket() : Packet(kDataPacketSize) {}
-};
-
 class DataPipe {
 public:
   struct Config {
@@ -48,8 +42,9 @@ public:
   std::unique_ptr<event::FIFO<DataPacket>> inboundQ;
   std::unique_ptr<event::FIFO<DataPacket>> outboundQ;
 
-  void setPrePrimed();
-  event::Condition* isPrimed();
+  void setReadyForSend() { return readyForSend_->fire(); }
+
+  event::Condition* readyForSend() { return readyForSend_.get(); }
   event::Condition* didClose();
 
   stats::RatioStat* statEfficiency;
@@ -57,12 +52,13 @@ public:
 private:
   event::EventLoop& loop_;
 
+  UDPCoreDataPipe core_;
+
   // Settings & states
-  std::unique_ptr<networking::UDPSocket> socket_;
   Config config_;
 
+  std::unique_ptr<event::BaseCondition> readyForSend_;
   std::unique_ptr<event::BaseCondition> didClose_;
-  std::unique_ptr<event::BaseCondition> isPrimed_;
 
   // TTL
   std::unique_ptr<event::Timer> ttlTimer_;

@@ -30,7 +30,7 @@ Dispatcher::Dispatcher(event::EventLoop& loop,
 
 bool Dispatcher::calculateCanSend() {
   for (auto const& dataPipe_ : dataPipes_) {
-    if (dataPipe_->isPrimed()->eval() &&
+    if (dataPipe_->readyForSend()->eval() &&
         dataPipe_->outboundQ->canPush()->eval()) {
       return true;
     }
@@ -54,7 +54,7 @@ void Dispatcher::doSend() {
   for (int i = 0; i < dataPipes_.size(); i++) {
     int pipeIndex = (currentDataPipeIndex_ + i) % dataPipes_.size();
 
-    if (dataPipes_[pipeIndex]->isPrimed()->eval() &&
+    if (dataPipes_[pipeIndex]->readyForSend()->eval() &&
         dataPipes_[pipeIndex]->outboundQ->canPush()->eval()) {
       // Found a data pipe that can accept packets
       // Push as many as possible

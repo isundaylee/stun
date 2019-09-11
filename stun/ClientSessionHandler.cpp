@@ -114,7 +114,7 @@ void ClientSessionHandler::attachHandlers() {
     auto dataPipe = std::make_unique<DataPipe>(
         loop_, std::make_unique<UDPSocket>(std::move(udpPipe)),
         std::move(dataPipeConfig));
-    dataPipe->setPrePrimed();
+    dataPipe->setReadyForSend();
 
     dispatcher_->addDataPipe(std::move(dataPipe));
 
