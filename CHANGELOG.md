@@ -1,4 +1,5 @@
 - [Core] Fixes infinite prompt stream when configuration wizard is interrupted.
+- [Core] Implements packet loss estimator (Issue #8).
 
 # v0.10.1 (2019-09-06)
 
