@@ -33,7 +33,11 @@ public:
            std::string const& aesKey, size_t minPaddingTo, bool compression,
            event::Duration ttl);
 
-  DataPipe(DataPipe&& move);
+  DataPipe(DataPipe const& copy) = delete;
+  DataPipe& operator=(DataPipe const& copy) = delete;
+
+  DataPipe(DataPipe&& copy) = delete;
+  DataPipe& operator=(DataPipe&& copy) = delete;
 
   std::unique_ptr<event::FIFO<DataPacket>> inboundQ;
   std::unique_ptr<event::FIFO<DataPacket>> outboundQ;
@@ -45,9 +49,6 @@ public:
   stats::RatioStat* statEfficiency;
 
 private:
-  DataPipe(DataPipe const& copy) = delete;
-  DataPipe& operator=(DataPipe const& copy) = delete;
-
   event::EventLoop& loop_;
 
   // Settings & states

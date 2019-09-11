@@ -59,25 +59,6 @@ DataPipe::DataPipe(event::EventLoop& loop,
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
 
-DataPipe::DataPipe(DataPipe&& move)
-    : inboundQ(std::move(move.inboundQ)), outboundQ(std::move(move.outboundQ)),
-      statEfficiency(move.statEfficiency), loop_(move.loop_),
-      socket_(std::move(move.socket_)), aesKey_(std::move(move.aesKey_)),
-      minPaddingTo_(move.minPaddingTo_), didClose_(std::move(move.didClose_)),
-      isPrimed_(std::move(move.isPrimed_)),
-      ttlTimer_(std::move(move.ttlTimer_)),
-      probeTimer_(std::move(move.probeTimer_)),
-      prober_(std::move(move.prober_)),
-      compressor_(std::move(move.compressor_)),
-      padder_(std::move(move.padder_)),
-      aesEncryptor_(std::move(move.aesEncryptor_)),
-      sender_(std::move(move.sender_)), receiver_(std::move(move.receiver_)) {
-  ttlKiller_->callback.target = this;
-  prober_->callback.target = this;
-  sender_->callback.target = this;
-  receiver_->callback.target = this;
-}
-
 void DataPipe::setPrePrimed() { isPrimed_->fire(); }
 
 event::Condition* DataPipe::didClose() { return didClose_.get(); }
