@@ -24,7 +24,7 @@ class StatBase {
 protected:
   StatBase(std::string entity, std::string metric,
            Prefix prefix = Prefix::None);
-  ~StatBase();
+  virtual ~StatBase();
 
 protected:
   std::string entity_;

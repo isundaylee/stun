@@ -22,7 +22,7 @@ public:
   friend class Timer;
 
   TimerManager(EventLoop& loop);
-  ~TimerManager();
+  virtual ~TimerManager();
 
   void setTimeout(Time target, BaseCondition* condition);
   void removeTimeout(BaseCondition* condition);

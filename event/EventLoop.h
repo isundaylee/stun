@@ -29,7 +29,7 @@ class ComputedCondition;
 
 class ConditionManager {
 public:
-  // TODO: Investigate and fix the absence of virtual destructor.
+  virtual ~ConditionManager() = default;
 
   virtual void
   prepareConditions(std::vector<Condition*> const& conditions,
@@ -38,6 +38,8 @@ public:
 
 class EventLoopPreparer {
 public:
+  virtual ~EventLoopPreparer() = default;
+
   virtual void prepare() = 0;
 };
 

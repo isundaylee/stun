@@ -167,7 +167,7 @@ TimerManager::TimerManager(EventLoop& loop) : loop_(loop) {
   TimerManager::Core::getInstance().addManager(this);
 }
 
-TimerManager::~TimerManager() {
+/* virtual */ TimerManager::~TimerManager() {
   TimerManager::Core::getInstance().removeManager(this);
 }
 

@@ -13,7 +13,7 @@ StatBase::StatBase(std::string entity, std::string metric,
   StatsManager::addStat(this);
 }
 
-StatBase::~StatBase() { StatsManager::removeStat(this); }
+/* virtual */ StatBase::~StatBase() { StatsManager::removeStat(this); }
 
 /* static */ StatsManager& StatsManager::getInstance() {
   static StatsManager instance;
