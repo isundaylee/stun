@@ -20,8 +20,8 @@ DataPipe::DataPipe(event::EventLoop& loop,
                    std::unique_ptr<networking::UDPSocket> socket, Config config)
     : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
-      loop_(loop), core_{loop, std::move(socket)}, config_{config},
-      didClose_(loop.createBaseCondition()) {
+      loop_(loop), core_{new UDPCoreDataPipe{loop, std::move(socket)}},
+      config_{config}, didClose_(loop.createBaseCondition()) {
   // Sets up TTL killer
   if (config_.common.ttl != 0s) {
     ttlTimer_ = loop.createTimer(config_.common.ttl);
@@ -44,9 +44,9 @@ DataPipe::DataPipe(event::EventLoop& loop,
   }
 
   // Configure sender and receiver
-  sender_ = loop_.createAction({outboundQ->canPop(), core_.canSend()});
+  sender_ = loop_.createAction({outboundQ->canPop(), core_->canSend()});
   sender_->callback.setMethod<DataPipe, &DataPipe::doSend>(this);
-  receiver_ = loop_.createAction({inboundQ->canPush(), core_.canReceive()});
+  receiver_ = loop_.createAction({inboundQ->canPush(), core_->canReceive()});
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
@@ -90,7 +90,7 @@ void DataPipe::doSend() {
     }
 
     try {
-      if (!core_.send(std::move(data))) {
+      if (!core_->send(std::move(data))) {
         LOG_E("DataPipe") << "Dropped a packet due to send() failure."
                           << std::endl;
       }
@@ -108,7 +108,7 @@ void DataPipe::doReceive() {
     DataPacket data;
 
     try {
-      if (!core_.receive(data)) {
+      if (!core_->receive(data)) {
         break;
       }
     } catch (networking::SocketClosedException const& ex) {

@@ -53,7 +53,7 @@ public:
 private:
   event::EventLoop& loop_;
 
-  UDPCoreDataPipe core_;
+  std::unique_ptr<UDPCoreDataPipe> core_;
 
   // Settings & states
   Config config_;
