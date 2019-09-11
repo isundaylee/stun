@@ -29,9 +29,15 @@ public:
 
 class DataPipe {
 public:
+  struct Config {
+    std::string aesKey;
+    size_t minPaddingTo;
+    bool compression;
+    event::Duration ttl;
+  };
+
   DataPipe(event::EventLoop& loop, std::unique_ptr<UDPSocket> socket,
-           std::string const& aesKey, size_t minPaddingTo, bool compression,
-           event::Duration ttl);
+           Config config);
 
   DataPipe(DataPipe const& copy) = delete;
   DataPipe& operator=(DataPipe const& copy) = delete;
@@ -53,8 +59,7 @@ private:
 
   // Settings & states
   std::unique_ptr<networking::UDPSocket> socket_;
-  std::string aesKey_;
-  size_t minPaddingTo_;
+  Config config_;
 
   std::unique_ptr<event::BaseCondition> didClose_;
   std::unique_ptr<event::BaseCondition> isPrimed_;

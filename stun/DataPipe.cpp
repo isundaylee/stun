@@ -17,32 +17,31 @@ static const size_t kDataPipeFIFOSize = 256;
 #endif
 
 DataPipe::DataPipe(event::EventLoop& loop,
-                   std::unique_ptr<networking::UDPSocket> socket,
-                   std::string const& aesKey, size_t minPaddingTo,
-                   bool compression, event::Duration ttl)
+                   std::unique_ptr<networking::UDPSocket> socket, Config config)
     : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
-      loop_(loop), socket_(std::move(socket)), aesKey_(aesKey),
-      minPaddingTo_(minPaddingTo), didClose_(loop.createBaseCondition()),
+      loop_(loop), socket_(std::move(socket)), config_{config},
+      didClose_(loop.createBaseCondition()),
       isPrimed_(loop.createBaseCondition()) {
   // Sets up TTL killer
-  if (ttl != 0s) {
-    ttlTimer_ = loop.createTimer(ttl);
+  if (config_.ttl != 0s) {
+    ttlTimer_ = loop.createTimer(config_.ttl);
     ttlKiller_ = loop_.createAction({ttlTimer_->didFire()});
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
 
   // Prepare Encryptor-s
-  if (minPaddingTo_ != 0) {
-    padder_.reset(new crypto::Padder(minPaddingTo_));
+  if (config_.minPaddingTo != 0) {
+    padder_.reset(new crypto::Padder(config_.minPaddingTo));
   }
 
-  if (compression) {
+  if (config_.compression) {
     compressor_.reset(new crypto::LZOCompressor());
   }
 
-  if (!aesKey_.empty()) {
-    aesEncryptor_.reset(new crypto::AESEncryptor(crypto::AESKey(aesKey_)));
+  if (!config_.aesKey.empty()) {
+    aesEncryptor_.reset(
+        new crypto::AESEncryptor(crypto::AESKey(config_.aesKey)));
   }
 
   // Configure sender and receiver

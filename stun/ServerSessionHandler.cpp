@@ -311,9 +311,13 @@ json ServerSessionHandler::createDataPipe() {
                   ? 0s
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
+  
+  auto dataPipeConfig = DataPipe::Config{
+aesKey,
+      config_.paddingTo, config_.compression, ttl
+  };
   auto dataPipe = std::make_unique<DataPipe>(
-      loop_, std::make_unique<UDPSocket>(std::move(udpPipe)), aesKey,
-      config_.paddingTo, config_.compression, ttl);
+      loop_, std::make_unique<UDPSocket>(std::move(udpPipe)), std::move(dataPipeConfig));
   dispatcher_->addDataPipe(std::move(dataPipe));
 
   return json{{"port", port},
