@@ -24,8 +24,5 @@ cxx_binary(
     name = 'sandbox',
     srcs = ['sandbox.cpp'],
     deps = [
-        '//event:event',
-        '//networking:networking',
-        '//stats:stats',
     ],
 )
