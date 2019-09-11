@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <common/FileDescriptor.h>
 #include <common/Util.h>
 #include <event/Condition.h>
@@ -38,6 +40,8 @@ public:
   event::Condition* canRead() const;
   event::Condition* canWrite() const;
 
+  std::optional<int> getPort() const { return port_; }
+
 protected:
   event::EventLoop& loop_;
 
@@ -46,6 +50,7 @@ protected:
   common::FileDescriptor fd_;
   bool bound_;
   bool connected_;
+  std::optional<int> port_;
   // TODO: UGLY AS HELL!!
   std::unique_ptr<SocketAddress> peerAddr_;
 

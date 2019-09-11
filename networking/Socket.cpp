@@ -73,6 +73,7 @@ int Socket::bind(int port) {
   LOG_V("Socket") << "Bound to port " << actualPort << std::endl;
 
   bound_ = true;
+  port_ = actualPort;
 
   return actualPort;
 }
