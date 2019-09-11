@@ -21,7 +21,6 @@ DataPipe::DataPipe(event::EventLoop& loop,
     : inboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       outboundQ(new event::FIFO<DataPacket>(loop, kDataPipeFIFOSize)),
       loop_(loop), core_{loop, std::move(socket)}, config_{config},
-      readyForSend_{loop.createBaseCondition()},
       didClose_(loop.createBaseCondition()) {
   // Sets up TTL killer
   if (config_.ttl != 0s) {
@@ -45,16 +44,14 @@ DataPipe::DataPipe(event::EventLoop& loop,
   }
 
   // Configure sender and receiver
-  sender_ = loop_.createAction(
-      {outboundQ->canPop(), core_.canSend(), readyForSend_.get()});
+  sender_ = loop_.createAction({outboundQ->canPop(), core_.canSend()});
   sender_->callback.setMethod<DataPipe, &DataPipe::doSend>(this);
   receiver_ = loop_.createAction({inboundQ->canPush(), core_.canReceive()});
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
   probeTimer_ = loop_.createTimer(0s);
-  prober_ = loop_.createAction(
-      {probeTimer_->didFire(), outboundQ->canPush(), readyForSend_.get()});
+  prober_ = loop_.createAction({probeTimer_->didFire(), outboundQ->canPush()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 }
 
@@ -93,7 +90,10 @@ void DataPipe::doSend() {
     }
 
     try {
-      core_.send(std::move(data));
+      if (!core_.send(std::move(data))) {
+        LOG_E("DataPipe") << "Dropped a packet due to send() failure."
+                          << std::endl;
+      }
     } catch (networking::SocketClosedException const& ex) {
       // TODO: SocketClosedException should not leak outside of CoreDataPipe
       LOG_E("DataPipe") << "While sending: " << ex.what() << std::endl;
@@ -137,7 +137,5 @@ void DataPipe::doReceive() {
       inboundQ->push(std::move(data));
     }
   }
-
-  readyForSend_->fire();
 }
 } // namespace stun

@@ -33,6 +33,8 @@ public:
   size_t read(Byte* buffer, size_t capacity);
   size_t write(Byte* buffer, size_t size);
 
+  bool isConnected() const { return connected_; }
+
   event::Condition* canRead() const;
   event::Condition* canWrite() const;
 

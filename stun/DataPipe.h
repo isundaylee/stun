@@ -42,9 +42,6 @@ public:
   std::unique_ptr<event::FIFO<DataPacket>> inboundQ;
   std::unique_ptr<event::FIFO<DataPacket>> outboundQ;
 
-  void setReadyForSend() { return readyForSend_->fire(); }
-
-  event::Condition* readyForSend() { return readyForSend_.get(); }
   event::Condition* didClose();
 
   stats::RatioStat* statEfficiency;
@@ -57,7 +54,6 @@ private:
   // Settings & states
   Config config_;
 
-  std::unique_ptr<event::BaseCondition> readyForSend_;
   std::unique_ptr<event::BaseCondition> didClose_;
 
   // TTL

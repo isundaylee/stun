@@ -7,6 +7,10 @@ UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop,
     : loop_{loop}, socket_{std::move(socket)} {}
 
 bool UDPCoreDataPipe::send(DataPacket packet) {
+  if (!socket_->isConnected()) {
+    return false;
+  }
+
   networking::UDPPacket out;
   out.fill(packet.data, packet.size);
   socket_->write(std::move(out));
