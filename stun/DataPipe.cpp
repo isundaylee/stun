@@ -23,24 +23,24 @@ DataPipe::DataPipe(event::EventLoop& loop,
       loop_(loop), core_{loop, std::move(socket)}, config_{config},
       didClose_(loop.createBaseCondition()) {
   // Sets up TTL killer
-  if (config_.ttl != 0s) {
-    ttlTimer_ = loop.createTimer(config_.ttl);
+  if (config_.common.ttl != 0s) {
+    ttlTimer_ = loop.createTimer(config_.common.ttl);
     ttlKiller_ = loop_.createAction({ttlTimer_->didFire()});
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
 
   // Prepare Encryptor-s
-  if (config_.minPaddingTo != 0) {
-    padder_.reset(new crypto::Padder(config_.minPaddingTo));
+  if (config_.common.minPaddingTo != 0) {
+    padder_.reset(new crypto::Padder(config_.common.minPaddingTo));
   }
 
-  if (config_.compression) {
+  if (config_.common.compression) {
     compressor_.reset(new crypto::LZOCompressor());
   }
 
-  if (!config_.aesKey.empty()) {
+  if (!config_.common.aesKey.empty()) {
     aesEncryptor_.reset(
-        new crypto::AESEncryptor(crypto::AESKey(config_.aesKey)));
+        new crypto::AESEncryptor(crypto::AESKey(config_.common.aesKey)));
   }
 
   // Configure sender and receiver

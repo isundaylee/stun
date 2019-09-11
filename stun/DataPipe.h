@@ -23,11 +23,15 @@ using networking::UDPSocket;
 namespace stun {
 class DataPipe {
 public:
-  struct Config {
+  struct CommonConfig {
     std::string aesKey;
     size_t minPaddingTo;
     bool compression;
     event::Duration ttl;
+  };
+
+  struct Config {
+    CommonConfig common;
   };
 
   DataPipe(event::EventLoop& loop, std::unique_ptr<UDPSocket> socket,

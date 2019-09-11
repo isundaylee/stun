@@ -312,8 +312,8 @@ json ServerSessionHandler::createDataPipe() {
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
 
-  auto dataPipeConfig =
-      DataPipe::Config{aesKey, config_.paddingTo, config_.compression, ttl};
+  auto dataPipeConfig = DataPipe::Config{DataPipe::CommonConfig{
+      aesKey, config_.paddingTo, config_.compression, ttl}};
   auto dataPipe = std::make_unique<DataPipe>(
       loop_, std::make_unique<UDPSocket>(std::move(udpPipe)),
       std::move(dataPipeConfig));
