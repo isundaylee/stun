@@ -55,12 +55,12 @@ public:
 
   stats::RatioStat* statEfficiency;
 
-  UDPCoreDataPipe& getCore() { return *core_; }
+  CoreDataPipe& getCore() { return *core_; }
 
 private:
   event::EventLoop& loop_;
 
-  std::unique_ptr<UDPCoreDataPipe> core_;
+  std::unique_ptr<CoreDataPipe> core_;
 
   // Settings & states
   Config config_;

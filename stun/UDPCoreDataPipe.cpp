@@ -3,16 +3,18 @@
 namespace stun {
 
 UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop, ClientConfig config)
-    : socket_{new networking::UDPSocket{loop, config.addr.type}} {
+    : CoreDataPipe{}, socket_{
+                          new networking::UDPSocket{loop, config.addr.type}} {
   socket_->connect(std::move(config.addr));
 }
 
 UDPCoreDataPipe::UDPCoreDataPipe(event::EventLoop& loop, ServerConfig config)
-    : socket_{new networking::UDPSocket{loop, networking::NetworkType::IPv4}} {
+    : CoreDataPipe{}, socket_{new networking::UDPSocket{
+                          loop, networking::NetworkType::IPv4}} {
   socket_->bind(0);
 }
 
-bool UDPCoreDataPipe::send(DataPacket packet) {
+/* virtual */ bool UDPCoreDataPipe::send(DataPacket packet) /* override */ {
   if (!socket_->isConnected()) {
     return false;
   }
@@ -23,7 +25,7 @@ bool UDPCoreDataPipe::send(DataPacket packet) {
   return true;
 }
 
-bool UDPCoreDataPipe::receive(DataPacket& output) {
+/* virtual */ bool UDPCoreDataPipe::receive(DataPacket& output) /* override */ {
   networking::UDPPacket packet;
   bool read = socket_->read(packet);
   if (!read) {

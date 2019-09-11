@@ -314,7 +314,7 @@ json ServerSessionHandler::createDataPipe() {
                        DataPipe::CommonConfig{aesKey, config_.paddingTo,
                                               config_.compression, ttl}};
   auto dataPipe = std::make_unique<DataPipe>(loop_, std::move(dataPipeConfig));
-  auto port = dataPipe->getCore().getPort();
+  auto port = dynamic_cast<UDPCoreDataPipe&>(dataPipe->getCore()).getPort();
   dispatcher_->addDataPipe(std::move(dataPipe));
 
   return json{{"port", port},
