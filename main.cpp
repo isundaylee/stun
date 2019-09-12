@@ -1,6 +1,19 @@
 #include <cxxopts/cxxopts.hpp>
 
+#ifdef STUN_BUILD_FLAVOR
 #include <Metadata.h>
+#else
+
+// We're likely not building with buck. For example, this might be ccls indexing
+// the file. Just put some dummy values to avoid errors.
+
+#include <string>
+
+const std::string kVersion = "";
+const std::string kGitCommitId = "";
+const bool kGitDirtyStatus = false;
+
+#endif
 
 #include <common/Configerator.h>
 #include <common/Notebook.h>
