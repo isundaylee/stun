@@ -53,11 +53,9 @@ static const std::string clientConfigTemplate = R"(
 }
 )";
 
-cxxopts::Options options("stun", "A simple layer-3 network packet tunnel.");
-
-std::string getConfigPath() {
-  if (options.count("config")) {
-    return options["config"].as<std::string>();
+std::string getConfigPath(cxxopts::ParseResult const& arguments) {
+  if (arguments.count("config")) {
+    return arguments["config"].as<std::string>();
   }
 
   const char* homeDir = getenv("HOME");
@@ -127,7 +125,9 @@ void generateConfig(std::string path) {
   config.write(content.c_str(), content.length());
 }
 
-void setupAndParseOptions(int argc, char* argv[]) {
+cxxopts::ParseResult setupAndParseOptions(int argc, char* argv[]) {
+  cxxopts::Options options("stun", "A simple layer-3 network packet tunnel.");
+
   options.add_option("", "c", "config",
                      "Path to the config file. Default is ~/.stunrc.",
                      cxxopts::value<std::string>(), "");
@@ -150,28 +150,32 @@ void setupAndParseOptions(int argc, char* argv[]) {
   options.add_option("", "h", "help", "Print help and usage info.",
                      cxxopts::value<bool>(), "");
 
-  try {
-    options.parse(argc, argv);
-  } catch (cxxopts::OptionException const& ex) {
-    std::cout << "Cannot parse options: " << ex.what() << std::endl;
-    std::cout << std::endl << options.help() << std::endl;
-    exit(1);
-  }
+  auto arguments = [&options, &argc, &argv]() {
+    try {
+      return options.parse(argc, argv);
+    } catch (cxxopts::OptionException const& ex) {
+      std::cout << "Cannot parse options: " << ex.what() << std::endl;
+      std::cout << std::endl << options.help() << std::endl;
+      exit(1);
+    }
+  }();
 
-  if (options.count("help")) {
+  if (arguments.count("help")) {
     std::cout << options.help() << std::endl;
     exit(1);
   }
 
-  if (options.count("very-verbose")) {
+  if (arguments.count("very-verbose")) {
     common::Logger::getDefault("").setLoggingThreshold(
         common::LogLevel::VERY_VERBOSE);
-  } else if (options.count("verbose")) {
+  } else if (arguments.count("verbose")) {
     common::Logger::getDefault("").setLoggingThreshold(
         common::LogLevel::VERBOSE);
   } else {
     common::Logger::getDefault("").setLoggingThreshold(common::LogLevel::INFO);
   }
+
+  return arguments;
 }
 
 auto parseSubnets(std::string const& key) {
@@ -257,12 +261,14 @@ std::unique_ptr<stun::Client> setupClient(event::EventLoop& loop) {
   return std::make_unique<stun::Client>(loop, config);
 }
 
-std::unique_ptr<flutter::Server> setupFlutterServer(event::EventLoop& loop) {
-  if (options.count("flutter") == 0) {
+std::unique_ptr<flutter::Server>
+setupFlutterServer(event::EventLoop& loop,
+                   cxxopts::ParseResult const& arguments) {
+  if (arguments.count("flutter") == 0) {
     return nullptr;
   }
 
-  auto port = options["flutter"].as<int>();
+  auto port = arguments["flutter"].as<int>();
   auto flutterServerConfig = flutter::ServerConfig{port};
 
   return std::make_unique<flutter::Server>(loop, flutterServerConfig);
@@ -300,9 +306,9 @@ int main(int argc, char* argv[]) {
 
   LOG_I("Main") << "Running version " << version << std::endl;
 
-  setupAndParseOptions(argc, argv);
-  std::string configPath = getConfigPath();
-  if (options.count("wizard") || access(configPath.c_str(), F_OK) == -1) {
+  auto arguments = setupAndParseOptions(argc, argv);
+  std::string configPath = getConfigPath(arguments);
+  if (arguments.count("wizard") || access(configPath.c_str(), F_OK) == -1) {
     generateConfig(configPath);
   }
 
@@ -318,7 +324,7 @@ int main(int argc, char* argv[]) {
 
   // Sets up stats collection
   event::Duration statsDumpInerval =
-      std::chrono::milliseconds(options["stats"].as<int>());
+      std::chrono::milliseconds(arguments["stats"].as<int>());
   statsTimer = loop.createTimer(statsDumpInerval);
   statsDumper = loop.createAction({statsTimer->didFire()});
   statsDumper->callback = [&statsTimer, statsDumpInerval]() {
@@ -330,7 +336,7 @@ int main(int argc, char* argv[]) {
     stats::StatsManager::dump(LOG_V("Stats"), data);
   });
 
-  auto flutterServer = setupFlutterServer(loop);
+  auto flutterServer = setupFlutterServer(loop, arguments);
 
   std::string role = common::Configerator::getString("role");
 
