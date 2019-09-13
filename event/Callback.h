@@ -29,10 +29,19 @@ public:
 
   template <typename T, R (T::*Method)()> void setMethod(T* object) {
     func_ = nullptr;
-    method_ = [](void* object) {
-      return ((static_cast<T*>(object))->*Method)();
+    method_ = [](void const* object) {
+      return ((static_cast<T*>(const_cast<void*>(object)))->*Method)();
     };
-    target = object;
+    target = static_cast<void const*>(const_cast<T const*>(object));
+  }
+
+  template <typename T, R (T::*Method)() const>
+  void setMethod(T const* object) {
+    func_ = nullptr;
+    method_ = [](void const* object) {
+      return ((static_cast<T const*>(object))->*Method)();
+    };
+    target = static_cast<void const*>(object);
   }
 
   R invoke() {
@@ -48,13 +57,13 @@ public:
     }
   }
 
-  void* target = nullptr;
+  void const* target = nullptr;
 
 private:
   Callback(Callback const& copy) = delete;
   Callback& operator=(Callback const& copy) = delete;
 
   std::function<R()> func_;
-  std::function<R(void*)> method_;
+  std::function<R(void const*)> method_;
 };
 } // namespace event

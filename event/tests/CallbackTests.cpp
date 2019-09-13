@@ -21,6 +21,7 @@ public:
   StringKeeper(std::string value) : value_{std::move(value)} {}
 
   std::string getValue() { return value_; }
+  std::string getValueConst() const { return value_; }
 
 private:
   std::string value_;
@@ -73,5 +74,25 @@ TEST(CallbackTests, MemberFunctionWithReturnValue) {
 
   callback.setMethod<StringKeeper, &StringKeeper::getValue>(&keeper);
   ASSERT_EQ(callback.invoke(), "test")
+      << "invoke() should return the expected value.";
+}
+
+TEST(CallbackTests, ConstMemberFunctionWithReturnValue) {
+  auto callback = event::Callback<std::string>{};
+  auto const keeper = StringKeeper{"test"};
+
+  callback.setMethod<StringKeeper, &StringKeeper::getValueConst>(&keeper);
+  ASSERT_EQ(callback.invoke(), "test")
+      << "invoke() should return the expected value.";
+}
+
+TEST(CallbackTests, ChangeConstMemberFunctionWithReturnValue) {
+  auto callback = event::Callback<std::string>{};
+  auto const keeper1 = StringKeeper{"test1"};
+  auto const keeper2 = StringKeeper{"test2"};
+
+  callback.setMethod<StringKeeper, &StringKeeper::getValueConst>(&keeper1);
+  callback.target = &keeper2;
+  ASSERT_EQ(callback.invoke(), "test2")
       << "invoke() should return the expected value.";
 }
