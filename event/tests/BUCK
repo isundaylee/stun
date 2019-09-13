@@ -1,5 +1,12 @@
 cxx_test(
     name = 'action',
     srcs = ['ActionTests.cpp'],
+    headers = ['TestUtils.h'],
+    deps = ['//event:event'],
+)
+
+cxx_test(
+    name = 'callback',
+    srcs = ['CallbackTests.cpp'],
     deps = ['//event:event'],
 )

@@ -1,16 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "TestUtils.h"
+
 #include <event/Action.h>
-
-class TestTrigger {
-public:
-  void fire() { fired_ = true; }
-
-  bool hasFired() const { return fired_; }
-
-private:
-  bool fired_ = false;
-};
 
 TEST(ActionTests, AlwaysOnAction) {
   event::EventLoop loop;
