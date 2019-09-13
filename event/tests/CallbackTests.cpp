@@ -2,6 +2,8 @@
 
 #include "TestUtils.h"
 
+#include <string>
+
 #include <event/Callback.h>
 
 class TriggerFirer {
@@ -12,6 +14,16 @@ public:
 
 private:
   TestTrigger& trigger_;
+};
+
+class StringKeeper {
+public:
+  StringKeeper(std::string value) : value_{std::move(value)} {}
+
+  std::string getValue() { return value_; }
+
+private:
+  std::string value_;
 };
 
 TEST(CallbackTests, VoidLambdaFunction) {
@@ -45,4 +57,21 @@ TEST(CallbackTests, ChangeMemberFunction) {
   callback.invoke();
   ASSERT_FALSE(trigger1.hasFired()) << "Trigger 1 should not have fired.";
   ASSERT_TRUE(trigger2.hasFired()) << "Trigger 2 should have fired.";
+}
+
+TEST(CallbackTests, LambdaFunctionWithReturnValue) {
+  auto callback = event::Callback<std::string>{};
+
+  callback = []() { return "test"; };
+  ASSERT_EQ(callback.invoke(), "test")
+      << "invoke() should return the expected value.";
+}
+
+TEST(CallbackTests, MemberFunctionWithReturnValue) {
+  auto callback = event::Callback<std::string>{};
+  auto keeper = StringKeeper{"test"};
+
+  callback.setMethod<StringKeeper, &StringKeeper::getValue>(&keeper);
+  ASSERT_EQ(callback.invoke(), "test")
+      << "invoke() should return the expected value.";
 }
