@@ -13,6 +13,7 @@
   cxxpp = /usr/bin/clang++
   ld = /usr/bin/clang++
   cxxflags = -std=c++17
+  gtest_dep = //third-party:googletest
 
 [cxx#asan]
   ldflags = -static-libstdc++ -fsanitize=address
