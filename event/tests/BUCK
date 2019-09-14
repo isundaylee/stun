@@ -10,3 +10,9 @@ cxx_test(
     srcs = ['CallbackTests.cpp'],
     deps = ['//event:event'],
 )
+
+cxx_test(
+    name = 'io',
+    srcs = ['IOTests.cpp'],
+    deps = ['//event:event'],
+)
