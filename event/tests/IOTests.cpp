@@ -15,7 +15,7 @@ TEST(IOTests, CanReadWriteTest) {
 
   auto readFd = pipeFds[0], writeFd = pipeFds[1];
   auto readCondition = loop.getIOConditionManager().canRead(readFd);
-  auto writeCondition = loop.getIOConditionManager().canWrite(readFd);
+  auto writeCondition = loop.getIOConditionManager().canWrite(writeFd);
   auto dummyAction = loop.createAction({readCondition, writeCondition});
   dummyAction->callback = []() {};
 
