@@ -178,6 +178,7 @@ cxx_library(
         ('googletest/googlemock', 'src/*.cc'),
         ('googletest/googlemock', 'src/*.h'),
     ]),
+    exported_linker_flags = ['-pthread'],
     visibility = [
         'PUBLIC',
     ],
