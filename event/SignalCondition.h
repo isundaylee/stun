@@ -70,8 +70,7 @@ public:
   std::unique_ptr<SignalCondition> onSigInt(Condition* pendingCondition);
 
   virtual void
-  prepareConditions(std::vector<Condition*> const& conditions,
-                    std::vector<Condition*> const& interesting) override;
+  prepareConditions(std::vector<Condition*> const& conditions) override;
 
   friend SignalCondition;
 };

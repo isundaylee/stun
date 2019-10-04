@@ -1,10 +1,10 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <set>
 #include <vector>
-#include <functional>
 
 namespace event {
 
@@ -20,6 +20,7 @@ enum class ConditionType {
   IO,
   TimerSignal,
   Signal,
+  Computed,
 };
 
 class Action;
@@ -31,9 +32,7 @@ class ConditionManager {
 public:
   virtual ~ConditionManager() = default;
 
-  virtual void
-  prepareConditions(std::vector<Condition*> const& conditions,
-                    std::vector<Condition*> const& interesting) = 0;
+  virtual void prepareConditions(std::vector<Condition*> const& conditions) = 0;
 };
 
 class EventLoopPreparer {

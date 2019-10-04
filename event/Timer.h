@@ -27,8 +27,7 @@ public:
   void setTimeout(Time target, BaseCondition* condition);
   void removeTimeout(BaseCondition* condition);
 
-  virtual void prepareConditions(std::vector<Condition*> const& conditions,
-                                 std::vector<Condition*> const& interesting);
+  virtual void prepareConditions(std::vector<Condition*> const& conditions);
 
 private:
   typedef std::pair<Time, BaseCondition*> TimeoutTrigger;

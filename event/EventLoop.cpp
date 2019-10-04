@@ -10,8 +10,11 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <thread>
 
 namespace event {
+
+const static auto kIdleSleepDuration = std::chrono::milliseconds{1};
 
 EventLoop::EventLoop()
     : actions_(), conditions_(), conditionManagers_(),
@@ -155,34 +158,7 @@ void EventLoop::runOnce() {
     }
 
     // Find all "interesting" conditions of the type
-    std::set<Condition*> interesting;
-    for (auto action : actions_) {
-      bool eligible = true;
-      for (auto condition : action->conditions_) {
-        if (!hasCondition(condition)) {
-          continue;
-        }
-
-        if (condition->type == ConditionType::Internal && !condition->eval()) {
-          eligible = false;
-          break;
-        }
-      }
-      if (eligible) {
-        for (auto condition : action->conditions_) {
-          if (!hasCondition(condition)) {
-            continue;
-          }
-
-          if (condition->type == pair.first) {
-            interesting.insert(condition);
-          }
-        }
-      }
-    }
-    pair.second->prepareConditions(
-        conditionsWithType,
-        std::vector<Condition*>(interesting.begin(), interesting.end()));
+    pair.second->prepareConditions(conditionsWithType);
   }
 
   // Invoke actions that have all their conditions met
@@ -203,6 +179,10 @@ void EventLoop::runOnce() {
         actionToInvoke->canInvoke()) {
       actionToInvoke->invoke();
     }
+  }
+
+  if (toInvoke.empty()) {
+    std::this_thread::sleep_for(kIdleSleepDuration);
   }
 }
 

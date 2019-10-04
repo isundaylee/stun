@@ -172,8 +172,7 @@ TimerManager::TimerManager(EventLoop& loop) : loop_(loop) {
 }
 
 /* virtual */ void
-TimerManager::prepareConditions(std::vector<Condition*> const& conditions,
-                                std::vector<Condition*> const& interesting) {
+TimerManager::prepareConditions(std::vector<Condition*> const& conditions) {
   TimerManager::Core::getInstance().maskSignal();
 
   while (!targets_.empty() && targets_.back().first <= clock_) {

@@ -76,8 +76,7 @@ SignalConditionManager::onSigInt(Condition* pendingCondition) {
 }
 
 /* virtual */ void SignalConditionManager::prepareConditions(
-    std::vector<Condition*> const& conditions,
-    std::vector<Condition*> const& interesting) /* override */ {
+    std::vector<Condition*> const& conditions) /* override */ {
   // All signals should be one-shot. Reset them here in the next event loop
   // iteration.
   for (auto cond : conditions) {

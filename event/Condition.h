@@ -54,7 +54,7 @@ private:
 class ComputedCondition : public Condition {
 public:
   ComputedCondition(EventLoop& loop)
-      : Condition(loop, ConditionType::Internal) {}
+      : Condition(loop, ConditionType::Computed) {}
 
   Callback<bool> expression;
 

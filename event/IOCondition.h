@@ -31,8 +31,7 @@ public:
   void close(int fd);
 
   virtual void
-  prepareConditions(std::vector<Condition*> const& conditions,
-                    std::vector<Condition*> const& interesting) override;
+  prepareConditions(std::vector<Condition*> const& conditions) override;
 
 private:
   IOConditionManager(IOConditionManager const& copy) = delete;

@@ -8,11 +8,13 @@ cxx_test(
 cxx_test(
     name = 'callback',
     srcs = ['CallbackTests.cpp'],
+    headers = ['TestUtils.h'],
     deps = ['//event:event'],
 )
 
 cxx_test(
     name = 'io',
     srcs = ['IOTests.cpp'],
+    headers = ['TestUtils.h'],
     deps = ['//event:event'],
 )
