@@ -49,6 +49,7 @@ def get_client_config(**kwargs):
     }
 
 
+DOCKER_CONTAINER_NAME_PREFIX = "stun_test_"
 DOCKER_NETWORK_NAME = "stun_test"
 DOCKER_IMAGE_TAG = "stun_test"
 
@@ -70,6 +71,7 @@ class Host:
         self.id = docker(
             [
                 "create",
+                "--name={}".format(DOCKER_CONTAINER_NAME_PREFIX + self.name),
                 "--volume={}:/usr/config".format(td),
                 "--cap-add=NET_ADMIN",
                 "--net={}".format(DOCKER_NETWORK_NAME),
