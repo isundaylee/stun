@@ -3,6 +3,7 @@
 #include <json/json.hpp>
 
 #include <stun/Dispatcher.h>
+#include <stun/Types.h>
 
 #include <networking/IPAddressPool.h>
 #include <networking/Messenger.h>
@@ -32,6 +33,7 @@ public:
     std::map<std::string, size_t> quotaTable;
     size_t mtu;
 
+    std::vector<DataPipeType> dataPipePreference;
     std::string user = "";
     size_t quota = 0;
     size_t priorQuotaUsed = 0;

@@ -24,6 +24,9 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
 
 static const event::Duration kSessionHandlerQuotaPoliceInterval = 1s;
 
+static const std::set<DataPipeType> kSessionHandlerSupportedDataPipeTypes = {
+    DataPipeType::UDP};
+
 class ServerSessionHandler::QuotaReporter {
 public:
   QuotaReporter(ServerSessionHandler* session) : session_(session) {
@@ -154,6 +157,14 @@ void ServerSessionHandler::attachHandlers() {
 
   messenger_->addHandler("hello", [this](auto const& message) {
     auto body = message.getBody();
+
+    if (body.find("data_pipe_preference") == body.end()) {
+      config_.dataPipePreference = {DataPipeType::UDP};
+    } else {
+      config_.dataPipePreference =
+          body["data_pipe_preference"]
+              .template get<std::vector<DataPipeType>>();
+    }
 
     if (config_.authentication) {
       if (body.find("user") == body.end()) {
@@ -309,15 +320,34 @@ json ServerSessionHandler::createDataPipe() {
                   : config_.dataPipeRotationInterval +
                         kSessionHandlerRotationGracePeriod);
 
-  auto dataPipeConfig =
-      DataPipe::Config{UDPCoreDataPipe::ServerConfig{},
-                       DataPipe::CommonConfig{aesKey, config_.paddingTo,
-                                              config_.compression, ttl}};
+  auto dataPipeType = DataPipeType::UDP;
+  for (auto preferredType : config_.dataPipePreference) {
+    if (kSessionHandlerSupportedDataPipeTypes.count(preferredType) != 0) {
+      dataPipeType = preferredType;
+      break;
+    }
+  }
+
+  auto coreConfig = [dataPipeType]() -> DataPipe::CoreConfig {
+    switch (dataPipeType) {
+    case DataPipeType::UDP:
+      return UDPCoreDataPipe::ServerConfig{};
+      break;
+    case DataPipeType::TCP:
+      notImplemented("TCP data pipe not supported yet.");
+      break;
+    }
+  }();
+
+  auto dataPipeConfig = DataPipe::Config{
+      coreConfig, DataPipe::CommonConfig{aesKey, config_.paddingTo,
+                                         config_.compression, ttl}};
   auto dataPipe = std::make_unique<DataPipe>(loop_, std::move(dataPipeConfig));
   auto port = dynamic_cast<UDPCoreDataPipe&>(dataPipe->getCore()).getPort();
   dispatcher_->addDataPipe(std::move(dataPipe));
 
-  return json{{"port", port},
+  return json{{"type", dataPipeType},
+              {"port", port},
               {"aes_key", aesKey},
               {"padding_to_size", config_.paddingTo},
               {"compression", config_.compression}};

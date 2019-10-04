@@ -92,13 +92,14 @@ class Host:
     def logs(self):
         return docker(["logs", self.id])[0]
 
-    def get_hello_payload(self):
-        regex = re.compile("Sent: hello = (.*)$")
+    def get_messenger_payloads(self, type):
+        regex = re.compile("Sent: {} = (.*)$".format(type))
+        results = []
         for line in self.logs().split("\n"):
             match = regex.search(line)
             if match is not None:
-                return json.loads(match.group(1))
-        raise RuntimeError("No hello Messenger message found.")
+                results.append(json.loads(match.group(1)))
+        return results
 
     def exec(self, cmd, assert_on_failure=False, input=None, detach=False):
         extra_flags = ["--interactive"]
@@ -422,19 +423,25 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_data_pipe_preference_default(self):
-        with Host("server", get_server_config()) as server, Host(
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
             "client", get_client_config(), entry_args=["-v"]
         ) as client:
             time.sleep(1)
 
             self.assertEqual(
-                client.get_hello_payload()["data_pipe_preference"],
+                client.get_messenger_payloads("hello")[0]["data_pipe_preference"],
                 ["udp"],
                 "Unexpected data_pipe_preference entry in hello message",
             )
 
+            self.assertEqual(
+                server.get_messenger_payloads("new_data_pipe")[0]["type"],
+                "udp",
+                "Unexpected type in new_data_pipe message",
+            )
+
     def test_data_pipe_preference_specified(self):
-        with Host("server", get_server_config()) as server, Host(
+        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
             "client",
             get_client_config(data_pipe_preference=["tcp", "udp"]),
             entry_args=["-v"],
@@ -442,8 +449,14 @@ class TestBasic(unittest.TestCase):
             time.sleep(1)
 
             self.assertEqual(
-                client.get_hello_payload()["data_pipe_preference"],
+                client.get_messenger_payloads("hello")[0]["data_pipe_preference"],
                 ["tcp", "udp"],
                 "Unexpected data_pipe_preference entry in hello message",
+            )
+
+            self.assertEqual(
+                server.get_messenger_payloads("new_data_pipe")[0]["type"],
+                "udp", # TODO: change to TCP once support is added
+                "Unexpected type in new_data_pipe message",
             )
 
