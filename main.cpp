@@ -27,6 +27,7 @@ const bool kGitDirtyStatus = false;
 #include <stats/StatsManager.h>
 #include <stun/Client.h>
 #include <stun/Server.h>
+#include <stun/Types.h>
 
 #include <unistd.h>
 
@@ -252,10 +253,27 @@ std::unique_ptr<stun::Server> setupServer(event::EventLoop& loop,
   return std::make_unique<stun::Server>(loop, config);
 }
 
+auto getDataPipePreference() {
+  if (!common::Configerator::hasKey("data_pipe_preference")) {
+    return std::vector<stun::DataPipeType>{stun::DataPipeType::UDP};
+  }
+
+  auto dataPipePreference =
+      common::Configerator::getJSON()["data_pipe_preference"]
+          .get<std::vector<stun::DataPipeType>>();
+
+  if (dataPipePreference.empty()) {
+    throw std::runtime_error("Empty array specified for data_pipe_preference");
+  }
+
+  return dataPipePreference;
+}
+
 std::unique_ptr<stun::Client> setupClient(event::EventLoop& loop) {
   auto config = ClientConfig{
       SocketAddress(common::Configerator::getString("server"),
                     common::Configerator::get<int>("port", kDefaultServerPort)),
+      getDataPipePreference(),
       common::Configerator::get<bool>("encryption", true),
       common::Configerator::get<std::string>("secret", ""),
       common::Configerator::get<size_t>("padding_to", 0),

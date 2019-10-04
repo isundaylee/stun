@@ -36,6 +36,7 @@ ClientSessionHandler::ClientSessionHandler(
   for (auto const& subnet : config_.subnetsProvided) {
     helloBody["provided_subnets"].push_back(subnet.toString());
   }
+  helloBody["data_pipe_preference"] = config_.dataPipePreference;
   messenger_->outboundQ->push(Message("hello", helloBody));
 
   attachHandlers();

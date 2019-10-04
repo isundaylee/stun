@@ -92,6 +92,14 @@ class Host:
     def logs(self):
         return docker(["logs", self.id])[0]
 
+    def get_hello_payload(self):
+        regex = re.compile("Sent: hello = (.*)$")
+        for line in self.logs().split("\n"):
+            match = regex.search(line)
+            if match is not None:
+                return json.loads(match.group(1))
+        raise RuntimeError("No hello Messenger message found.")
+
     def exec(self, cmd, assert_on_failure=False, input=None, detach=False):
         extra_flags = ["--interactive"]
 
@@ -411,5 +419,31 @@ class TestBasic(unittest.TestCase):
                 "TX loss rate: 0.000000, RX loss rate: 0.000000",
                 client.logs(),
                 "Expected entry not found in client logs.",
+            )
+
+    def test_data_pipe_preference_default(self):
+        with Host("server", get_server_config()) as server, Host(
+            "client", get_client_config(), entry_args=["-v"]
+        ) as client:
+            time.sleep(1)
+
+            self.assertEqual(
+                client.get_hello_payload()["data_pipe_preference"],
+                ["udp"],
+                "Unexpected data_pipe_preference entry in hello message",
+            )
+
+    def test_data_pipe_preference_specified(self):
+        with Host("server", get_server_config()) as server, Host(
+            "client",
+            get_client_config(data_pipe_preference=["tcp", "udp"]),
+            entry_args=["-v"],
+        ) as client:
+            time.sleep(1)
+
+            self.assertEqual(
+                client.get_hello_payload()["data_pipe_preference"],
+                ["tcp", "udp"],
+                "Unexpected data_pipe_preference entry in hello message",
             )
 

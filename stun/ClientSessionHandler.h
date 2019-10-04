@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stun/Dispatcher.h>
+#include <stun/Types.h>
 
 #include <event/Promise.h>
 #include <event/Timer.h>
@@ -27,6 +28,8 @@ public:
 struct ClientConfig {
 public:
   SocketAddress serverAddr;
+
+  std::vector<DataPipeType> dataPipePreference;
 
   bool encryption;
   std::string secret;
