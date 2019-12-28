@@ -40,6 +40,8 @@ Socket::Socket(event::EventLoop& loop, NetworkType networkType, SocketType type,
   setNonblock();
 }
 
+Socket::~Socket() { loop_.getIOConditionManager().close(fd_.fd); }
+
 SocketAddress Socket::getPeerAddress() const {
   assertTrue(bound_ || connected_,
              "Calling getPeerAddress() on a unbound and unconnected socket.");

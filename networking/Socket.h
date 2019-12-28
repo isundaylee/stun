@@ -29,6 +29,8 @@ public:
   Socket(Socket&& move) = default;
   Socket& operator=(Socket&& move) = default;
 
+  ~Socket();
+
   int bind(int port);
   void connect(SocketAddress peer);
   SocketAddress getPeerAddress() const;

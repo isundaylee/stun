@@ -46,6 +46,10 @@ public:
   Tunnel(Tunnel&& move) = default;
 #endif
 
+#if !(TARGET_IOS)
+  ~Tunnel();
+#endif
+
   std::string deviceName;
 
   bool read(TunnelPacket& packet);

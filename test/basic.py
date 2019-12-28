@@ -114,6 +114,9 @@ class Host:
     def logs(self, name="default"):
         return self.exec(["cat", f"/tmp/stun-{name}.stdout"], assert_on_failure=True)[0]
 
+    def stderr(self, name="default"):
+        return self.exec(["cat", f"/tmp/stun-{name}.stderr"], assert_on_failure=True)[0]
+
     def get_messenger_payloads(self, type):
         regex = re.compile("Sent: {} = (.*)$".format(type))
         results = []
@@ -168,10 +171,11 @@ class Host:
 
         time.sleep(1)
 
-        if expect_immediate_exit:
-            return None
-        else:
-            return self.get_stun_pid(name)
+        pid = self.get_stun_pid(name)
+        if (pid is None) and (not expect_immediate_exit):
+            raise RuntimeError("Failed to get newly launched stun's PID.")
+
+        return pid
 
     def get_stun_pid(self, name):
         """Return the PID of the `stun` process previously launched with
@@ -181,15 +185,20 @@ class Host:
         ps_entries = [e for e in ps_entries if "-c {}".format(config_path) in e]
         ps_entries = [e for e in ps_entries if "bash" not in e]
 
-        if len(ps_entries) != 1:
-            raise RuntimeError("Failed to get stun PID.")
+        if len(ps_entries) > 1:
+            raise RuntimeError("More than 1 ps entries found.")
 
-        return int(ps_entries[0].split()[1])
+        return None if (not ps_entries) else int(ps_entries[0].split()[1])
 
     def kill_stun(self, name):
         """Kill a `stun` process previously launched with `run_stun` with the
         given name."""
-        self.exec(["kill", str(self.get_stun_pid(name))], assert_on_failure=True)
+        pid = self.get_stun_pid(name)
+
+        if pid is None:
+            raise RuntimeError("Failed to get stun PID in kill_stun.")
+
+        self.exec(["kill", str(pid)], assert_on_failure=True)
         time.sleep(1)
 
     def get_masqueraded_subnets(self):
@@ -592,6 +601,70 @@ class TestBasic(unittest.TestCase):
                 server.get_messenger_payloads("new_data_pipe")[0]["type"],
                 "udp",  # TODO: change to TCP once support is added
                 "Unexpected type in new_data_pipe message",
+            )
+
+    def test_client_disconnect(self):
+        with Host(
+            self.test_context, "server", get_server_config(self.test_context)
+        ) as server, Host(
+            self.test_context, "client", get_client_config(self.test_context)
+        ) as client:
+
+            self.assertEqual(
+                client.exec(
+                    ["ping", "-t", "1", "-c", "1", f"{self.test_context.get_ip(1)}"]
+                )[2],
+                0,
+                "Failed to ping from client to server.",
+            )
+
+            client.kill_stun("default")
+
+            time.sleep(1)
+
+            # Server should not have crashed
+            self.assertIsNotNone(server.get_stun_pid("default"))
+
+    def test_client_reconnect(self):
+        with Host(
+            self.test_context, "server", get_server_config(self.test_context)
+        ) as server, Host(
+            self.test_context, "client", get_client_config(self.test_context)
+        ) as client:
+
+            self.assertEqual(
+                client.exec(
+                    ["ping", "-t", "1", "-c", "1", f"{self.test_context.get_ip(1)}"]
+                )[2],
+                0,
+                "Failed to ping from client to server.",
+            )
+
+            server.kill_stun("default")
+            time.sleep(1)
+
+            # Client should not have crashed
+            self.assertIsNotNone(client.get_stun_pid("default"))
+
+            server.run_stun("default", get_server_config(self.test_context))
+            time.sleep(5)
+
+            # Client should have reconnected by now
+            self.assertIn(
+                "Will reconnect in 5000 ms.",
+                client.logs(),
+                "Expected client log entry not found",
+            )
+            self.assertIn(
+                "Reconnecting...", client.logs(), "Expected client log entry not found"
+            )
+
+            self.assertEqual(
+                client.exec(
+                    ["ping", "-t", "1", "-c", "1", f"{self.test_context.get_ip(1)}"]
+                )[2],
+                0,
+                "Failed to ping from client to server.",
             )
 
 

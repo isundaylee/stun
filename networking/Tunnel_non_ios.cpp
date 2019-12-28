@@ -93,6 +93,8 @@ Tunnel::Tunnel(event::EventLoop& loop) : loop_(loop) {
 #endif
 }
 
+Tunnel::~Tunnel() { loop_.getIOConditionManager().close(fd_.fd); }
+
 event::Condition* Tunnel::canRead() const {
   return loop_.getIOConditionManager().canRead(fd_.fd);
 }
