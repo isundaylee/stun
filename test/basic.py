@@ -66,20 +66,16 @@ class Context(object):
 
 
 class Host:
-    def __init__(self, test_context, name, config, entry_args=[]):
+    def __init__(
+        self, test_context, name, config, entry_args=[], expect_immediate_exit=False
+    ):
         self.test_context = test_context
         self.name = name
-        self.config = config
-        self.entry_args = entry_args
+        self.default_stun_config = config
+        self.default_stun_args = entry_args
+        self.default_stun_expect_immediate_exit = expect_immediate_exit
 
     def __enter__(self):
-        td = tempfile.mkdtemp(prefix="stun_tes")
-
-        with open(os.path.join(td, "stunrc"), "w") as f:
-            json.dump(self.config, f)
-
-        args = ["-c", "/usr/config/stunrc"] + self.entry_args
-
         self.id = docker(
             [
                 "create",
@@ -89,18 +85,25 @@ class Host:
                     + "-"
                     + self.name
                 ),
-                "--volume={}:/usr/config".format(td),
                 "--cap-add=NET_ADMIN",
                 "--net={}".format(DOCKER_NETWORK_NAME + "-" + self.test_context.uuid),
                 "--net-alias={}".format(self.name),
                 "--device=/dev/net/tun",
-                "--entrypoint=/usr/src/stun",
                 DOCKER_IMAGE_TAG,
+                "/bin/sleep",
+                "10000",
             ]
-            + args
         )[0].strip()
 
         docker(["start", self.id])
+
+        self.exec(["mkdir", "/usr/config"])
+        self.run_stun(
+            "default",
+            self.default_stun_config,
+            self.default_stun_args,
+            expect_immediate_exit=self.default_stun_expect_immediate_exit,
+        )
 
         return self
 
@@ -108,8 +111,8 @@ class Host:
         docker(["kill", self.id], assert_on_failure=False)
         docker(["rm", self.id])
 
-    def logs(self):
-        return docker(["logs", self.id])[0]
+    def logs(self, name="default"):
+        return self.exec(["cat", f"/tmp/stun-{name}.stdout"], assert_on_failure=True)[0]
 
     def get_messenger_payloads(self, type):
         regex = re.compile("Sent: {} = (.*)$".format(type))
@@ -149,19 +152,26 @@ class Host:
 
         return None
 
-    def run_stun(self, name, config):
+    def run_stun(self, name, config, args=[], expect_immediate_exit=False):
         """Run an additional `stun` process with the given name and config. 
         Return the PID of the launched `stun` process."""
         config_path = "/usr/config/stunrc-{}".format(name)
         self.create_file(config_path, json.dumps(config).encode())
 
-        self.exec(
-            ["/usr/src/stun", "-c", config_path], assert_on_failure=True, detach=True
+        cmdline = (
+            " ".join(["/usr/src/stun", "-c", config_path] + args)
+            + f" >/tmp/stun-{name}.stdout"
+            + f" 2>/tmp/stun-{name}.stderr"
         )
+
+        self.exec(["/bin/bash", "-c", cmdline], assert_on_failure=True, detach=True)
 
         time.sleep(1)
 
-        return self.get_stun_pid(name)
+        if expect_immediate_exit:
+            return None
+        else:
+            return self.get_stun_pid(name)
 
     def get_stun_pid(self, name):
         """Return the PID of the `stun` process previously launched with
@@ -169,6 +179,7 @@ class Host:
         config_path = "/usr/config/stunrc-{}".format(name)
         ps_entries = self.exec(["ps", "aux"], assert_on_failure=True)[0].split("\n")
         ps_entries = [e for e in ps_entries if "-c {}".format(config_path) in e]
+        ps_entries = [e for e in ps_entries if "bash" not in e]
 
         if len(ps_entries) != 1:
             raise RuntimeError("Failed to get stun PID.")
@@ -261,9 +272,11 @@ class TestBasic(unittest.TestCase):
             "server",
             get_server_config(self.test_context, authentication=True),
         ) as server, Host(
-            self.test_context, "client", get_client_config(self.test_context)
+            self.test_context,
+            "client",
+            get_client_config(self.test_context),
+            expect_immediate_exit=True,
         ) as client:
-
             self.assertIn(
                 "Session ended with error: No user name provided.",
                 client.logs(),
