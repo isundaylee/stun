@@ -577,7 +577,7 @@ class TestBasic(unittest.TestCase):
 
             self.assertEqual(
                 server.get_messenger_payloads("new_data_pipe")[0]["type"],
-                "udp", # TODO: change to TCP once support is added
+                "udp",  # TODO: change to TCP once support is added
                 "Unexpected type in new_data_pipe message",
             )
 
