@@ -462,3 +462,6 @@ class TestBasic(unittest.TestCase):
                 "Unexpected type in new_data_pipe message",
             )
 
+
+if __name__ == "__main__":
+    unittest.main()
