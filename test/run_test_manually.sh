@@ -6,4 +6,4 @@ buck build //test:dockerfile //:main#release
 
 DOCKERFILE_PATH="buck-out/gen/test/dockerfile/dockerfile" \
     BINARY_PATH="buck-out/gen/main#release" \
-    pytest test/basic.py -k $1
+    pytest test/basic.py --numprocesses=12 -k $1

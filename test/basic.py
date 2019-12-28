@@ -6,6 +6,7 @@ import tempfile
 import json
 import shutil
 import time
+import uuid
 
 tempfile.tempdir = "/tmp"
 
@@ -49,13 +50,19 @@ def get_client_config(**kwargs):
     }
 
 
-DOCKER_CONTAINER_NAME_PREFIX = "stun_test_"
+DOCKER_CONTAINER_NAME_PREFIX = "stun_test-"
 DOCKER_NETWORK_NAME = "stun_test"
 DOCKER_IMAGE_TAG = "stun_test"
 
 
+class Context(object):
+    def __init__(self):
+        self.uuid = uuid.uuid1().hex
+
+
 class Host:
-    def __init__(self, name, config, entry_args=[]):
+    def __init__(self, test_context, name, config, entry_args=[]):
+        self.test_context = test_context
         self.name = name
         self.config = config
         self.entry_args = entry_args
@@ -71,10 +78,15 @@ class Host:
         self.id = docker(
             [
                 "create",
-                "--name={}".format(DOCKER_CONTAINER_NAME_PREFIX + self.name),
+                "--name={}".format(
+                    DOCKER_CONTAINER_NAME_PREFIX
+                    + self.test_context.uuid
+                    + "-"
+                    + self.name
+                ),
                 "--volume={}:/usr/config".format(td),
                 "--cap-add=NET_ADMIN",
-                "--net={}".format(DOCKER_NETWORK_NAME),
+                "--net={}".format(DOCKER_NETWORK_NAME + "-" + self.test_context.uuid),
                 "--net-alias={}".format(self.name),
                 "--device=/dev/net/tun",
                 "--entrypoint=/usr/src/stun",
@@ -188,14 +200,17 @@ class TestBasic(unittest.TestCase):
             docker(["build", "-t", DOCKER_IMAGE_TAG, td])
 
     def setUp(self):
-        docker(["network", "create", DOCKER_NETWORK_NAME])
+        self.test_context = Context()
+        docker(
+            ["network", "create", DOCKER_NETWORK_NAME + "-" + self.test_context.uuid]
+        )
 
     def tearDown(self):
-        docker(["network", "rm", DOCKER_NETWORK_NAME])
+        docker(["network", "rm", DOCKER_NETWORK_NAME + "-" + self.test_context.uuid])
 
     def test_basic(self):
-        with Host("server", get_server_config()) as server, Host(
-            "client", get_client_config()
+        with Host(self.test_context, "server", get_server_config()) as server, Host(
+            self.test_context, "client", get_client_config()
         ) as client:
 
             self.assertEqual(
@@ -211,8 +226,8 @@ class TestBasic(unittest.TestCase):
 
         client_config = get_client_config(user="nice_guy")
 
-        with Host("server", server_config) as server, Host(
-            "client", client_config
+        with Host(self.test_context, "server", server_config) as server, Host(
+            self.test_context, "client", client_config
         ) as client:
 
             self.assertEqual(
@@ -228,9 +243,9 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_authentication_without_username(self):
-        with Host("server", get_server_config(authentication=True)) as server, Host(
-            "client", get_client_config()
-        ) as client:
+        with Host(
+            self.test_context, "server", get_server_config(authentication=True)
+        ) as server, Host(self.test_context, "client", get_client_config()) as client:
 
             self.assertIn(
                 "Session ended with error: No user name provided.",
@@ -245,8 +260,10 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_provided_subnets(self):
-        with Host("server", get_server_config()) as server, Host(
-            "client", get_client_config(provided_subnets=["10.180.0.0/24"])
+        with Host(self.test_context, "server", get_server_config()) as server, Host(
+            self.test_context,
+            "client",
+            get_client_config(provided_subnets=["10.180.0.0/24"]),
         ) as client:
 
             self.assertEqual(
@@ -265,8 +282,10 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_custom_port(self):
-        with Host("server", get_server_config(port=1099)) as server, Host(
-            "client", get_client_config(port=1099)
+        with Host(
+            self.test_context, "server", get_server_config(port=1099)
+        ) as server, Host(
+            self.test_context, "client", get_client_config(port=1099)
         ) as client:
 
             self.assertEqual(
@@ -276,7 +295,7 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_multiple_servers_iptables_rule(self):
-        with Host("server", get_server_config()) as server:
+        with Host(self.test_context, "server", get_server_config()) as server:
             server.run_stun(
                 "extra", get_server_config(address_pool="10.180.0.0/24", port=1099)
             )
@@ -300,7 +319,7 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_multiple_servers_iptables_rule_cleared_properly(self):
-        with Host("server", get_server_config()) as server:
+        with Host(self.test_context, "server", get_server_config()) as server:
             server.run_stun(
                 "extra", get_server_config(address_pool="10.180.0.0/24", port=1099)
             )
@@ -333,9 +352,15 @@ class TestBasic(unittest.TestCase):
         server_config = {"authentication": True, "quotas": {"test-client": 1}}
 
         with Host(
-            "server", get_server_config(**server_config), entry_args=["-v"]
+            self.test_context,
+            "server",
+            get_server_config(**server_config),
+            entry_args=["-v"],
         ) as server, Host(
-            "client", get_client_config(user="test-client"), entry_args=["-v"]
+            self.test_context,
+            "client",
+            get_client_config(user="test-client"),
+            entry_args=["-v"],
         ) as client:
 
             server_expected_messages = [
@@ -350,8 +375,10 @@ class TestBasic(unittest.TestCase):
                 self.assertIn(message, server_logs, "Expected log message not present.")
 
     def test_per_user_log_message_without_authentication(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
-            "client", get_client_config(), entry_args=["-v"]
+        with Host(
+            self.test_context, "server", get_server_config(), entry_args=["-v"]
+        ) as server, Host(
+            self.test_context, "client", get_client_config(), entry_args=["-v"]
         ) as client:
 
             server_expected_messages = [
@@ -367,7 +394,9 @@ class TestBasic(unittest.TestCase):
 
     def test_masquerade_output_interface_set(self):
         with Host(
-            "server", get_server_config(masquerade_output_interface="eth0")
+            self.test_context,
+            "server",
+            get_server_config(masquerade_output_interface="eth0"),
         ) as server:
             entries = server.exec(
                 ["iptables", "-t", "nat", "-S"], assert_on_failure=True
@@ -381,7 +410,7 @@ class TestBasic(unittest.TestCase):
             self.assertTrue(found, "Expected iptables rule not found.")
 
     def test_masquerade_output_interface_empty(self):
-        with Host("server", get_server_config()) as server:
+        with Host(self.test_context, "server", get_server_config()) as server:
             entries = server.exec(
                 ["iptables", "-t", "nat", "-S"], assert_on_failure=True
             )[0].split("\n")
@@ -394,8 +423,12 @@ class TestBasic(unittest.TestCase):
             self.assertTrue(found, "Expected iptables rule not found.")
 
     def test_malformatted_provided_subnet(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
-            "client", get_client_config(provided_subnets=["10.179.10.1/24"])
+        with Host(
+            self.test_context, "server", get_server_config(), entry_args=["-v"]
+        ) as server, Host(
+            self.test_context,
+            "client",
+            get_client_config(provided_subnets=["10.179.10.1/24"]),
         ) as client:
 
             self.assertIn(
@@ -403,8 +436,10 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_loss_estimator(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
-            "client", get_client_config(), entry_args=["-v"]
+        with Host(
+            self.test_context, "server", get_server_config(), entry_args=["-v"]
+        ) as server, Host(
+            self.test_context, "client", get_client_config(), entry_args=["-v"]
         ) as client:
 
             client.exec(
@@ -425,8 +460,10 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_data_pipe_preference_default(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
-            "client", get_client_config(), entry_args=["-v"]
+        with Host(
+            self.test_context, "server", get_server_config(), entry_args=["-v"]
+        ) as server, Host(
+            self.test_context, "client", get_client_config(), entry_args=["-v"]
         ) as client:
             time.sleep(1)
 
@@ -443,7 +480,10 @@ class TestBasic(unittest.TestCase):
             )
 
     def test_data_pipe_preference_specified(self):
-        with Host("server", get_server_config(), entry_args=["-v"]) as server, Host(
+        with Host(
+            self.test_context, "server", get_server_config(), entry_args=["-v"]
+        ) as server, Host(
+            self.test_context,
             "client",
             get_client_config(data_pipe_preference=["tcp", "udp"]),
             entry_args=["-v"],
