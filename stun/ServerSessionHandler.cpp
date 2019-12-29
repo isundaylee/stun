@@ -25,7 +25,7 @@ static const event::Duration kSessionHandlerRotationGracePeriod = 5s;
 static const event::Duration kSessionHandlerQuotaPoliceInterval = 1s;
 
 static const std::set<DataPipeType> kSessionHandlerSupportedDataPipeTypes = {
-    DataPipeType::UDP};
+    DataPipeType::UDP, DataPipeType::TCP};
 
 class ServerSessionHandler::QuotaReporter {
 public:
@@ -339,7 +339,7 @@ json ServerSessionHandler::createDataPipe() {
       return UDPCoreDataPipe::ServerConfig{};
       break;
     case DataPipeType::TCP:
-      notImplemented("TCP data pipe not supported yet.");
+      return TCPCoreDataPipe::ServerConfig{};
       break;
     }
   }();
@@ -348,7 +348,14 @@ json ServerSessionHandler::createDataPipe() {
       coreConfig, DataPipe::CommonConfig{aesKey, config_.paddingTo,
                                          config_.compression, ttl}};
   auto dataPipe = std::make_unique<DataPipe>(loop_, std::move(dataPipeConfig));
-  auto port = dynamic_cast<UDPCoreDataPipe&>(dataPipe->getCore()).getPort();
+  auto port = [dataPipeType, &dataPipe]() {
+    switch (dataPipeType) {
+    case DataPipeType::UDP:
+      return dynamic_cast<UDPCoreDataPipe&>(dataPipe->getCore()).getPort();
+    case DataPipeType::TCP:
+      return dynamic_cast<TCPCoreDataPipe&>(dataPipe->getCore()).getPort();
+    }
+  }();
   dispatcher_->addDataPipe(std::move(dataPipe));
 
   return json{{"type", dataPipeType},

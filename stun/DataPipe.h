@@ -2,6 +2,7 @@
 
 #include <variant>
 
+#include <stun/TCPCoreDataPipe.h>
 #include <stun/UDPCoreDataPipe.h>
 
 #include <crypto/AESEncryptor.h>
@@ -32,8 +33,10 @@ public:
     event::Duration ttl;
   };
 
-  using CoreConfig = std::variant<UDPCoreDataPipe::ClientConfig,
-                                  UDPCoreDataPipe::ServerConfig>;
+  using CoreConfig =
+      std::variant<UDPCoreDataPipe::ClientConfig, UDPCoreDataPipe::ServerConfig,
+                   TCPCoreDataPipe::ClientConfig,
+                   TCPCoreDataPipe::ServerConfig>;
 
   struct Config {
     CoreConfig core;

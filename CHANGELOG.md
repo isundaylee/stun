@@ -1,3 +1,5 @@
+- [Core] Implements TCP data pipe support.
+
 # v0.10.2 (2019-09-10)
 
 - [Core] Fixes infinite prompt stream when configuration wizard is interrupted.

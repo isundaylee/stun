@@ -109,8 +109,22 @@ void ClientSessionHandler::attachHandlers() {
 
     auto socketAddress =
         SocketAddress{config_.serverAddr.getHost().toString(), body["port"]};
+
+    auto dataPipeType = DataPipeType::UDP;
+    if (body.find("type") != body.end()) {
+      dataPipeType = body["type"];
+    }
+
+    auto coreConfig = [dataPipeType, &socketAddress]() -> DataPipe::CoreConfig {
+      switch (dataPipeType) {
+      case DataPipeType::UDP:
+        return UDPCoreDataPipe::ClientConfig{std::move(socketAddress)};
+      case DataPipeType::TCP:
+        return TCPCoreDataPipe::ClientConfig{std::move(socketAddress)};
+      }
+    }();
     auto dataPipeConfig = DataPipe::Config{
-        UDPCoreDataPipe::ClientConfig{std::move(socketAddress)},
+        coreConfig,
         DataPipe::CommonConfig{body["aes_key"], body["padding_to_size"],
                                body["compression"], 0s}};
     auto dataPipe =

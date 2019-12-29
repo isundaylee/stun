@@ -577,7 +577,7 @@ class TestBasic(unittest.TestCase):
                 "Unexpected type in new_data_pipe message",
             )
 
-    def test_data_pipe_preference_specified(self):
+    def test_data_pipe_preference_specified_tcp(self):
         with Host(
             self.test_context,
             "server",
@@ -599,8 +599,16 @@ class TestBasic(unittest.TestCase):
 
             self.assertEqual(
                 server.get_messenger_payloads("new_data_pipe")[0]["type"],
-                "udp",  # TODO: change to TCP once support is added
+                "tcp",
                 "Unexpected type in new_data_pipe message",
+            )
+
+            self.assertEqual(
+                client.exec(
+                    ["ping", "-t", "1", "-c", "1", f"{self.test_context.get_ip(1)}"]
+                )[2],
+                0,
+                "Failed to ping from client to server.",
             )
 
     def test_client_disconnect(self):

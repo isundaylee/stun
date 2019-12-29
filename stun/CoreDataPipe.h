@@ -6,15 +6,13 @@
 #include <networking/Packet.h>
 #include <networking/UDPSocket.h>
 
-namespace {
-static const size_t kDataPacketSize = 2048;
-};
-
 namespace stun {
 
 class DataPacket : public networking::Packet {
 public:
-  DataPacket() : Packet(kDataPacketSize) {}
+  constexpr static size_t Size = 2048;
+
+  DataPacket() : Packet(Size) {}
 };
 
 class CoreDataPipe {

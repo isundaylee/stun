@@ -11,7 +11,7 @@
 
 namespace networking {
 
-const static size_t kPacketPoolBlockSize = 4096;
+const static size_t kPacketPoolBlockSize = 4096 + 32;
 const static size_t kPacketPoolBlockCount = 32;
 
 struct Packet {
@@ -24,19 +24,24 @@ struct Packet {
   Packet& operator=(Packet&& move);
   ~Packet();
 
-  void fill(Byte* buffer, size_t size);
+  void fill(Byte* buffer, size_t size, size_t offset = 0);
   void fill(Packet packet);
 
-  template <typename T> void pack(T const& obj) {
-    fill((Byte*)&obj, sizeof(obj));
+  template <typename T> void pack(T const& obj, size_t offset = 0) {
+    fill((Byte*)&obj, sizeof(obj), offset);
   }
 
-  template <typename T> T unpack() {
+  template <typename T> void unpack(T& output, size_t offset = 0) {
+    memcpy(&output, data + offset, sizeof(T));
+  }
+
+  template <typename T> T unpack(size_t offset = 0) {
     T obj;
-    memcpy(&obj, data, sizeof(obj));
+    unpack(obj);
     return obj;
   }
 
+  // TODO: Make these work with correct destruction
   void trimFront(size_t bytes);
   void insertFront(size_t bytes);
 

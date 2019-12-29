@@ -22,12 +22,24 @@ class CoreDataPipeFactory {
 public:
   CoreDataPipeFactory(event::EventLoop& loop) : loop_{loop} {}
 
-  auto operator()(UDPCoreDataPipe::ServerConfig const& config) {
+  auto operator()(UDPCoreDataPipe::ServerConfig const& config)
+      -> std::unique_ptr<CoreDataPipe> {
     return std::make_unique<UDPCoreDataPipe>(loop_, config);
   }
 
-  auto operator()(UDPCoreDataPipe::ClientConfig const& config) {
+  auto operator()(UDPCoreDataPipe::ClientConfig const& config)
+      -> std::unique_ptr<CoreDataPipe> {
     return std::make_unique<UDPCoreDataPipe>(loop_, config);
+  }
+
+  auto operator()(TCPCoreDataPipe::ServerConfig const& config)
+      -> std::unique_ptr<CoreDataPipe> {
+    return std::make_unique<TCPCoreDataPipe>(loop_, config);
+  }
+
+  auto operator()(TCPCoreDataPipe::ClientConfig const& config)
+      -> std::unique_ptr<CoreDataPipe> {
+    return std::make_unique<TCPCoreDataPipe>(loop_, config);
   }
 
 private:
@@ -125,6 +137,9 @@ void DataPipe::doSend() {
       doKill();
       return;
     }
+
+    LOG_VV("DataPipe") << "Sent a packet. Payload size " << payloadSize
+                       << ", wire size " << data.size << "." << std::endl;
   }
 }
 
@@ -157,6 +172,9 @@ void DataPipe::doReceive() {
     if (statEfficiency != nullptr) {
       statEfficiency->accumulate(data.size, wireSize);
     }
+
+    LOG_VV("DataPipe") << "Received a packet. Wire size " << wireSize
+                       << ", payload size " << data.size << "." << std::endl;
 
     if (data.size > 0) {
       inboundQ->push(std::move(data));
