@@ -44,11 +44,13 @@ public:
     };
 
     // Sets up missed heartbeat disconnection
-    messenger_->loop_.arm({missedTimer_->didFire()}, [this]() {
-      LOG_I("Messenger") << "Disconnected due to missed heartbeats."
-                         << std::endl;
-      messenger_->disconnect();
-    });
+    messenger_->loop_.arm(
+        "networking::Messenger::Heartbeater::missedTimerFireTrigger",
+        {missedTimer_->didFire()}, [this]() {
+          LOG_I("Messenger")
+              << "Disconnected due to missed heartbeats." << std::endl;
+          messenger_->disconnect();
+        });
 
     // Sets up heartbeat message handler
     messenger_->addHandler(

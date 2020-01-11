@@ -56,16 +56,18 @@ void Server::doAccept() {
 
   // Trigger to remove finished clients
   auto handlerPtr = handler.get();
-  loop_.arm({handler->didEnd()}, [this, handlerPtr]() {
-    auto it = std::find_if(sessionHandlers_.begin(), sessionHandlers_.end(),
-                           [handlerPtr](auto const& handler) {
-                             return handler.get() == handlerPtr;
-                           });
+  loop_.arm("stun::Server::sessionHandlerEndedTrigger", {handler->didEnd()},
+            [this, handlerPtr]() {
+              auto it =
+                  std::find_if(sessionHandlers_.begin(), sessionHandlers_.end(),
+                               [handlerPtr](auto const& handler) {
+                                 return handler.get() == handlerPtr;
+                               });
 
-    assertTrue(it != sessionHandlers_.end(),
-               "Cannot find the client to remove.");
-    sessionHandlers_.erase(it);
-  });
+              assertTrue(it != sessionHandlers_.end(),
+                         "Cannot find the client to remove.");
+              sessionHandlers_.erase(it);
+            });
 
   sessionHandlers_.push_back(std::move(handler));
 }

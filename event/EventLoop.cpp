@@ -79,18 +79,18 @@ SignalConditionManager& EventLoop::getSignalConditionManager() {
   return *signalConditionManager_.get();
 }
 
-void EventLoop::arm(std::vector<event::Condition*> conditions,
+void EventLoop::arm(const char* name, std::vector<event::Condition*> conditions,
                     std::function<void(void)> callback) {
-  return triggerManager_->arm(conditions, callback);
+  return triggerManager_->arm(name, conditions, callback);
 }
 
-void EventLoop::perform(std::function<void(void)> callback) {
-  return triggerManager_->perform(callback);
+void EventLoop::perform(const char* name, std::function<void(void)> callback) {
+  return triggerManager_->perform(name, callback);
 }
 
-void EventLoop::performIn(event::Duration delay,
+void EventLoop::performIn(const char* name, event::Duration delay,
                           std::function<void(void)> callback) {
-  return triggerManager_->performIn(delay, callback);
+  return triggerManager_->performIn(name, delay, callback);
 }
 
 void EventLoop::run() {

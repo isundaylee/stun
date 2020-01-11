@@ -46,7 +46,8 @@ event::Condition* ClientSessionHandler::didEnd() const { return didEnd_.get(); }
 
 void ClientSessionHandler::attachHandlers() {
   // Fire our didEnd() when our command pipe is closed
-  loop_.arm({messenger_->didDisconnect()}, [this]() { didEnd_->fire(); });
+  loop_.arm("stun::ClientSessionHandler::messengerDisconnectTrigger",
+            {messenger_->didDisconnect()}, [this]() { didEnd_->fire(); });
 
   messenger_->addHandler("config", [this](auto const& message) {
     auto body = message.getBody();
@@ -86,7 +87,8 @@ void ClientSessionHandler::attachHandlers() {
                        << std::endl;
     }
 
-    loop_.arm({tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
+    loop_.arm("stun::ClientSessionHandler::tunnelPromiseReadyTrigger",
+              {tunnelPromise->isReady(), messenger_->outboundQ->canPush()},
               [this, tunnelPromise]() {
                 LOG_I("Session") << "Tunnel established." << std::endl;
                 dispatcher_.reset(

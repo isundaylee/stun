@@ -18,12 +18,13 @@ public:
   // would self-destruct once the conditions fire. It will also self-destruct
   // if some of the conditions it depends on is already removed from the event
   // loop.
-  void arm(std::vector<event::Condition*> conditions,
+  void arm(const char* name, std::vector<event::Condition*> conditions,
            std::function<void(void)> callback);
 
-  void perform(std::function<void(void)> callback);
+  void perform(const char* name, std::function<void(void)> callback);
 
-  void performIn(event::Duration delay, std::function<void(void)> callback);
+  void performIn(const char* name, event::Duration delay,
+                 std::function<void(void)> callback);
 
   virtual void prepare() override;
 

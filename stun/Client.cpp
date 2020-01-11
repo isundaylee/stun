@@ -52,6 +52,7 @@ void Client::createRoutes(std::vector<Route> routes) {
 
       // We yield the remaining routes to the next event loop iteration
       loop_.perform(
+          "stun::Client::createMoreRoutesTrigger",
           [routes = std::move(routes), this]() { createRoutes(routes); });
 
       break;
@@ -194,9 +195,10 @@ void Client::doReconnect() {
                          .count()
                   << " ms." << std::endl;
 
-  loop_.performIn(kReconnectDelayInterval, [this]() {
-    LOG_I("Client") << "Reconnecting..." << std::endl;
-    connect();
-  });
+  loop_.performIn("stun::Client::reconnectTrigger", kReconnectDelayInterval,
+                  [this]() {
+                    LOG_I("Client") << "Reconnecting..." << std::endl;
+                    connect();
+                  });
 }
 } // namespace stun

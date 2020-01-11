@@ -10,9 +10,9 @@ Trigger::Trigger(event::EventLoop& loop) : loop_(loop) {
   loop_.addPreparer(this);
 }
 
-void Trigger::arm(std::vector<event::Condition*> conditions,
+void Trigger::arm(const char* name, std::vector<event::Condition*> conditions,
                   std::function<void(void)> callback) {
-  auto action = loop_.createAction("event::Trigger", conditions);
+  auto action = loop_.createAction(name, conditions);
   auto actionPtr = action.get();
 
   action->callback = [callback, actionPtr, this]() {
@@ -29,18 +29,18 @@ void Trigger::arm(std::vector<event::Condition*> conditions,
   triggerActions_.push_back(std::move(action));
 }
 
-void Trigger::perform(std::function<void(void)> callback) {
-  arm({}, [callback]() { callback(); });
+void Trigger::perform(const char* name, std::function<void(void)> callback) {
+  arm(name, {}, [callback]() { callback(); });
 }
 
-void Trigger::performIn(event::Duration delay,
+void Trigger::performIn(const char* name, event::Duration delay,
                         std::function<void(void)> callback) {
   auto timer =
       std::shared_ptr<event::Timer>(loop_.createTimer(delay).release());
 
   // We explicitly capture timer by copying here because we need to keep timer
   // alive as long as the trigger.
-  arm({timer->didFire()}, [timer, callback]() { callback(); });
+  arm(name, {timer->didFire()}, [timer, callback]() { callback(); });
 }
 
 /* virtual */ void Trigger::prepare() /*override */ {
