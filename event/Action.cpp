@@ -1,5 +1,7 @@
 #include "event/Action.h"
 
+#include <common/Logger.h>
+
 #include <iostream>
 
 namespace event {
@@ -8,11 +10,18 @@ Action::Action(EventLoop& loop, const char* actionName,
                std::vector<Condition*> conditions)
     : loop_(loop), actionName_(actionName), conditions_(conditions) {
   loop.addAction(this);
+  LOG_VV("Action") << "Added:    " << actionName_ << std::endl;
 }
 
-Action::~Action() { loop_.removeAction(this); }
+Action::~Action() {
+  loop_.removeAction(this);
+  LOG_VV("Action") << "Removed:  " << actionName_ << std::endl;
+}
 
-void Action::invoke() { callback.invoke(); }
+void Action::invoke() {
+  callback.invoke();
+  LOG_VV("Action") << "Invoked:  " << actionName_ << std::endl;
+}
 
 bool Action::canInvoke() const {
   for (auto condition : conditions_) {
