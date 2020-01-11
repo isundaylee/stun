@@ -8,7 +8,7 @@ TEST(ActionTests, AlwaysOnAction) {
   event::EventLoop loop;
 
   auto trigger = TestTrigger{};
-  auto action = loop.createAction({});
+  auto action = loop.createAction("", {});
   action->callback = [&trigger]() { trigger.fire(); };
 
   loop.runOnce();
@@ -20,7 +20,7 @@ TEST(ActionTests, SingleBaseConditionAction) {
 
   auto trigger = TestTrigger{};
   auto condition = loop.createBaseCondition();
-  auto action = event::Action{loop, {condition.get()}};
+  auto action = event::Action{loop, "", {condition.get()}};
   action.callback = [&trigger]() { trigger.fire(); };
 
   loop.runOnce();
@@ -37,7 +37,7 @@ TEST(ActionTests, MultipleBaseConditionsAction) {
   auto trigger = TestTrigger{};
   auto condition1 = loop.createBaseCondition();
   auto condition2 = loop.createBaseCondition();
-  auto action = event::Action{loop, {condition1.get(), condition2.get()}};
+  auto action = event::Action{loop, "", {condition1.get(), condition2.get()}};
   action.callback = [&trigger]() { trigger.fire(); };
 
   loop.runOnce();

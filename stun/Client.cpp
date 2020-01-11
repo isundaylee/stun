@@ -128,7 +128,8 @@ std::unique_ptr<Tunnel> Client::createTunnel(ClientTunnelConfig config) {
       cleanerDidFinish_ = loop_.createBaseCondition();
       cleanerCondition_ =
           loop_.getSignalConditionManager().onSigInt(cleanerDidFinish_.get());
-      cleaner_ = loop_.createAction({cleanerCondition_.get()});
+      cleaner_ = loop_.createAction("stun::Client::cleaner_",
+                                    {cleanerCondition_.get()});
 
       cleaner_->callback = [defaultInterfaceName, originalDNS, this]() {
         InterfaceConfig::setDNSServers(defaultInterfaceName, originalDNS);
@@ -167,7 +168,8 @@ void Client::connect() {
   handler_.reset(new ClientSessionHandler(
       loop_, config_, std::make_unique<TCPSocket>(std::move(socket)),
       tunnelFactory_));
-  reconnector_ = loop_.createAction({handler_->didEnd()});
+  reconnector_ =
+      loop_.createAction("stun::Client::reconnector_", {handler_->didEnd()});
   reconnector_->callback.setMethod<Client, &Client::doReconnect>(this);
 }
 

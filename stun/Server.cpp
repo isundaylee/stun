@@ -19,7 +19,8 @@ Server::Server(event::EventLoop& loop, Config config)
   }
 
   server_.reset(new TCPServer(loop, networking::NetworkType::IPv4));
-  listener_ = loop_.createAction({server_->canAccept()});
+  listener_ =
+      loop_.createAction("stun::Server::listener_", {server_->canAccept()});
   listener_->callback.setMethod<Server, &Server::doAccept>(this);
   server_->bind(config.port);
 

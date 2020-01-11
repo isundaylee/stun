@@ -28,7 +28,8 @@ Tunnel::Tunnel(event::EventLoop& loop, Sender sender, Receiver receiver)
   canReceive_ = loop_.createComputedCondition();
   canReceive_->expression.setMethod<Tunnel, &Tunnel::calculateCanReceive>(this);
 
-  receiveAction_ = loop_.createAction({canReceive_.get()});
+  receiveAction_ = loop_.createAction("networking::Tunnel::receiveAction_",
+                                      {canReceive_.get()});
   receiveAction_->callback.setMethod<Tunnel, &Tunnel::doReceive>(this);
 }
 

@@ -22,6 +22,7 @@ public:
         missedTimer_(messenger->loop_.createTimer(kMessengerHeartBeatTimeout)),
         statRtt_("Connection", "rtt") {
     beater_ = messenger_->loop_.createAction(
+        "networking::Messenger::Heartbeater::beater_",
         {beatTimer_->didFire(), messenger_->outboundQ->canPush()});
 
     // Sets up periodic heart beat sending
@@ -97,8 +98,10 @@ public:
   Transporter(Messenger* messenger, std::unique_ptr<TCPSocket> socket)
       : messenger_(messenger), socket_(std::move(socket)), bufferUsed_(0),
         sender_(messenger_->loop_.createAction(
+            "networking::Messenger::Transporter::sender_",
             {socket_->canWrite(), messenger->outboundQ->canPop()})),
         receiver_(messenger_->loop_.createAction(
+            "networking::Messenger::Transporter::receiver_",
             {socket_->canRead(), messenger->outboundQ->canPush()})) {
     sender_->callback.setMethod<Transporter, &Transporter::doSend>(this);
     receiver_->callback.setMethod<Transporter, &Transporter::doReceive>(this);

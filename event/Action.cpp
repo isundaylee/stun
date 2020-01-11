@@ -4,8 +4,9 @@
 
 namespace event {
 
-Action::Action(EventLoop& loop, std::vector<Condition*> conditions)
-    : loop_(loop), conditions_(conditions) {
+Action::Action(EventLoop& loop, const char* actionName,
+               std::vector<Condition*> conditions)
+    : loop_(loop), actionName_(actionName), conditions_(conditions) {
   loop.addAction(this);
 }
 

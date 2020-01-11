@@ -35,6 +35,7 @@ public:
 
     timer_ = session->loop_.createTimer(0s);
     reporter_ = session_->loop_.createAction(
+        "stun::ServerSessionHandler::reporter_",
         {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     reporter_->callback.setMethod<QuotaReporter, &QuotaReporter::doReport>(
         this);
@@ -80,6 +81,7 @@ public:
 
     timer_ = session->loop_.createTimer(0s);
     police_ = session_->loop_.createAction(
+        "stun::ServerSessionHandler::police_",
         {timer_->didFire(), session->messenger_->outboundQ->canPush()});
     police_->callback.setMethod<QuotaPolice, &QuotaPolice::doPolice>(this);
   }
@@ -275,8 +277,10 @@ void ServerSessionHandler::attachHandlers() {
     if (config_.dataPipeRotationInterval != 0s) {
       dataPipeRotationTimer_ =
           loop_.createTimer(config_.dataPipeRotationInterval);
-      dataPipeRotator_ = loop_.createAction({dataPipeRotationTimer_->didFire(),
-                                             messenger_->outboundQ->canPush()});
+      dataPipeRotator_ =
+          loop_.createAction("stun::ServerSessionHandler::dataPipeRotator_",
+                             {dataPipeRotationTimer_->didFire(),
+                              messenger_->outboundQ->canPush()});
       dataPipeRotator_->callback.setMethod<
           ServerSessionHandler, &ServerSessionHandler::doRotateDataPipe>(this);
     }

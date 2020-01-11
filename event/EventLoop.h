@@ -63,7 +63,8 @@ public:
   void addConditionManager(ConditionManager* manager, ConditionType type);
   void addPreparer(EventLoopPreparer* preparer);
 
-  std::unique_ptr<Action> createAction(std::vector<Condition*> conditions);
+  std::unique_ptr<Action> createAction(const char* name,
+                                       std::vector<Condition*> conditions);
 
   std::unique_ptr<BaseCondition>
   createBaseCondition(ConditionType type = ConditionType::Internal);

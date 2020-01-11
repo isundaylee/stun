@@ -98,7 +98,8 @@ SignalConditionManager::onSigInt(Condition* pendingCondition) {
     for (auto pair : sigIntPendingConditions_) {
       pendingConditions.push_back(pair.second);
     }
-    terminator_ = loop_.createAction(std::move(pendingConditions));
+    terminator_ = loop_.createAction("event::SignalCondition::terminator_",
+                                     std::move(pendingConditions));
     terminator_->callback = []() { throw NormalTerminationException(); };
   }
 }

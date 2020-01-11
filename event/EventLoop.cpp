@@ -51,8 +51,8 @@ void EventLoop::addPreparer(EventLoopPreparer* preparer) {
 }
 
 std::unique_ptr<Action>
-EventLoop::createAction(std::vector<Condition*> conditions) {
-  return std::make_unique<Action>(*this, conditions);
+EventLoop::createAction(const char* name, std::vector<Condition*> conditions) {
+  return std::make_unique<Action>(*this, name, conditions);
 }
 
 std::unique_ptr<BaseCondition> EventLoop::createBaseCondition(

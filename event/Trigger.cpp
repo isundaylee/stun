@@ -12,7 +12,7 @@ Trigger::Trigger(event::EventLoop& loop) : loop_(loop) {
 
 void Trigger::arm(std::vector<event::Condition*> conditions,
                   std::function<void(void)> callback) {
-  auto action = loop_.createAction(conditions);
+  auto action = loop_.createAction("event::Trigger", conditions);
   auto actionPtr = action.get();
 
   action->callback = [callback, actionPtr, this]() {

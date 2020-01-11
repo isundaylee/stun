@@ -46,7 +46,8 @@ DataPipe::DataPipe(event::EventLoop& loop, Config config)
   // Sets up TTL killer
   if (config_.common.ttl != 0s) {
     ttlTimer_ = loop.createTimer(config_.common.ttl);
-    ttlKiller_ = loop_.createAction({ttlTimer_->didFire()});
+    ttlKiller_ = loop_.createAction("stun::DataPipe::ttlKiller_",
+                                    {ttlTimer_->didFire()});
     ttlKiller_->callback.setMethod<DataPipe, &DataPipe::doKill>(this);
   }
 
@@ -65,14 +66,17 @@ DataPipe::DataPipe(event::EventLoop& loop, Config config)
   }
 
   // Configure sender and receiver
-  sender_ = loop_.createAction({outboundQ->canPop(), core_->canSend()});
+  sender_ = loop_.createAction("stun::DataPipe::sender_",
+                               {outboundQ->canPop(), core_->canSend()});
   sender_->callback.setMethod<DataPipe, &DataPipe::doSend>(this);
-  receiver_ = loop_.createAction({inboundQ->canPush(), core_->canReceive()});
+  receiver_ = loop_.createAction("stun::DataPipe::receiver_",
+                                 {inboundQ->canPush(), core_->canReceive()});
   receiver_->callback.setMethod<DataPipe, &DataPipe::doReceive>(this);
 
   // Setup prober
   probeTimer_ = loop_.createTimer(0s);
-  prober_ = loop_.createAction({probeTimer_->didFire(), outboundQ->canPush()});
+  prober_ = loop_.createAction("stun::DataPipe::prober_",
+                               {probeTimer_->didFire(), outboundQ->canPush()});
   prober_->callback.setMethod<DataPipe, &DataPipe::doProbe>(this);
 } // namespace stun
 

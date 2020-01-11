@@ -17,7 +17,7 @@ TEST(IOTests, CanReadWriteTest) {
   auto readFd = pipeFds[0], writeFd = pipeFds[1];
   auto readCondition = loop.getIOConditionManager().canRead(readFd);
   auto writeCondition = loop.getIOConditionManager().canWrite(writeFd);
-  auto dummyAction = loop.createAction({readCondition, writeCondition});
+  auto dummyAction = loop.createAction("", {readCondition, writeCondition});
   dummyAction->callback = []() {};
 
   loop.runOnce();
@@ -48,7 +48,7 @@ TEST(IOTests, IndirectIOCondition) {
     return readCondition->eval();
   };
   auto trigger = TestTrigger{};
-  auto action = loop.createAction({computedCondition.get()});
+  auto action = loop.createAction("", {computedCondition.get()});
   action->callback = [&trigger]() { trigger.fire(); };
 
   loop.runOnce();

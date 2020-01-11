@@ -355,7 +355,8 @@ int main(int argc, char* argv[]) {
   event::Duration statsDumpInerval =
       std::chrono::milliseconds(arguments["stats"].as<int>());
   statsTimer = loop.createTimer(statsDumpInerval);
-  statsDumper = loop.createAction({statsTimer->didFire()});
+  statsDumper =
+      loop.createAction("main()::statsDumper", {statsTimer->didFire()});
   statsDumper->callback = [&statsTimer, statsDumpInerval]() {
     stats::StatsManager::collect();
     statsTimer->extend(statsDumpInerval);

@@ -21,19 +21,21 @@ Dispatcher::Dispatcher(event::EventLoop& loop,
   canReceive_->expression
       .setMethod<Dispatcher, &Dispatcher::calculateCanReceive>(this);
 
-  sender_ = loop.createAction({tunnel_->canRead(), canSend_.get()});
+  sender_ = loop.createAction("stun::Dispatcher::sender_",
+                              {tunnel_->canRead(), canSend_.get()});
   sender_->callback.setMethod<Dispatcher, &Dispatcher::doSend>(this);
 
-  receiver_ = loop.createAction({canReceive_.get(), tunnel_->canWrite()});
+  receiver_ = loop.createAction("stun::Dispatcher::receiver_",
+                                {canReceive_.get(), tunnel_->canWrite()});
   receiver_->callback.setMethod<Dispatcher, &Dispatcher::doReceive>(this);
 }
 
 bool Dispatcher::calculateCanSend() {
   // Here and in doSend(), we are only checking whether the queue can accept new
   // packets. However, data pipes with empty queues might not be able to push
-  // out those packets yet (e.g. due to an unconnected UDP server socket). 
+  // out those packets yet (e.g. due to an unconnected UDP server socket).
   //
-  // TODO: Should we do better checks here? 
+  // TODO: Should we do better checks here?
   for (auto const& dataPipe_ : dataPipes_) {
     if (dataPipe_->outboundQ->canPush()->eval()) {
       return true;
