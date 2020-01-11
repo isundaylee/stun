@@ -11,6 +11,9 @@
 #include <sstream>
 #include <stdexcept>
 
+// TODO: Switch to <ctime> and std:: things once we can.
+#include <time.h>
+
 #define L()                                                                    \
   ::common::Logger::getDefault("=======").withLogLevel(common::LogLevel::INFO)
 #define LOG_E(tag)                                                             \
@@ -76,7 +79,8 @@ public:
   std::function<void(std::string)> tee;
 
 private:
-  const size_t kTimestampBufferSize = 64;
+  const size_t kSecTimestampBufferSize = 64;
+  const size_t kSubsecTimestampBufferSize = 64;
 
   bool linePrimed_ = false;
   std::string tag_;
@@ -86,15 +90,19 @@ private:
   std::stringstream buffer_;
 
   std::string logHeader() {
-    char timestampBuffer[kTimestampBufferSize];
-    time_t rawTime;
-    struct tm* timeInfo;
+    char secTimestampBuffer[kSecTimestampBufferSize];
+    char subsecTimestampBuffer[kSubsecTimestampBufferSize];
 
-    time(&rawTime);
-    timeInfo = localtime(&rawTime);
+    struct timespec secAndNsec;
+    clock_gettime(CLOCK_REALTIME, &secAndNsec);
+    struct tm const* timeInfo = localtime(&secAndNsec.tv_sec);
 
-    strftime(timestampBuffer, kTimestampBufferSize, "[%F %H:%M:%S] ", timeInfo);
-    return std::string(timestampBuffer);
+    strftime(secTimestampBuffer, kSecTimestampBufferSize, "%F %H:%M:%S",
+             timeInfo);
+    snprintf(subsecTimestampBuffer, kSubsecTimestampBufferSize, ".%06ld",
+             secAndNsec.tv_nsec / 1000);
+    return "[" + std::string{secTimestampBuffer} +
+           std::string{subsecTimestampBuffer} + "] ";
   }
 
 #if TARGET_IOS
