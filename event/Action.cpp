@@ -19,8 +19,11 @@ Action::~Action() {
 }
 
 void Action::invoke() {
+  // We need to save a copy since callback.invoke() might destruct this Action
+  // (e.g. for Trigger).
+  const char* actionNameCopy = actionName_;
   callback.invoke();
-  LOG_VV("Action") << "Invoked:  " << actionName_ << std::endl;
+  LOG_VV("Action") << "Invoked:  " << actionNameCopy << std::endl;
 }
 
 bool Action::canInvoke() const {
