@@ -47,7 +47,8 @@ TCPCoreDataPipe::TCPCoreDataPipe(event::EventLoop& loop, ServerConfig config)
                "DataPacket too big for TCPCoreDataPipe.");
     MessageHeader header{static_cast<uint16_t>(packet.size)};
 
-    packetToSend_.pack(header);
+    header.serialize(packetToSend_.data);
+    packetToSend_.size = MessageHeader::WireSize;
     packetToSend_.fill(packet.data, packet.size, sizeof(MessageHeader));
     packetBytesSent_ = 0;
   }
@@ -75,8 +76,7 @@ TCPCoreDataPipe::TCPCoreDataPipe(event::EventLoop& loop, ServerConfig config)
     return false;
   }
 
-  MessageHeader header;
-  receiveBuffer_.unpack(header);
+  auto header = MessageHeader::deserialize(receiveBuffer_.data);
   size_t fullPacketSize = sizeof(MessageHeader) + header.size;
 
   if (receiveBuffer_.size < fullPacketSize) {

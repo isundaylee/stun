@@ -26,16 +26,38 @@ public:
 
   struct ServerConfig {};
 
-  struct __attribute__((packed)) MessageHeader {
+  struct MessageHeader {
+    constexpr static size_t WireSize = 4;
+
     uint8_t version;
     uint8_t unused;
     uint16_t size;
 
     MessageHeader(uint16_t size_) : version(0x01), unused(0), size(size_) {}
     MessageHeader() : MessageHeader{0} {}
-  };
 
-  static_assert(sizeof(MessageHeader) == 4);
+    // serialize()
+
+    void serialize(Byte* buffer) {
+      buffer[0] = version;
+      buffer[1] = unused;
+      *static_cast<uint16_t*>(static_cast<void*>(buffer + 2)) = htons(size);
+    }
+
+    static MessageHeader deserialize(Byte* buffer) {
+      uint8_t version = buffer[0];
+      uint8_t unused = buffer[1];
+      uint16_t size =
+          ntohs(*static_cast<uint16_t*>(static_cast<void*>(buffer + 2)));
+
+      assertTrue(version == 0x01,
+                 "Unexpected TCPCoreDataPipe::MessageHeader::version.");
+      assertTrue(unused == 0x00,
+                 "Unexpected TCPCoreDataPipe::MessageHeader::unused.");
+
+      return MessageHeader{size};
+    }
+  };
 
   TCPCoreDataPipe(event::EventLoop& loop, ClientConfig config);
   TCPCoreDataPipe(event::EventLoop& loop, ServerConfig config);
