@@ -86,7 +86,7 @@ TEST(IOTests, BlockedIOCPUUtil) {
   };
 
   auto trigger = TestTrigger{};
-  auto action = loop.createAction({computedCondition.get()});
+  auto action = loop.createAction("", {computedCondition.get()});
   action->callback = [&trigger]() { trigger.fire(); };
 
   while (!trigger.hasFired()) {
